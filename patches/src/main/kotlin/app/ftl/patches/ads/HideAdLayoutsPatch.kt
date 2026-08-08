@@ -2,31 +2,34 @@ package app.ftl.patches.ads
 
 import app.morphe.patcher.patch.resourcePatch
 
-private val AD_ID_TAG = Regex(
-    "android:id=\"@id/(?i)(ads?|banner)[a-z_]*\"|android:id=\"@\\+id/(?i)(ads?|banner|nativead)[a-z_]*\"",
+private val TAG_SPAN = Regex("<[^>]+>")
+private val AD_ID_ATTR = Regex(
+    "android:id=\"@\\+?id/(ads?|banner)[a-z_]*\"|android:id=\"@\\+?id/nativead[a-z_]*\"",
+    RegexOption.IGNORE_CASE,
 )
-private val ADVIEW_TAG = Regex("<com\\.google\\.android\\.gms\\.ads\\.AdView")
+private val ADVIEW_TAG = Regex("^<com\\.google\\.android\\.gms\\.ads\\.AdView\\b")
 private val WIDTH_ATTR = Regex("android:layout_width=\"[^\"]*\"")
 private val HEIGHT_ATTR = Regex("android:layout_height=\"[^\"]*\"")
 private val VISIBILITY_ATTR = Regex("android:visibility=\"[^\"]*\"")
 
-private fun hideAdElements(xml: String): String {
-    if (!AD_ID_TAG.containsMatchIn(xml) && !ADVIEW_TAG.containsMatchIn(xml)) return xml
+private fun hideAdElements(xml: String): String =
+    TAG_SPAN.replace(xml) { match ->
+        val tag = match.value
+        val isAdTag = AD_ID_ATTR.containsMatchIn(tag) || ADVIEW_TAG.containsMatchIn(tag)
+        if (!isAdTag || !WIDTH_ATTR.containsMatchIn(tag) || !HEIGHT_ATTR.containsMatchIn(tag)) {
+            return@replace tag
+        }
 
-    return xml.lineSequence().joinToString("\n") { line ->
-        if (!AD_ID_TAG.containsMatchIn(line) && !ADVIEW_TAG.containsMatchIn(line)) return@joinToString line
-
-        var patched = line
+        var patched = tag
         patched = WIDTH_ATTR.replace(patched, "android:layout_width=\"0.0dip\"")
         patched = HEIGHT_ATTR.replace(patched, "android:layout_height=\"0.0dip\"")
         patched = if (VISIBILITY_ATTR.containsMatchIn(patched)) {
             VISIBILITY_ATTR.replace(patched, "android:visibility=\"gone\"")
         } else {
-            "$patched android:visibility=\"gone\""
+            patched.replaceFirst(Regex("\\s*/?>$"), " android:visibility=\"gone\"${if (patched.trimEnd().endsWith("/>")) " />" else ">"}")
         }
         patched
     }
-}
 
 val hideAdLayoutsPatch = resourcePatch(
     name = "Hide ad layouts",
