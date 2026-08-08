@@ -1,6 +1,6 @@
 package app.ftl.patches.cleanup
 
-import app.morphe.patcher.patch.rawResourcePatch
+import app.morphe.patcher.patch.resourcePatch
 import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.stringOption
 import java.io.File
@@ -43,7 +43,7 @@ private val JUNK_PATTERNS = listOf(
 // outside these dirs. Excluding them stops a same-named real app file from being caught.
 private val EXCLUDED_PREFIXES = listOf("assets/", "res/")
 
-val apkCleanupPatch = rawResourcePatch(
+val apkCleanupPatch = resourcePatch(
     name = "APK Junk Cleanup",
     description = "Removes build artifacts and metadata that bloat the APK: Play Services / Firebase version files, protobuf descriptors, debug probes, kotlin builtins, META-INF subfolder clutter, and misc junk. Safe — only removes files with no runtime purpose.",
     default = false,
