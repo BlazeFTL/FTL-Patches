@@ -1,6 +1,6 @@
 package app.ftl.patches.resources
 
-import app.morphe.patcher.patch.rawResourcePatch
+import app.morphe.patcher.patch.resourcePatch
 import app.morphe.patcher.patch.stringsOption
 import java.io.File
 import java.util.logging.Logger
@@ -53,7 +53,7 @@ private fun extractLanguageCodes(dirName: String): List<String> {
     return languages
 }
 
-val langCleanPatch = rawResourcePatch(
+val langCleanPatch = resourcePatch(
     name = "Remove Languages",
     description = "Removes translations for languages you don\'t use across ALL resource types (strings, drawables, layouts, raw, xml, etc.). Only keeps the languages you pick. Base resources with no language code are always preserved.",
     default = false,
@@ -95,12 +95,8 @@ val langCleanPatch = rawResourcePatch(
             if (shouldKeep) {
                 keptDirs++
             } else {
-                var size = 0L
-                dir.walkTopDown().filter { it.isFile }.forEach { file ->
-                    size += file.length()
-                    val relPath = file.relativeTo(apkRoot).path.replace(File.separatorChar, '/')
-                    delete(relPath)
-                }
+                val size = dir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+                dir.deleteRecursively()
                 removedDirs++
                 logger.fine("Removed ${dir.name} (${size / 1024}KB) — languages: ${langs.joinToString()}")
             }
