@@ -5,7 +5,7 @@ patches {
     about {
         name = "BlazeFTL Patches"
         description = "Universal Patches for removing ads,analytics,duplicate graphics"
-        source = "git@github.com:BlazeFTL/morphe-patches.git"
+        source = "git@github.com:BlazeFTL/ftl-patches.git"
         author = "BlazeFTL"
         contact = "https://github.com/BlazeFTL"
         website = "https://github.com/BlazeFTL/FTL-Patches"
