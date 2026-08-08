@@ -1,6 +1,7 @@
 package your.patches.category
 
 import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.booleanOption
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
 import com.android.tools.smali.dexlib2.iface.debug.EndLocal
 import com.android.tools.smali.dexlib2.iface.debug.LineNumber
