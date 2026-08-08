@@ -8,7 +8,7 @@ import java.util.logging.Logger
 
 private val logger = Logger.getLogger("ApkCleanupPatch")
 
-// === NEVER REMOVE THESE — they will crash the app ===
+// === NEVER REMOVE THESE ===
 private val PROTECTED_PATTERNS = listOf(
     Regex(""".*META-INF/MANIFEST\.MF$"""),
     Regex(""".*META-INF/services/.*"""),
@@ -18,7 +18,7 @@ private val PROTECTED_PATTERNS = listOf(
     Regex(""".*AndroidManifest\.xml$"""),
 )
 
-// === SAFE TO REMOVE — pure build metadata, no runtime use ===
+// === SAFE JUNK ===
 private val JUNK_PATTERNS = listOf(
     // Play Services / Firebase version metadata
     Regex(""".*play-services-.*\.properties$"""),
@@ -52,7 +52,7 @@ private val JUNK_PATTERNS = listOf(
 
 val apkCleanupPatch = rawResourcePatch(
     name = "APK Junk Cleanup",
-    description = "Removes build artifacts and metadata that bloat the APK: Play Services / Firebase version files, protobuf descriptors, debug probes, and misc META-INF clutter. Safe — only removes files with no runtime purpose.",
+    description = "Removes build artifacts and metadata that bloat the APK: Play Services / Firebase version files, protobuf descriptors, debug probes, kotlin builtins, META-INF subfolder clutter, and misc junk. Safe — only removes files with no runtime purpose.",
     default = false,
 ) {
     val splitByArch by booleanOption(
@@ -80,6 +80,7 @@ val apkCleanupPatch = rawResourcePatch(
         val apkRoot = manifestFile.parentFile ?: File(".")
 
         var removedFiles = 0
+        var removedDirs = 0
         var freedBytes = 0L
 
         // --- 1. Remove junk files ---
@@ -88,7 +89,6 @@ val apkCleanupPatch = rawResourcePatch(
             .forEach { file ->
                 val relativePath = file.relativeTo(apkRoot).path.replace("\\", "/")
 
-                // Safety guard: never delete protected files
                 if (PROTECTED_PATTERNS.any { it.matches(relativePath) }) {
                     return@forEach
                 }
@@ -98,19 +98,45 @@ val apkCleanupPatch = rawResourcePatch(
                     if (file.delete()) {
                         removedFiles++
                         freedBytes += size
-                        logger.fine("Removed: $relativePath (${size}B)")
-                    } else {
-                        logger.warning("Failed to delete: $relativePath")
+                        logger.fine("Removed file: $relativePath (${size}B)")
                     }
                 }
             }
+
+        // --- 2. Remove kotlin/ folder (kotlin_builtins, compile-time only) ---
+        val kotlinDir = File(apkRoot, "kotlin")
+        if (kotlinDir.isDirectory) {
+            val size = kotlinDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+            kotlinDir.deleteRecursively()
+            removedDirs++
+            freedBytes += size
+            logger.info("Removed kotlin/ folder (${size / 1024}KB)")
+        }
+
+        // --- 3. Remove useless META-INF subfolders (keep services/ and signatures) ---
+        val metaInfDir = File(apkRoot, "META-INF")
+        if (metaInfDir.isDirectory) {
+            metaInfDir.listFiles()?.forEach { entry ->
+                if (!entry.isDirectory) return@forEach
+
+                val name = entry.name.lowercase()
+                // Keep services/ (ServiceLoader) — everything else in subfolders is junk
+                if (name == "services") return@forEach
+
+                val size = entry.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+                entry.deleteRecursively()
+                removedDirs++
+                freedBytes += size
+                logger.info("Removed META-INF/$name/ (${size / 1024}KB)")
+            }
+        }
 
         // Clean up empty directories left behind
         apkRoot.walkBottomUp()
             .filter { it.isDirectory && it != apkRoot && it.listFiles()?.isEmpty() == true }
             .forEach { it.delete() }
 
-        // --- 2. Architecture split (only if toggle is on) ---
+        // --- 4. Architecture split ---
         if (splitByArch == true) {
             val archToKeep = targetArch ?: "arm64-v8a"
             val libDir = get("lib", false)
@@ -142,10 +168,6 @@ val apkCleanupPatch = rawResourcePatch(
             }
         }
 
-        if (removedFiles > 0) {
-            logger.info("APK Cleanup: removed $removedFiles items, freed ${freedBytes / 1024}KB")
-        } else {
-            logger.info("APK Cleanup: nothing to remove")
-        }
+        logger.info("APK Cleanup: removed $removedFiles files + $removedDirs dirs, freed ${freedBytes / 1024}KB")
     }
 }
