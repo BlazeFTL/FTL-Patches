@@ -1,31 +1,37 @@
-package patches.misc.debug
+package app.morphe.patches.all.misc.debugging
 
 import app.morphe.patcher.patch.bytecodePatch
-import com.android.tools.smali.dexlib2.iface.debug.DebugItem
-import com.android.tools.smali.dexlib2.immutable.ImmutableMethodImplementation
+import app.morphe.patcher.util.proxy.mutableTypes.MutableMethodParameter
+import java.lang.reflect.Field
 
-val removeDebugInfoPatch = bytecodePatch(
-    name = "Remove debug info",
-    description = "Strips line numbers, local variable debug info, and source file names from bytecode, and removes BuildConfig classes.",
+private val parameterNameField: Field by lazy {
+    MutableMethodParameter::class.java.getDeclaredField("name").apply {
+        isAccessible = true
+    }
+}
+
+val removeAllDexDebugInfoPatch = bytecodePatch(
+    name = "Remove all DEX debug info",
+    description = "Removes debug information from every DEX method.",
     default = true,
 ) {
     execute {
-        classes.removeAll { it.type.endsWith("/BuildConfig;") }
-
         classes.toList().forEach { classDef ->
             val mutableClass = mutableClassDefBy(classDef)
-            mutableClass.sourceFile = null
 
-            mutableClass.methods.forEach { method ->
-                val impl = method.implementation ?: return@forEach
-                method.implementation = ImmutableMethodImplementation(
-                    impl.registerCount,
-                    impl.instructions,
-                    impl.tryBlocks,
-                    emptyList<DebugItem>(),
-                )
+            mutableClass.methods.toList().forEach { method ->
+                method.implementation?.let { implementation ->
+                    val iterator = implementation.debugItems.iterator()
+                    while (iterator.hasNext()) {
+                        iterator.next()
+                        (iterator as MutableIterator<*>).remove()
+                    }
+                }
+
+                method.parameters.forEach { parameter ->
+                    parameterNameField.set(parameter, null)
+                }
             }
         }
-    
-}
+    }
 }
