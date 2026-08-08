@@ -1,7 +1,7 @@
 package app.ftl.patches.analytics
 
+import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
-import app.morphe.patcher.fingerprint.Fingerprint
 import app.morphe.patcher.patch.bytecodePatch
 
 internal object FirebaseAnalyticsLogEventFingerprint : Fingerprint(
@@ -58,6 +58,5 @@ val removeAnalyticsPatch = bytecodePatch(
         YandexMetricaReportEventFingerprint.method.addInstructions(0, "return-void")
         AppsFlyerLogEventFingerprint.method.addInstructions(0, "return-void")
         AdjustTrackEventFingerprint.method.addInstructions(0, "return-void")
-        
     }
 }
