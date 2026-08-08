@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "patches": [
     {
       "name": "Drawable clean",
@@ -15,7 +15,7 @@
           "description": "Density bucket to keep; duplicates are stripped from every other bucket.",
           "required": false,
           "type": "kotlin.String",
-          "default": "xxhdpi",
+          "default": "xhdpi",
           "values": {
             "ldpi": "ldpi",
             "mdpi": "mdpi",
@@ -85,7 +85,7 @@
     },
     {
       "name": "Png optimizer",
-      "description": "Compresses png resources with pngquant (color quantization) and optipng (structure optimization, skipped for .9.png to preserve stretch regions).",
+      "description": "Losslessly recompresses png resources: re-deflates image data at maximum compression and strips non-rendering metadata (tEXt/zTXt/iTXt/tIME). Pure JVM, no native binaries — files are only rewritten when the result is smaller.",
       "default": false,
       "dependencies": [],
       "compatiblePackages": null,
