@@ -1,5 +1,6 @@
 package app.ftl.patches.cleanup
 
+import app.morphe.patcher.patch.resourcePatch
 import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.stringOption
 import java.io.File
