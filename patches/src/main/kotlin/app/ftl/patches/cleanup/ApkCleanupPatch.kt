@@ -10,45 +10,47 @@ private val logger = Logger.getLogger("ApkCleanupPatch")
 
 // Files that are build artifacts, metadata, or debug probes.
 // They bloat the APK but serve no purpose at runtime.
+// All patterns match the FULL relative path, so they need .* prefix
+// to catch files inside subdirectories like META-INF/.
 private val JUNK_PATTERNS = listOf(
     // Kotlin metadata
     Regex(""".*\.kotlin_module$"""),
     Regex(""".*\.kotlin_builtins$"""),
-    Regex("""kotlin-tooling-metadata\.json$"""),
-    Regex("""DebugProbesKt\.bin$"""),
+    Regex(""".*kotlin-tooling-metadata\.json$"""),
+    Regex(""".*DebugProbesKt\.bin$"""),
 
     // Version & build metadata
     Regex(""".*\.version$"""),
-    Regex("""androidsupportmultidexversion\.txt$"""),
-    Regex("""stamp-cert-sha256$"""),
-    Regex("""version-control-info\.textproto$"""),
-    Regex("""app-update\.properties$"""),
-    Regex("""billing\.properties$"""),
-    Regex("""hsdp\.properties$"""),
-    Regex("""core-common\.properties$"""),
-    Regex("""user-messaging-platform\.properties$"""),
+    Regex(""".*androidsupportmultidexversion\.txt$"""),
+    Regex(""".*stamp-cert-sha256$"""),
+    Regex(""".*version-control-info\.textproto$"""),
+    Regex(""".*app-update\.properties$"""),
+    Regex(""".*billing\.properties$"""),
+    Regex(""".*hsdp\.properties$"""),
+    Regex(""".*core-common\.properties$"""),
+    Regex(""".*user-messaging-platform\.properties$"""),
 
     // Play Services / Firebase version metadata
-    Regex("""play-services-.*\.properties$"""),
-    Regex("""firebase-.*\.properties$"""),
+    Regex(""".*play-services-.*\.properties$"""),
+    Regex(""".*firebase-.*\.properties$"""),
 
     // Protobuf descriptors (reflection data, not needed at runtime)
     Regex(""".*\.proto$"""),
 
     // Misc META-INF clutter
-    Regex("""META-INF/CHANGES$"""),
-    Regex("""META-INF/README\.md$"""),
+    Regex(""".*META-INF/CHANGES$"""),
+    Regex(""".*META-INF/README\.md$"""),
 )
 
 val apkCleanupPatch = rawResourcePatch(
-    name = "APK Cleanup",
+    name = "APK Junk Cleanup",
     description = "Strips build artifacts and metadata (Kotlin modules, version files, protobuf descriptors, library properties) that bloat the APK but are unused at runtime. Optionally keeps native libraries for only one CPU architecture.",
     default = false,
 ) {
     val splitByArch by booleanOption(
         key = "splitByArch",
         default = false,
-        title = "Split APK by architecture",
+        title = "Keep Only One Architecture",
         description = "Keep native libraries (.so files) for only one CPU architecture. To generate separate APKs for each architecture, run this patch multiple times with a different architecture selected each time.",
     )
 
@@ -66,7 +68,6 @@ val apkCleanupPatch = rawResourcePatch(
     )
 
     execute {
-        // APK root is the parent of AndroidManifest.xml (every APK has one)
         val manifestFile = get("AndroidManifest.xml", false)
         val apkRoot = manifestFile.parentFile ?: File(".")
 
@@ -84,6 +85,9 @@ val apkCleanupPatch = rawResourcePatch(
                     if (file.delete()) {
                         removedFiles++
                         freedBytes += size
+                        logger.fine("Removed: $relativePath (${size}B)")
+                    } else {
+                        logger.warning("Failed to delete: $relativePath")
                     }
                 }
             }
@@ -113,7 +117,6 @@ val apkCleanupPatch = rawResourcePatch(
                         freedBytes += size
                     }
 
-                    // Remove empty lib/ if nothing remains
                     if (libDir.listFiles()?.isEmpty() == true) {
                         libDir.delete()
                     }
@@ -127,8 +130,9 @@ val apkCleanupPatch = rawResourcePatch(
         }
 
         if (removedFiles > 0) {
-            logger.info("APK Cleanup: removed $removedFiles items, freed ${freedBytes / 1024}KB"
-                       )
+            logger.info("APK Cleanup: removed $removedFiles items, freed ${freedBytes / 1024}KB")
+        } else {
+            logger.info("APK Cleanup: nothing to remove")
         }
     }
 }
