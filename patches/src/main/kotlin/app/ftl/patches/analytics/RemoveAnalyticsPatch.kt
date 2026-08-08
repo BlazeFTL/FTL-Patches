@@ -97,6 +97,20 @@ internal val ANALYTICS_STRING_BLACKLIST = listOf(
 
 private const val ANALYTICS_STRING_REPLACEMENT = ""
 
+// SDK's own bytecode: entry points already stubbed via fingerprints above.
+// Poisoning strings inside the SDK's own internals can break its init-time
+// validation and crash the app before any tracking call is even made.
+private val ANALYTICS_SDK_PACKAGE_PREFIXES = listOf(
+    "Lcom/google/firebase/",
+    "Lcom/google/android/gms/analytics/",
+    "Lcom/google/android/gms/measurement/",
+    "Lcom/google/android/gms/internal/measurement/",
+    "Lcom/flurry/android/",
+    "Lcom/yandex/metrica/",
+    "Lcom/appsflyer/",
+    "Lcom/adjust/sdk/",
+)
+
 val stripFirebaseManifestComponentsPatch = resourcePatch(
     name = "Strip Firebase manifest components",
     description = "Removes Firebase Analytics/Crashlytics receiver and service declarations from AndroidManifest.xml.",
@@ -149,6 +163,8 @@ val removeAnalyticsPatch = bytecodePatch(
         AdjustTrackEventFingerprint.methodOrNull?.addInstructions(0, "return-void")
 
         classDefForEach { classDef ->
+            if (ANALYTICS_SDK_PACKAGE_PREFIXES.any { classDef.type.startsWith(it) }) return@classDefForEach
+
             val hasMatch = classDef.methods.any { method ->
                 (method.instructionsOrNull ?: emptyList()).any { instruction ->
                     instruction.opcode == Opcode.CONST_STRING &&
