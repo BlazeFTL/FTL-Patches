@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.20.0-dev.5",
+  "version": "1.20.0-dev.6",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -110,7 +110,7 @@
     },
     {
       "name": "Remove all DEX debug info",
-      "description": "Removes source-file references and debug-info references from every original DEX without creating mutable Smali methods.",
+      "description": "Removes .source and all method debug_info data from every original DEX without creating mutable Smali methods.",
       "default": false,
       "dependencies": [],
       "compatiblePackages": null,
