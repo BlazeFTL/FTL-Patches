@@ -73,32 +73,25 @@ val apkCleanupPatch = rawResourcePatch(
         val apkRoot = manifestFile.parentFile ?: File(".")
 
         var removedFiles = 0
-        var removedDirs = 0
         var freedBytes = 0L
 
         fun isProtected(relativePath: String) = PROTECTED_PATTERNS.any { it.matches(relativePath) }
 
-        // Deletes a directory tree but honors PROTECTED_PATTERNS; returns (filesRemoved, dirsRemoved, bytesFreed).
-        fun deleteUnprotected(dir: File): Triple<Int, Int, Long> {
-            var files = 0
-            var dirs = 0
-            var bytes = 0L
-            dir.walkBottomUp().forEach { entry ->
-                if (entry == dir) return@forEach
-                val relativePath = entry.relativeTo(apkRoot).path.replace("\\", "/")
-                if (isProtected(relativePath)) return@forEach
-                if (entry.isFile) {
-                    val size = entry.length()
-                    if (entry.delete()) {
-                        files++
-                        bytes += size
-                    }
-                } else if (entry.isDirectory && entry.listFiles()?.isEmpty() == true) {
-                    if (entry.delete()) dirs++
-                }
+        // Recursively removes a path via the patcher's own get()/delete() API — this materializes
+        // entries on demand and marks them for removal at rebuild, unlike raw java.io.File.delete(),
+        // which only affects files already present in the raw-mode working directory.
+        fun removeTree(path: String) {
+            val entry = get(path, false)
+            if (entry.isDirectory) {
+                entry.list()?.forEach { child -> removeTree("$path/$child") }
+            } else if (entry.isFile) {
+                if (isProtected(path)) return
+                val size = entry.length()
+                delete(path)
+                removedFiles++
+                freedBytes += size
+                logger.fine("Removed: $path (${size}B)")
             }
-            if (dir.listFiles()?.isEmpty() == true && dir.delete()) dirs++
-            return Triple(files, dirs, bytes)
         }
 
         // --- 1. Remove junk files ---
@@ -123,35 +116,19 @@ val apkCleanupPatch = rawResourcePatch(
 
         // --- 2. Remove kotlin/ folder (kotlin_builtins, compile-time only) ---
         try {
-            val kotlinDir = File(apkRoot, "kotlin")
-            if (kotlinDir.isDirectory) {
-                val (f, d, size) = deleteUnprotected(kotlinDir)
-                removedFiles += f
-                removedDirs += d
-                freedBytes += size
-                logger.info("Removed kotlin/ folder (${size / 1024}KB)")
-            }
+            removeTree("kotlin")
         } catch (e: Exception) {
             logger.severe("APK Cleanup: failed removing kotlin/ folder: ${e.message}")
         }
 
         // --- 3. Remove useless META-INF subfolders (keep services/ and signatures) ---
         try {
-            val metaInfDir = File(apkRoot, "META-INF")
-            if (metaInfDir.isDirectory) {
-                metaInfDir.listFiles()?.forEach { entry ->
-                    if (!entry.isDirectory) return@forEach
-
-                    val name = entry.name.lowercase()
-                    // Keep services/ (ServiceLoader) — everything else in subfolders is junk
-                    if (name == "services") return@forEach
-
+            val metaInf = get("META-INF", false)
+            if (metaInf.isDirectory) {
+                metaInf.list()?.forEach { name ->
+                    if (name.lowercase() == "services") return@forEach
                     try {
-                        val (f, d, size) = deleteUnprotected(entry)
-                        removedFiles += f
-                        removedDirs += d
-                        freedBytes += size
-                        logger.info("Removed META-INF/$name/ (${size / 1024}KB)")
+                        removeTree("META-INF/$name")
                     } catch (e: Exception) {
                         logger.severe("APK Cleanup: failed removing META-INF/$name/: ${e.message}")
                     }
@@ -161,7 +138,7 @@ val apkCleanupPatch = rawResourcePatch(
             logger.severe("APK Cleanup: failed scanning META-INF/: ${e.message}")
         }
 
-        // Clean up any remaining empty directories
+        // Clean up any remaining empty directories left in the raw-mode working tree
         apkRoot.walkBottomUp()
             .filter { it.isDirectory && it != apkRoot && it.listFiles()?.isEmpty() == true }
             .forEach { it.delete() }
@@ -172,33 +149,26 @@ val apkCleanupPatch = rawResourcePatch(
             val libDir = get("lib", false)
 
             if (libDir.isDirectory) {
-                val archDirs = libDir.listFiles { f -> f.isDirectory }?.toList() ?: emptyList()
-                val hasTarget = archDirs.any { it.name == archToKeep }
+                val archNames = libDir.list()?.toList() ?: emptyList()
+                val hasTarget = archNames.contains(archToKeep)
 
                 if (hasTarget) {
-                    archDirs.filter { it.name != archToKeep }.forEach { archDir ->
-                        val files = archDir.walkTopDown().filter { it.isFile }.toList()
-                        val size = files.sumOf { it.length() }
-                        val count = files.size
-
-                        archDir.deleteRecursively()
-                        removedFiles += count
-                        removedDirs++
-                        freedBytes += size
-                    }
-
-                    if (libDir.listFiles()?.isEmpty() == true) {
-                        libDir.delete()
+                    archNames.filter { it != archToKeep }.forEach { arch ->
+                        try {
+                            removeTree("lib/$arch")
+                        } catch (e: Exception) {
+                            logger.severe("APK Cleanup: failed removing lib/$arch/: ${e.message}")
+                        }
                     }
                 } else {
                     logger.warning(
                         "APK Cleanup: selected architecture \"$archToKeep\" not found in lib/. " +
-                        "Available: ${archDirs.joinToString { it.name }}. Keeping all architectures."
+                        "Available: ${archNames.joinToString()}. Keeping all architectures."
                     )
                 }
             }
         }
 
-        logger.info("APK Cleanup: removed $removedFiles files + $removedDirs dirs, freed ${freedBytes / 1024}KB")
+        logger.info("APK Cleanup: removed $removedFiles files, freed ${freedBytes / 1024}KB")
     }
 }
