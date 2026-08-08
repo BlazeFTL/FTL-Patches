@@ -1,85 +1,64 @@
 package app.ftl.patches.DexDebugInfo
 
 import app.morphe.patcher.patch.bytecodePatch
-import app.morphe.patcher.util.proxy.mutableTypes.MutableClass
-import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
 
 private fun clearDebugItems(implementation: MutableMethodImplementation) {
     val instructionListField =
-        MutableMethodImplementation::class.java.getDeclaredField("instructionList").apply {
-            isAccessible = true
-        }
+        MutableMethodImplementation::class.java.getDeclaredField("instructionList")
+    instructionListField.isAccessible = true
 
-    @Suppress("UNCHECKED_CAST")
-    val locations = instructionListField.get(implementation) as List<Any>
+    val locations = instructionListField.get(implementation) as? Iterable<*>
+        ?: return
 
     for (location in locations) {
+        if (location == null) continue
+
         val getDebugItems = location.javaClass.getMethod("getDebugItems")
         @Suppress("UNCHECKED_CAST")
-        val debugItems = getDebugItems.invoke(location) as MutableList<Any>
+        val debugItems =
+            getDebugItems.invoke(location) as? MutableCollection<Any>
+                ?: continue
+
         debugItems.clear()
     }
 }
 
-private fun clearParameterNames(method: MutableMethod) {
-    val parameters = method.parameters
+private fun clearParameterNames(method: Any) {
+    val parameters = runCatching {
+        method.javaClass.getMethod("getParameters").invoke(method) as? Iterable<*>
+    }.getOrNull() ?: return
+
     for (parameter in parameters) {
-        val nameField = parameter.javaClass.getDeclaredField("name").apply {
-            isAccessible = true
+        if (parameter == null) continue
+
+        runCatching {
+            val field = parameter.javaClass.getDeclaredField("name")
+            field.isAccessible = true
+            field.set(parameter, null)
         }
-        nameField.set(parameter, null)
     }
 }
 
-private fun sameMethod(a: MutableMethod, b: com.android.tools.smali.dexlib2.iface.Method): Boolean =
-    a.name == b.name &&
-        a.returnType == b.returnType &&
-        a.parameterTypes.map(CharSequence::toString) ==
-            b.parameterTypes.map(CharSequence::toString)
-
 val removeDebugInfoPatch = bytecodePatch(
     name = "Remove all DEX debug info",
-    description = "Removes source files, method debug items, and parameter names from every DEX class.",
+    description = "Removes debug information from every class and method in every processed DEX file.",
     default = true,
 ) {
     execute {
-        classDefForEach { originalClass ->
-            val methodsNeedingChanges = originalClass.methods.filter { method ->
-                val hasParameterNames = method.parameters.any { it.name != null }
-                val hasDebugItems =
-                    method.implementation?.debugItems?.iterator()?.hasNext() == true
+        classDefForEach { classDef ->
+            val mutableClass = mutableClassDefBy(classDef)
 
-                hasParameterNames || hasDebugItems
-            }
-
-            val needsSourceRemoval = originalClass.sourceFile != null
-
-            if (!needsSourceRemoval && methodsNeedingChanges.isEmpty()) {
-                return@classDefForEach
-            }
-
-            val mutableClass = mutableClassDefBy(originalClass)
-
-            if (needsSourceRemoval) {
+            runCatching {
                 mutableClass.setSourceFile(null)
             }
 
-            if (methodsNeedingChanges.isEmpty()) {
-                return@classDefForEach
-            }
+            mutableClass.methods.forEach { method ->
+                clearParameterNames(method)
 
-            mutableClass.methods.forEach { mutableMethod ->
-                val originalMethod = methodsNeedingChanges.firstOrNull {
-                    sameMethod(mutableMethod, it)
-                } ?: return@forEach
-
-                if (originalMethod.parameters.any { it.name != null }) {
-                    clearParameterNames(mutableMethod)
-                }
-
-                if (originalMethod.implementation?.debugItems?.iterator()?.hasNext() == true) {
-                    mutableMethod.implementation?.let(::clearDebugItems)
+                val implementation = method.implementation
+                if (implementation is MutableMethodImplementation) {
+                    clearDebugItems(implementation)
                 }
             }
         }
