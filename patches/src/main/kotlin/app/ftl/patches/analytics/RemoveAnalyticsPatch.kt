@@ -111,8 +111,10 @@ private val ANALYTICS_SDK_PACKAGE_PREFIXES = listOf(
     "Lcom/adjust/sdk/",
 )
 
+// name = null keeps this out of PatchLoader's top-level list (removeAnalyticsPatch
+// pulls it in via dependsOn), so it doesn't show as its own toggle in the UI.
 val stripFirebaseManifestComponentsPatch = resourcePatch(
-    name = "Strip Firebase manifest components",
+    name = null,
     description = "Removes Firebase Analytics/Crashlytics receiver and service declarations from AndroidManifest.xml.",
 ) {
     execute {
