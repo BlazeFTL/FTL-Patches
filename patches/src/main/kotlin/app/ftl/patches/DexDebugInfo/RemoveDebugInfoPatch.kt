@@ -12,14 +12,14 @@ val removeDebugInfoPatch = bytecodePatch(
     default = true
 ) {
     execute {
-        classes.toList().forEach { classDef ->
+        classDefForEach { classDef ->
             val needsSourceFileStrip = classDef.sourceFile != null
             val needsMethodStrip = classDef.methods.any { method ->
                 val impl = method.implementation
                 (impl != null && impl.debugItems.iterator().hasNext()) ||
                     method.parameters.any { it.name != null }
             }
-            if (!needsSourceFileStrip && !needsMethodStrip) return@forEach
+            if (!needsSourceFileStrip && !needsMethodStrip) return@classDefForEach
 
             val mutableClass = mutableClassDefBy(classDef)
             if (needsSourceFileStrip) mutableClass.sourceFile = null
