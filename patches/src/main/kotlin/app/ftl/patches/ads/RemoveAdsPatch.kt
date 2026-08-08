@@ -230,7 +230,7 @@ val removeAdsPatch = bytecodePatch(
                         }
                 }
             }
-            if (!hasMatch) return@forEach
+            if (!hasMatch) return@classDefForEach
 
             mutableClassDefBy(classDef).methods.forEach { method ->
                 (method.instructionsOrNull ?: emptyList()).forEachIndexed { index, instruction ->
