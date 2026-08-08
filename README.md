@@ -1,12 +1,10 @@
-# 👋🧩 Morphe Patches template
+# 👋🧩 FTL Patches
 
-Template repository for Morphe Patches.
+Personal collection of Morphe Patches.
 
 ## ❓ About
 
-Patches for apps I like.
-
-TODO: Update this about section with a brief introduction/summary about this repo and what it offers.
+Strips ads and analytics/crash-reporting SDKs at the bytecode level, and trims resource bloat — unused density buckets, unused language packs, and lossless PNG recompression — for smaller, cleaner APKs.
 
 ## 🩹 Patches list
 
@@ -51,9 +49,10 @@ Or manually add this repository url as a patch source in Morphe: https://github.
 
 ### 🛠️ Building
 
-To build UserXYZ Patches,
+To build FTL Patches,
 you can follow the [Morphe documentation](https://github.com/MorpheApp/morphe-documentation).
 
 ## 📜 License
 
-UserXYZ Patches are licensed under the [GNU General Public License v3.0](LICENSE)
+FTL Patches are licensed under the [GNU General Public License v3.0](LICENSE)
+Public License v3.0](LICENSE)
