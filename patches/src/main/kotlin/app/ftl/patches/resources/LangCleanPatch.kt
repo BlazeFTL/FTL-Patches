@@ -10,6 +10,7 @@ private val LANG_DIR = Regex("^values-([a-z]{2,3})(?:-.+)?$")
 val langCleanPatch = rawResourcePatch(
     name = "Language clean",
     description = "Removes language resource directories (values-<lang>) for languages not in the keep list, freeing up space used by unused translations. The default \"values\" directory is always kept.",
+    default = false,
 ) {
     val keepLanguages by stringsOption(
         key = "keepLanguages",
