@@ -20,30 +20,19 @@ private val PROTECTED_PATTERNS = listOf(
 
 // === SAFE JUNK ===
 private val JUNK_PATTERNS = listOf(
-    // Play Services / Firebase version metadata
     Regex(""".*play-services-.*\.properties$"""),
     Regex(""".*firebase-.*\.properties$"""),
-
-    // Other library properties
     Regex(""".*app-update\.properties$"""),
     Regex(""".*billing\.properties$"""),
     Regex(""".*hsdp\.properties$"""),
     Regex(""".*core-common\.properties$"""),
     Regex(""".*user-messaging-platform\.properties$"""),
-
-    // Protobuf descriptors
     Regex(""".*\.proto$"""),
-
-    // Debug probes
     Regex(""".*DebugProbesKt\.bin$"""),
-
-    // Version & build metadata
     Regex(""".*\.version$"""),
     Regex(""".*androidsupportmultidexversion\.txt$"""),
     Regex(""".*stamp-cert-sha256$"""),
     Regex(""".*version-control-info\.textproto$"""),
-
-    // Misc META-INF clutter
     Regex(""".*META-INF/CHANGES$"""),
     Regex(""".*META-INF/README\.md$"""),
     Regex(""".*META-INF/NOTICE.*"""),
@@ -76,8 +65,10 @@ val apkCleanupPatch = rawResourcePatch(
     )
 
     execute {
-        val manifestFile = get("AndroidManifest.xml", false)
-        val apkRoot = manifestFile.parentFile ?: File(".")
+        // In rawResourcePatch, CWD is the decoded APK root.
+        // Do NOT use get().parentFile — it may point to a temp copy.
+        val apkRoot = File(".").absoluteFile.normalize()
+        logger.info("APK root: ${apkRoot.path}")
 
         var removedFiles = 0
         var removedDirs = 0
@@ -103,7 +94,7 @@ val apkCleanupPatch = rawResourcePatch(
                 }
             }
 
-        // --- 2. Remove kotlin/ folder (kotlin_builtins, compile-time only) ---
+        // --- 2. Remove kotlin/ folder ---
         val kotlinDir = File(apkRoot, "kotlin")
         if (kotlinDir.isDirectory) {
             val size = kotlinDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
@@ -111,6 +102,8 @@ val apkCleanupPatch = rawResourcePatch(
             removedDirs++
             freedBytes += size
             logger.info("Removed kotlin/ folder (${size / 1024}KB)")
+        } else {
+            logger.fine("kotlin/ folder not found at ${kotlinDir.path}")
         }
 
         // --- 3. Remove useless META-INF subfolders (keep services/ and signatures) ---
@@ -120,7 +113,6 @@ val apkCleanupPatch = rawResourcePatch(
                 if (!entry.isDirectory) return@forEach
 
                 val name = entry.name.lowercase()
-                // Keep services/ (ServiceLoader) — everything else in subfolders is junk
                 if (name == "services") return@forEach
 
                 val size = entry.walkTopDown().filter { it.isFile }.sumOf { it.length() }
@@ -129,6 +121,8 @@ val apkCleanupPatch = rawResourcePatch(
                 freedBytes += size
                 logger.info("Removed META-INF/$name/ (${size / 1024}KB)")
             }
+        } else {
+            logger.fine("META-INF/ not found at ${metaInfDir.path}")
         }
 
         // Clean up empty directories left behind
@@ -139,7 +133,7 @@ val apkCleanupPatch = rawResourcePatch(
         // --- 4. Architecture split ---
         if (splitByArch == true) {
             val archToKeep = targetArch ?: "arm64-v8a"
-            val libDir = get("lib", false)
+            val libDir = File(apkRoot, "lib")
 
             if (libDir.isDirectory) {
                 val archDirs = libDir.listFiles { f -> f.isDirectory }?.toList() ?: emptyList()
