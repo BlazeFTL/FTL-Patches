@@ -203,6 +203,20 @@ internal val AD_STRING_BLACKLIST = listOf(
 
 private const val AD_STRING_REPLACEMENT = "Remove-Fucking-Ads"
 
+// SDK's own bytecode: entry points already stubbed via fingerprints above.
+// Poisoning strings inside the SDK's own internals breaks its init-time
+// validation (e.g. GMS MobileAdsInitProvider checks its app-id string format
+// and throws IllegalStateException if it's malformed).
+private val AD_SDK_PACKAGE_PREFIXES = listOf(
+    "Lcom/google/android/gms/ads/",
+    "Lcom/google/android/gms/internal/ads/",
+    "Lcom/facebook/ads/",
+    "Lcom/applovin/",
+    "Lcom/unity3d/services/",
+    "Lcom/unity3d/ads/",
+    "Lcom/ironsource/",
+)
+
 val removeAdsPatch = bytecodePatch(
     name = "Remove ads",
     description = "Neuters ad-load entry points for major ad SDKs, poisons const-string ad network hosts/unit-id prefixes across all bytecode, and hides leftover ad view containers in layout XML.",
@@ -221,6 +235,8 @@ val removeAdsPatch = bytecodePatch(
         IronSourceLoadInterstitialFingerprint.methodOrNull?.addInstructions(0, "return-void")
 
         classDefForEach { classDef ->
+            if (AD_SDK_PACKAGE_PREFIXES.any { classDef.type.startsWith(it) }) return@classDefForEach
+
             val hasMatch = classDef.methods.any { method ->
                 (method.instructionsOrNull ?: emptyList()).any { instruction ->
                     instruction.opcode == Opcode.CONST_STRING &&
