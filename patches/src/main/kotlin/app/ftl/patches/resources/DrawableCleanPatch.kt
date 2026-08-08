@@ -1,45 +1,46 @@
 package app.ftl.patches.resources
 
 import app.morphe.patcher.patch.rawResourcePatch
-import java.io.ByteArrayOutputStream
+import java.io.File
 
-private val STRIP_CHUNKS = setOf("tEXt", "zTXt", "iTXt", "tIME")
-private val PNG_SIGNATURE = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)
+private val DENSITIES = listOf("ldpi", "mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi")
+private val DRAWABLE_EXTENSIONS = setOf("png", "webp", "jpg", "jpeg", "gif")
+private val MIPMAP_EXTENSIONS = setOf("png", "xml")
 
-private fun stripPngMetadata(bytes: ByteArray): ByteArray {
-    if (bytes.size < 8 || !bytes.copyOfRange(0, 8).contentEquals(PNG_SIGNATURE)) return bytes
+private fun densityDirs(resDir: File, prefix: String, density: String): List<File> =
+    resDir.listFiles { f -> f.isDirectory && f.name.startsWith("$prefix-$density") }?.toList() ?: emptyList()
 
-    val output = ByteArrayOutputStream(bytes.size)
-    output.write(PNG_SIGNATURE)
+private fun dedupeByBaselineDensity(resDir: File, prefix: String, baseline: String, extensions: Set<String>) {
+    val baselineNames = densityDirs(resDir, prefix, baseline)
+        .flatMap { dir -> dir.walkTopDown().filter { it.isFile && it.extension.lowercase() in extensions } }
+        .map { it.name }
+        .toSet()
+    if (baselineNames.isEmpty()) return
 
-    var offset = 8
-    while (offset + 8 <= bytes.size) {
-        val length = ((bytes[offset].toInt() and 0xFF) shl 24) or
-            ((bytes[offset + 1].toInt() and 0xFF) shl 16) or
-            ((bytes[offset + 2].toInt() and 0xFF) shl 8) or
-            (bytes[offset + 3].toInt() and 0xFF)
-        val type = String(bytes, offset + 4, 4, Charsets.US_ASCII)
-        val chunkEnd = offset + 12 + length
-
-        if (type !in STRIP_CHUNKS) {
-            output.write(bytes, offset, chunkEnd - offset)
+    DENSITIES.filter { it != baseline }.forEach { density ->
+        densityDirs(resDir, prefix, density).forEach { dir ->
+            dir.walkTopDown()
+                .filter { it.isFile && it.extension.lowercase() in extensions && it.name in baselineNames }
+                .forEach { it.delete() }
         }
-
-        offset = chunkEnd
-        if (type == "IEND") break
     }
-
-    return output.toByteArray()
 }
 
 val drawableCleanPatch = rawResourcePatch(
     name = "Drawable clean",
-    description = "Strips PNG text, timestamp and color-profile metadata from drawable resources.",
+    description = "Keeps drawable/mipmap resources only in the target density bucket and removes duplicate-named copies from every other density bucket, relying on Android's density fallback to resolve them.",
 ) {
+    val targetDensity by stringOption(name = "Target density")
+
     execute {
         val resDir = get("res", false)
-        resDir.walkTopDown()
-            .filter { it.isFile && it.extension.equals("png", ignoreCase = true) }
-            .forEach { file -> file.writeBytes(stripPngMetadata(file.readBytes())) }
+        val baseline = targetDensity?.takeIf { it in DENSITIES } ?: "xxhdpi"
+
+        dedupeByBaselineDensity(resDir, "drawable", baseline, DRAWABLE_EXTENSIONS)
+        dedupeByBaselineDensity(resDir, "mipmap", baseline, MIPMAP_EXTENSIONS)
+
+        resDir.walkBottomUp()
+            .filter { it.isDirectory && it.listFiles()?.isEmpty() == true }
+            .forEach { it.delete() }
     }
 }
