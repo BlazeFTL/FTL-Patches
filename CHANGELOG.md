@@ -1,3 +1,25 @@
+## [1.20.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.19.0...v1.20.0) (2026-08-08)
+
+### ✨ New Features
+
+* add debug info patch ([7bdb120](https://github.com/BlazeFTL/FTL-Patches/commit/7bdb120ef3a8c674320964912ea91ee0a763686d))
+* debug ([ba6432b](https://github.com/BlazeFTL/FTL-Patches/commit/ba6432bbe4d790990c051c1dd4737937ce6fa5c8))
+* debug ([48ae29e](https://github.com/BlazeFTL/FTL-Patches/commit/48ae29eff57f0c7655a4a47c7e81afe15f5dec54))
+* finalize debug info ([e684261](https://github.com/BlazeFTL/FTL-Patches/commit/e684261df5afecd2cfbf5ab6d19260efb725281d))
+* up ([99d32f2](https://github.com/BlazeFTL/FTL-Patches/commit/99d32f2ea42f3a01f0e593122372da5e422848ba))
+* up ([9e5608d](https://github.com/BlazeFTL/FTL-Patches/commit/9e5608d69ba96c3f0ba70096b9a9136ff9ff25f5))
+* up ([ace631c](https://github.com/BlazeFTL/FTL-Patches/commit/ace631c5205c466040975b449b5d1d5ca7c56de3))
+* up ([034e1c3](https://github.com/BlazeFTL/FTL-Patches/commit/034e1c39ff8ad8a32672ef903c027519a69a60f8))
+* up ([e3820d9](https://github.com/BlazeFTL/FTL-Patches/commit/e3820d90c717ad01459c4c9d8e4757b8e09cec52))
+* up ([7a6493d](https://github.com/BlazeFTL/FTL-Patches/commit/7a6493d466b8f6ae62b7287639ef9c19297c3fa1))
+* up ([459b6e0](https://github.com/BlazeFTL/FTL-Patches/commit/459b6e099e99b6add33cfca04ce398d6d6fea28d))
+* up ([59aa948](https://github.com/BlazeFTL/FTL-Patches/commit/59aa9480e184aa9087cff651ea18c035b988471c))
+* up ([49aafd0](https://github.com/BlazeFTL/FTL-Patches/commit/49aafd0c7659f063912f077c345dff5eeac2c77a))
+* up ([2d518ec](https://github.com/BlazeFTL/FTL-Patches/commit/2d518ec19ee8d5084d7047bff62227d08e399725))
+* up ([5e5105b](https://github.com/BlazeFTL/FTL-Patches/commit/5e5105bd36608ea165447bf4eca744832933bdf3))
+* up ([dd0d7fb](https://github.com/BlazeFTL/FTL-Patches/commit/dd0d7fb27799d9ece6611a20d9ef636eb4ed5a71))
+* up ([be837c7](https://github.com/BlazeFTL/FTL-Patches/commit/be837c7eefabcb9da4f839208e7bca874bd7325d))
+
 ## [1.20.0-dev.10](https://github.com/BlazeFTL/FTL-Patches/compare/v1.20.0-dev.9...v1.20.0-dev.10) (2026-08-08)
 
 ### ✨ New Features
