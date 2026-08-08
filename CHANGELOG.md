@@ -1,3 +1,10 @@
+## [1.2.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.1.0...v1.2.0) (2026-08-08)
+
+### ✨ New Features
+
+* ass ([c4c2baa](https://github.com/BlazeFTL/FTL-Patches/commit/c4c2baa97386e35a07d2395fa7cdecddb7dd574a))
+* Drwable clean update ([ed978d6](https://github.com/BlazeFTL/FTL-Patches/commit/ed978d682ddb56e192e125e89788422d1e414e9e))
+
 ## [1.1.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.0.0...v1.1.0) (2026-08-08)
 
 ### ✨ New Features

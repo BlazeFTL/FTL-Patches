@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-08-08T08:15:23",
-  "description": "## [1.1.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.0.0...v1.1.0) (2026-08-08)\n\n### ✨ New Features\n\n* ass ([a1aaf45](https://github.com/BlazeFTL/FTL-Patches/commit/a1aaf457fe6430bfd723a944a5784cfc6fb67810))",
-  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.1.0/patches-1.1.0.mpp",
+  "created_at": "2026-08-08T08:27:22",
+  "description": "## [1.2.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.1.0...v1.2.0) (2026-08-08)\n\n### ✨ New Features\n\n* ass ([c4c2baa](https://github.com/BlazeFTL/FTL-Patches/commit/c4c2baa97386e35a07d2395fa7cdecddb7dd574a))\n* Drwable clean update ([ed978d6](https://github.com/BlazeFTL/FTL-Patches/commit/ed978d682ddb56e192e125e89788422d1e414e9e))",
+  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.2.0/patches-1.2.0.mpp",
   "signature_download_url": "",
-  "version": "1.1.0"
+  "version": "1.2.0"
 }

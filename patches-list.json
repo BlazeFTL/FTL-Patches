@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "patches": [
     {
       "name": "Drawable clean",
@@ -12,11 +12,18 @@
         {
           "key": "targetDensity",
           "title": "Target density",
-          "description": null,
+          "description": "Density bucket to keep; duplicates are stripped from every other bucket.",
           "required": false,
           "type": "kotlin.String",
-          "default": null,
-          "values": null
+          "default": "xxhdpi",
+          "values": {
+            "ldpi": "ldpi",
+            "mdpi": "mdpi",
+            "hdpi": "hdpi",
+            "xhdpi": "xhdpi",
+            "xxhdpi": "xxhdpi",
+            "xxxhdpi": "xxxhdpi"
+          }
         }
       ]
     },
@@ -56,14 +63,6 @@
       "options": []
     },
     {
-      "name": "Hide ad layouts",
-      "description": "Zeroes size and hides visibility of ad-related view containers in layout XML.",
-      "default": false,
-      "dependencies": [],
-      "compatiblePackages": null,
-      "options": []
-    },
-    {
       "name": "Remove ads",
       "description": "Neuters ad-load entry points for major ad SDKs, poisons const-string ad network hosts/unit-id prefixes across all bytecode, and hides leftover ad view containers in layout XML.",
       "default": false,
@@ -80,14 +79,6 @@
       "dependencies": [
         "ResourcePatch"
       ],
-      "compatiblePackages": null,
-      "options": []
-    },
-    {
-      "name": "Strip Firebase manifest components",
-      "description": "Removes Firebase Analytics/Crashlytics receiver and service declarations from AndroidManifest.xml.",
-      "default": false,
-      "dependencies": [],
       "compatiblePackages": null,
       "options": []
     }
