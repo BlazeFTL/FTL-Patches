@@ -1,3 +1,9 @@
+## [1.3.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.2.0...v1.3.0) (2026-08-08)
+
+### ✨ New Features
+
+* ass ([e057495](https://github.com/BlazeFTL/FTL-Patches/commit/e05749552ccac5ee02cf94e039098340de79a165))
+
 ## [1.2.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.1.0...v1.2.0) (2026-08-08)
 
 ### ✨ New Features

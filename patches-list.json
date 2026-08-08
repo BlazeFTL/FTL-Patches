@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "patches": [
     {
       "name": "Drawable clean",
@@ -60,6 +60,35 @@
           ]
         }
       ],
+      "options": []
+    },
+    {
+      "name": "Language clean",
+      "description": "Removes language resource directories (values-<lang>) for languages not in the keep list, freeing up space used by unused translations. The default \"values\" directory is always kept.",
+      "default": false,
+      "dependencies": [],
+      "compatiblePackages": null,
+      "options": [
+        {
+          "key": "keepLanguages",
+          "title": "Languages to keep",
+          "description": "Language codes (e.g. en, ru, es) whose resources should not be removed. Add a code to keep more languages, or remove one to also delete it.",
+          "required": false,
+          "type": "kotlin.collections.List<kotlin.String>",
+          "default": [
+            "en",
+            "ru"
+          ],
+          "values": null
+        }
+      ]
+    },
+    {
+      "name": "Png optimizer",
+      "description": "Compresses png resources with pngquant (color quantization) and optipng (structure optimization, skipped for .9.png to preserve stretch regions).",
+      "default": false,
+      "dependencies": [],
+      "compatiblePackages": null,
       "options": []
     },
     {
