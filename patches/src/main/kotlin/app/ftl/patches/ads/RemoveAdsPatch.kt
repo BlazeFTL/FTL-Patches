@@ -71,7 +71,6 @@ val removeAdsPatch = bytecodePatch(
         AppLovinMaxInterstitialLoadFingerprint.method.addInstructions(0, "return-void")
         AppLovinMaxRewardedLoadFingerprint.method.addInstructions(0, "return-void")
         UnityAdsLoadFingerprint.method.addInstructions(0, "return-void")
-        IronSourceLoadInterstitialFingerprint.method.addInstructions(0, "return-void
-                                                                     ")
+        IronSourceLoadInterstitialFingerprint.method.addInstructions(0, "return-void")
     }
 }
