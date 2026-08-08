@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.19.0",
+  "version": "1.20.0-dev.10",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -59,6 +59,14 @@
       "dependencies": [
         "ResourcePatch"
       ],
+      "compatiblePackages": null,
+      "options": []
+    },
+    {
+      "name": "Remove Debug Info",
+      "description": "Removes debug information (line numbers, variable names, source file references) from every class in the .dex files to reduce overall APK size.",
+      "default": false,
+      "dependencies": [],
       "compatiblePackages": null,
       "options": []
     },
