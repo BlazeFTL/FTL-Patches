@@ -170,9 +170,9 @@ private fun patchOriginalDexMappings(context: BytecodePatchContext): Int {
 }
 
 val removeAllDexDebugInfoPatch = bytecodePatch(
-    name = "Remove all DEX debug info",
-    description = "Removes every method debug_info reference from every original DEX without creating MutableMethodImplementation objects.",
-    default = true,
+    name = "Remove Debug Info",
+    description = "Removes debug information (line numbers, variable names, source file references) from every class in the .dex files to reduce overall APK size.",
+    default = false,
 ) {
     execute {
         val changed = patchOriginalDexMappings(this)
