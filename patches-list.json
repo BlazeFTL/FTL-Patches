@@ -4,11 +4,21 @@
   "patches": [
     {
       "name": "Drawable clean",
-      "description": "Strips PNG text, timestamp and color-profile metadata from drawable resources.",
+      "description": "Keeps drawable/mipmap resources only in the target density bucket and removes duplicate-named copies from every other density bucket, relying on Android's density fallback to resolve them.",
       "default": false,
       "dependencies": [],
       "compatiblePackages": null,
-      "options": []
+      "options": [
+        {
+          "key": "targetDensity",
+          "title": "Target density",
+          "description": null,
+          "required": false,
+          "type": "kotlin.String",
+          "default": null,
+          "values": null
+        }
+      ]
     },
     {
       "name": "Example Patch",
@@ -55,7 +65,7 @@
     },
     {
       "name": "Remove ads",
-      "description": "Neuters ad-load entry points for major ad SDKs and hides leftover ad view containers in layout XML.",
+      "description": "Neuters ad-load entry points for major ad SDKs, poisons const-string ad network hosts/unit-id prefixes across all bytecode, and hides leftover ad view containers in layout XML.",
       "default": false,
       "dependencies": [
         "ResourcePatch"
@@ -65,7 +75,17 @@
     },
     {
       "name": "Remove analytics",
-      "description": "Neuters logging entry points for Firebase Analytics, Crashlytics, Flurry, legacy Google Analytics, Yandex Metrica, AppsFlyer and Adjust.",
+      "description": "Neuters logging entry points for major analytics/crash-reporting SDKs, poisons const-string analytics hosts and component names across all bytecode, and strips Firebase receiver/service declarations from the manifest.",
+      "default": false,
+      "dependencies": [
+        "ResourcePatch"
+      ],
+      "compatiblePackages": null,
+      "options": []
+    },
+    {
+      "name": "Strip Firebase manifest components",
+      "description": "Removes Firebase Analytics/Crashlytics receiver and service declarations from AndroidManifest.xml.",
       "default": false,
       "dependencies": [],
       "compatiblePackages": null,
