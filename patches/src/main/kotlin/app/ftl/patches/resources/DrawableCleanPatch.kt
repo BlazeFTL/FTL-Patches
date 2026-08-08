@@ -1,6 +1,7 @@
 package app.ftl.patches.resources
 
 import app.morphe.patcher.patch.rawResourcePatch
+import app.morphe.patcher.patch.stringOption
 import java.io.File
 
 private val DENSITIES = listOf("ldpi", "mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi")
@@ -30,7 +31,7 @@ val drawableCleanPatch = rawResourcePatch(
     name = "Drawable clean",
     description = "Keeps drawable/mipmap resources only in the target density bucket and removes duplicate-named copies from every other density bucket, relying on Android's density fallback to resolve them.",
 ) {
-    val targetDensity by stringOption(name = "Target density")
+    val targetDensity by stringOption(key = "targetDensity", title = "Target density")
 
     execute {
         val resDir = get("res", false)
