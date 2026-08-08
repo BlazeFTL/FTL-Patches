@@ -65,14 +65,14 @@ val removeAdsPatch = bytecodePatch(
     dependsOn(hideAdLayoutsPatch)
 
     execute {
-        AdViewLoadAdFingerprint.method.addInstructions(0, "return-void")
-        InterstitialAdLoadFingerprint.method.addInstructions(0, "return-void")
-        RewardedAdLoadFingerprint.method.addInstructions(0, "return-void")
-        FacebookAdViewLoadAdFingerprint.method.addInstructions(0, "return-void")
-        FacebookInterstitialLoadAdFingerprint.method.addInstructions(0, "return-void")
-        AppLovinMaxInterstitialLoadFingerprint.method.addInstructions(0, "return-void")
-        AppLovinMaxRewardedLoadFingerprint.method.addInstructions(0, "return-void")
-        UnityAdsLoadFingerprint.method.addInstructions(0, "return-void")
-        IronSourceLoadInterstitialFingerprint.method.addInstructions(0, "return-void")
+        AdViewLoadAdFingerprint.methodOrNull?.addInstructions(0, "return-void")
+        InterstitialAdLoadFingerprint.methodOrNull?.addInstructions(0, "return-void")
+        RewardedAdLoadFingerprint.methodOrNull?.addInstructions(0, "return-void")
+        FacebookAdViewLoadAdFingerprint.methodOrNull?.addInstructions(0, "return-void")
+        FacebookInterstitialLoadAdFingerprint.methodOrNull?.addInstructions(0, "return-void")
+        AppLovinMaxInterstitialLoadFingerprint.methodOrNull?.addInstructions(0, "return-void")
+        AppLovinMaxRewardedLoadFingerprint.methodOrNull?.addInstructions(0, "return-void")
+        UnityAdsLoadFingerprint.methodOrNull?.addInstructions(0, "return-void")
+        IronSourceLoadInterstitialFingerprint.methodOrNull?.addInstructions(0, "return-void")
     }
 }
