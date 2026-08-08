@@ -148,7 +148,7 @@ val removeAnalyticsPatch = bytecodePatch(
         AppsFlyerLogEventFingerprint.methodOrNull?.addInstructions(0, "return-void")
         AdjustTrackEventFingerprint.methodOrNull?.addInstructions(0, "return-void")
 
-        classes.forEach { classDef ->
+        classDefForEach { classDef ->
             val hasMatch = classDef.methods.any { method ->
                 (method.instructionsOrNull ?: emptyList()).any { instruction ->
                     instruction.opcode == Opcode.CONST_STRING &&
