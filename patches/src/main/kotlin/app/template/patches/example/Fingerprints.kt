@@ -11,7 +11,7 @@ import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 
 /**
- * See: O
+ * See:
  * https://github.com/MorpheApp/morphe-patcher/blob/main/docs
  * https://github.com/MorpheApp/morphe-patcher/blob/main/docs/2_2_1_fingerprinting.md
  *
