@@ -83,7 +83,10 @@ val apkCleanupPatch = resourcePatch(
         fun removeTree(path: String) {
             val entry = get(path, false)
             if (entry.isDirectory) {
-                entry.list()?.forEach { child -> removeTree("$path/$child") }
+                val children = entry.list()
+                val preview = children?.take(5)?.joinToString()
+                logger.info("APK Cleanup: $path/ -> ${children?.size ?: -1} entries (e.g. $preview)")
+                children?.forEach { child -> removeTree("$path/$child") }
             } else if (entry.isFile) {
                 if (isProtected(path)) return
                 val size = entry.length()
@@ -91,6 +94,8 @@ val apkCleanupPatch = resourcePatch(
                 removedFiles++
                 freedBytes += size
                 logger.fine("Removed: $path (${size}B)")
+            } else {
+                logger.info("APK Cleanup: $path -> neither file nor directory")
             }
         }
 
