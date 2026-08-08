@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, and trims r
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.20.0-dev.7](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.20.0-dev.7)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;7 patches total
+> **[v1.20.0-dev.8](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.20.0-dev.8)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;7 patches total
 <details open>
 <summary>🌐 Universal&nbsp;&nbsp;•&nbsp;&nbsp;7 patches</summary>
 <br>
@@ -22,7 +22,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, and trims r
 | [Remove Analytics](#remove-analytics) | Disables tracking and crash-reporting tools, corrupts analytics web links inside the code, and removes background tracking services. |  |
 | [Remove Duplicate Graphics](#remove-duplicate-graphics) | Keeps images for only one screen density (like xhdpi) and removes copies for all other densities. Android will automatically scale the kept images, making the app significantly smaller. | • Target density |
 | [Remove Languages](#remove-languages) | Removes translations for languages you don't use across ALL resource types (strings, drawables, layouts, raw, xml, etc.). Only keeps the languages you pick. Base resources with no language code are always preserved. | • Languages to keep |
-| [Remove debug info](#remove-debug-info) | Removes debug info (.source, .line, .local, .prologue) from every class in all classes*.dex files. | • Remove all debug info<br>• Remove .source<br>• Remove .line<br>• Remove .prologue<br>• Remove .xxx local |
+| [Remove debug info](#remove-debug-info) | Zeroes debug_info_off on every method's code_item across all classes*.dex files, stripping line numbers, local variable tables, and source file names. |  |
 
 </details>
 

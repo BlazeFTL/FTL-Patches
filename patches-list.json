@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.20.0-dev.7",
+  "version": "1.20.0-dev.8",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -110,57 +110,11 @@
     },
     {
       "name": "Remove debug info",
-      "description": "Removes debug info (.source, .line, .local, .prologue) from every class in all classes*.dex files.",
+      "description": "Zeroes debug_info_off on every method's code_item across all classes*.dex files, stripping line numbers, local variable tables, and source file names.",
       "default": false,
       "dependencies": [],
       "compatiblePackages": null,
-      "options": [
-        {
-          "key": "removeAll",
-          "title": "Remove all debug info",
-          "description": null,
-          "required": false,
-          "type": "kotlin.Boolean",
-          "default": true,
-          "values": null
-        },
-        {
-          "key": "removeSource",
-          "title": "Remove .source",
-          "description": null,
-          "required": false,
-          "type": "kotlin.Boolean",
-          "default": true,
-          "values": null
-        },
-        {
-          "key": "removeLine",
-          "title": "Remove .line",
-          "description": null,
-          "required": false,
-          "type": "kotlin.Boolean",
-          "default": true,
-          "values": null
-        },
-        {
-          "key": "removePrologue",
-          "title": "Remove .prologue",
-          "description": null,
-          "required": false,
-          "type": "kotlin.Boolean",
-          "default": true,
-          "values": null
-        },
-        {
-          "key": "removeLocal",
-          "title": "Remove .xxx local",
-          "description": null,
-          "required": false,
-          "type": "kotlin.Boolean",
-          "default": true,
-          "values": null
-        }
-      ]
+      "options": []
     }
   ]
 }
