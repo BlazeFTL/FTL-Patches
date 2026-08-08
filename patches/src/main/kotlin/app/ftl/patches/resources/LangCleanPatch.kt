@@ -8,8 +8,8 @@ import app.morphe.patcher.patch.stringsOption
 private val LANG_DIR = Regex("^values-([a-z]{2,3})(?:-.+)?$")
 
 val langCleanPatch = rawResourcePatch(
-    name = "Language clean",
-    description = "Removes language resource directories (values-<lang>) for languages not in the keep list, freeing up space used by unused translations. The default \"values\" directory is always kept.",
+    name = "Remove Languages",
+    description = "Removes translations for languages you don't use. Only keeps the languages you pick. The default English strings are always kept.",
     default = false,
 ) {
     val keepLanguages by stringsOption(
