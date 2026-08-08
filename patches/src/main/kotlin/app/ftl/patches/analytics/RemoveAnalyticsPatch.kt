@@ -51,12 +51,12 @@ val removeAnalyticsPatch = bytecodePatch(
     description = "Neuters logging entry points for Firebase Analytics, Crashlytics, Flurry, legacy Google Analytics, Yandex Metrica, AppsFlyer and Adjust.",
 ) {
     execute {
-        FirebaseAnalyticsLogEventFingerprint.method.addInstructions(0, "return-void")
-        CrashlyticsRecordExceptionFingerprint.method.addInstructions(0, "return-void")
-        FlurryAgentLogEventFingerprint.method.addInstructions(0, "return-void")
-        GoogleAnalyticsTrackerSendFingerprint.method.addInstructions(0, "return-void")
-        YandexMetricaReportEventFingerprint.method.addInstructions(0, "return-void")
-        AppsFlyerLogEventFingerprint.method.addInstructions(0, "return-void")
-        AdjustTrackEventFingerprint.method.addInstructions(0, "return-void")
+        FirebaseAnalyticsLogEventFingerprint.methodOrNull?.addInstructions(0, "return-void")
+        CrashlyticsRecordExceptionFingerprint.methodOrNull?.addInstructions(0, "return-void")
+        FlurryAgentLogEventFingerprint.methodOrNull?.addInstructions(0, "return-void")
+        GoogleAnalyticsTrackerSendFingerprint.methodOrNull?.addInstructions(0, "return-void")
+        YandexMetricaReportEventFingerprint.methodOrNull?.addInstructions(0, "return-void")
+        AppsFlyerLogEventFingerprint.methodOrNull?.addInstructions(0, "return-void")
+        AdjustTrackEventFingerprint.methodOrNull?.addInstructions(0, "return-void")
     }
 }
