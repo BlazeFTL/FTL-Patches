@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.19.0",
+  "version": "1.20.0-dev.1",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -107,6 +107,14 @@
           "values": null
         }
       ]
+    },
+    {
+      "name": "Remove all DEX debug info",
+      "description": "Removes debug information from every class and method in every processed DEX file.",
+      "default": false,
+      "dependencies": [],
+      "compatiblePackages": null,
+      "options": []
     }
   ]
 }
