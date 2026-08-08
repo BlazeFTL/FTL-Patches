@@ -1,3 +1,10 @@
+## [1.5.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.4.0...v1.5.0) (2026-08-08)
+
+### ✨ New Features
+
+* remove example patches ([ac3c957](https://github.com/BlazeFTL/FTL-Patches/commit/ac3c9576646e2939a2277a6d428afe7dc3bde53b))
+* test ([284aaec](https://github.com/BlazeFTL/FTL-Patches/commit/284aaec8b6cae7e9a1a699c294c59a1e8b4e5499))
+
 ## [1.4.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.3.0...v1.4.0) (2026-08-08)
 
 ### ✨ New Features
