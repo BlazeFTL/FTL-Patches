@@ -1,7 +1,7 @@
 package app.ftl.patches.ads
 
+import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
-import app.morphe.patcher.fingerprint.Fingerprint
 import app.morphe.patcher.patch.bytecodePatch
 
 internal object AdViewLoadAdFingerprint : Fingerprint(
@@ -60,8 +60,10 @@ internal object IronSourceLoadInterstitialFingerprint : Fingerprint(
 
 val removeAdsPatch = bytecodePatch(
     name = "Remove ads",
-    description = "Neuters ad-load entry points for Google Mobile Ads, Meta Audience Network, AppLovin MAX, Unity Ads and IronSource.",
+    description = "Neuters ad-load entry points for major ad SDKs and hides leftover ad view containers in layout XML.",
 ) {
+    dependsOn(hideAdLayoutsPatch)
+
     execute {
         AdViewLoadAdFingerprint.method.addInstructions(0, "return-void")
         InterstitialAdLoadFingerprint.method.addInstructions(0, "return-void")
