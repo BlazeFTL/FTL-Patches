@@ -31,7 +31,13 @@ val drawableCleanPatch = rawResourcePatch(
     name = "Drawable clean",
     description = "Keeps drawable/mipmap resources only in the target density bucket and removes duplicate-named copies from every other density bucket, relying on Android's density fallback to resolve them.",
 ) {
-    val targetDensity by stringOption(key = "targetDensity", title = "Target density")
+    val targetDensity by stringOption(
+        key = "targetDensity",
+        default = "xxhdpi",
+        values = DENSITIES.associateWith { it },
+        title = "Target density",
+        description = "Density bucket to keep; duplicates are stripped from every other bucket.",
+    )
 
     execute {
         val resDir = get("res", false)
