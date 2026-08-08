@@ -39,8 +39,6 @@ private val JUNK_PATTERNS = listOf(
     Regex(""".*META-INF/LICENSE.*"""),
 )
 
-// Filenames matched by JUNK_PATTERNS are only ever library/build metadata that lives
-// outside these dirs. Excluding them stops a same-named real app file from being caught.
 private val EXCLUDED_PREFIXES = listOf("assets/", "res/")
 
 val apkCleanupPatch = resourcePatch(
@@ -69,7 +67,7 @@ val apkCleanupPatch = resourcePatch(
     )
 
     execute {
-        val manifestFile = get("AndroidManifest.xml", false)
+        val manifestFile = get("AndroidManifest.xml")
         val apkRoot = manifestFile.parentFile ?: File(".")
 
         var removedFiles = 0
@@ -77,11 +75,8 @@ val apkCleanupPatch = resourcePatch(
 
         fun isProtected(relativePath: String) = PROTECTED_PATTERNS.any { it.matches(relativePath) }
 
-        // Recursively removes a path via the patcher's own get()/delete() API — this materializes
-        // entries on demand and marks them for removal at rebuild, unlike raw java.io.File.delete(),
-        // which only affects files already present in the raw-mode working directory.
         fun removeTree(path: String) {
-            val entry = get(path, false)
+            val entry = get(path)
             if (entry.isDirectory) {
                 val children = entry.list()
                 val preview = children?.take(5)?.joinToString()
@@ -99,7 +94,6 @@ val apkCleanupPatch = resourcePatch(
             }
         }
 
-        // --- 1. Remove junk files ---
         apkRoot.walkTopDown()
             .filter { it.isFile }
             .toList()
@@ -119,16 +113,14 @@ val apkCleanupPatch = resourcePatch(
                 }
             }
 
-        // --- 2. Remove kotlin/ folder (kotlin_builtins, compile-time only) ---
         try {
             removeTree("kotlin")
         } catch (e: Exception) {
             logger.severe("APK Cleanup: failed removing kotlin/ folder: ${e.message}")
         }
 
-        // --- 3. Remove useless META-INF subfolders (keep services/ and signatures) ---
         try {
-            val metaInf = get("META-INF", false)
+            val metaInf = get("META-INF")
             if (metaInf.isDirectory) {
                 metaInf.list()?.forEach { name ->
                     if (name.lowercase() == "services") return@forEach
@@ -143,15 +135,13 @@ val apkCleanupPatch = resourcePatch(
             logger.severe("APK Cleanup: failed scanning META-INF/: ${e.message}")
         }
 
-        // Clean up any remaining empty directories left in the raw-mode working tree
         apkRoot.walkBottomUp()
             .filter { it.isDirectory && it != apkRoot && it.listFiles()?.isEmpty() == true }
             .forEach { it.delete() }
 
-        // --- 4. Architecture split ---
         if (splitByArch == true) {
             val archToKeep = targetArch ?: "arm64-v8a"
-            val libDir = get("lib", false)
+            val libDir = get("lib")
 
             if (libDir.isDirectory) {
                 val archNames = libDir.list()?.toList() ?: emptyList()
