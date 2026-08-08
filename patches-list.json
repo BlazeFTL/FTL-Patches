@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.20.0-dev.9",
+  "version": "1.20.0-dev.10",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -63,6 +63,14 @@
       "options": []
     },
     {
+      "name": "Remove Debug Info",
+      "description": "Removes debug information (line numbers, variable names, source file references) from every class in the .dex files to reduce overall APK size.",
+      "default": false,
+      "dependencies": [],
+      "compatiblePackages": null,
+      "options": []
+    },
+    {
       "name": "Remove Duplicate Graphics",
       "description": "Keeps images for only one screen density (like xhdpi) and removes copies for all other densities. Android will automatically scale the kept images, making the app significantly smaller.",
       "default": false,
@@ -107,14 +115,6 @@
           "values": null
         }
       ]
-    },
-    {
-      "name": "Remove all DEX debug info",
-      "description": "Removes every method debug_info reference from every original DEX without creating MutableMethodImplementation objects.",
-      "default": false,
-      "dependencies": [],
-      "compatiblePackages": null,
-      "options": []
     }
   ]
 }

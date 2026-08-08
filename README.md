@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, and trims r
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.20.0-dev.9](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.20.0-dev.9)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;7 patches total
+> **[v1.20.0-dev.10](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.20.0-dev.10)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;7 patches total
 <details open>
 <summary>🌐 Universal&nbsp;&nbsp;•&nbsp;&nbsp;7 patches</summary>
 <br>
@@ -20,9 +20,9 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, and trims r
 | [Png Optimizer](#png-optimizer) | Compresses PNG images without losing quality and strips hidden metadata (DPI, timestamps, text) to make the app smaller. Only rewrites files when the result is actually smaller. |  |
 | [Remove Ads](#remove-ads) | Disables ad SDKs, ruins ad network request URLs, and hides empty ad containers across the app. |  |
 | [Remove Analytics](#remove-analytics) | Disables tracking and crash-reporting tools, corrupts analytics web links inside the code, and removes background tracking services. |  |
+| [Remove Debug Info](#remove-debug-info) | Removes debug information (line numbers, variable names, source file references) from every class in the .dex files to reduce overall APK size. |  |
 | [Remove Duplicate Graphics](#remove-duplicate-graphics) | Keeps images for only one screen density (like xhdpi) and removes copies for all other densities. Android will automatically scale the kept images, making the app significantly smaller. | • Target density |
 | [Remove Languages](#remove-languages) | Removes translations for languages you don't use across ALL resource types (strings, drawables, layouts, raw, xml, etc.). Only keeps the languages you pick. Base resources with no language code are always preserved. | • Languages to keep |
-| [Remove all DEX debug info](#remove-all-dex-debug-info) | Removes every method debug_info reference from every original DEX without creating MutableMethodImplementation objects. |  |
 
 </details>
 
