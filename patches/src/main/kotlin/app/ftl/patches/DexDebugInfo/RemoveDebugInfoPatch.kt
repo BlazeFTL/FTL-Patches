@@ -1,35 +1,52 @@
-package app.morphe.patches.all.misc.debugging
+package app.ftl.patches.DexDebugInfo
 
 import app.morphe.patcher.patch.bytecodePatch
-import app.morphe.patcher.util.proxy.mutableTypes.MutableMethodParameter
-import java.lang.reflect.Field
+import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
 
-private val parameterNameField: Field by lazy {
-    MutableMethodParameter::class.java.getDeclaredField("name").apply {
-        isAccessible = true
-    }
-}
-
-val removeAllDexDebugInfoPatch = bytecodePatch(
+@Suppress("unused")
+val removeDebugInfoPatch = bytecodePatch(
     name = "Remove all DEX debug info",
-    description = "Removes debug information from every DEX method.",
+    description = "Removes debug information from every class and method in every processed DEX file.",
     default = true,
 ) {
     execute {
-        classes.toList().forEach { classDef ->
+        classDefForEach { classDef ->
             val mutableClass = mutableClassDefBy(classDef)
 
-            mutableClass.methods.toList().forEach { method ->
-                method.implementation?.let { implementation ->
-                    val iterator = implementation.debugItems.iterator()
-                    while (iterator.hasNext()) {
-                        iterator.next()
-                        (iterator as MutableIterator<*>).remove()
+            mutableClass.setSourceFile(null)
+
+            mutableClass.methods.forEach { method ->
+                method.parameters.forEach { parameter ->
+                    runCatching {
+                        val field = parameter.javaClass.getDeclaredField("name")
+                        field.isAccessible = true
+                        field.set(parameter, null)
                     }
                 }
 
-                method.parameters.forEach { parameter ->
-                    parameterNameField.set(parameter, null)
+                val implementation = method.implementation ?: return@forEach
+
+                if (implementation is MutableMethodImplementation) {
+                    runCatching {
+                        val instructionListField =
+                            MutableMethodImplementation::class.java.getDeclaredField("instructionList")
+                        instructionListField.isAccessible = true
+
+                        @Suppress("UNCHECKED_CAST")
+                        val locations =
+                            instructionListField.get(implementation) as MutableList<Any>
+
+                        locations.forEach { location ->
+                            val debugItemsMethod =
+                                location.javaClass.getMethod("getDebugItems")
+
+                            @Suppress("UNCHECKED_CAST")
+                            val debugItems =
+                                debugItemsMethod.invoke(location) as MutableList<Any>
+
+                            debugItems.clear()
+                        }
+                    }
                 }
             }
         }
