@@ -141,7 +141,7 @@ private fun patchDex(data: ByteArray): Int {
 
         // class_def_item.source_file_idx at +8.
         val sourceFileIdx = readUInt(data, classDefOff + 8).toInt()
-        if (sourceFileIdx != 0xFFFFFFFF) {
+        if (sourceFileIdx != -1) {
             writeUInt(data, classDefOff + 8, 0xFFFFFFFFL)
             changed++
         }
