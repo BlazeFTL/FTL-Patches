@@ -150,8 +150,8 @@ val stripFirebaseManifestComponentsPatch = resourcePatch(
 }
 
 val removeAnalyticsPatch = bytecodePatch(
-    name = "Remove analytics",
-    description = "Neuters logging entry points for major analytics/crash-reporting SDKs, poisons const-string analytics hosts and component names across all bytecode, and strips Firebase receiver/service declarations from the manifest.",
+    name = "Remove Analytics",
+    description = "Disables tracking and crash-reporting tools, corrupts analytics web links inside the code, and removes background tracking services.",
     default = false,
 ) {
     dependsOn(stripFirebaseManifestComponentsPatch)
