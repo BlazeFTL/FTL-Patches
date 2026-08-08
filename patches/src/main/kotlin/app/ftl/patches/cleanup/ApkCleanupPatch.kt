@@ -8,15 +8,33 @@ import java.util.logging.Logger
 
 private val logger = Logger.getLogger("ApkCleanupPatch")
 
-// Files that are build artifacts, metadata, or debug probes.
-// They bloat the APK but serve no purpose at runtime.
-// All patterns match the FULL relative path, so they need .* prefix
-// to catch files inside subdirectories like META-INF/.
+// === NEVER REMOVE THESE — they will crash the app ===
+private val PROTECTED_PATTERNS = listOf(
+    Regex(""".*META-INF/MANIFEST\.MF$"""),
+    Regex(""".*META-INF/services/.*"""),
+    Regex(""".*META-INF/.*\.(RSA|SF|DSA|EC)$"""),
+    Regex(""".*classes\d*\.dex$"""),
+    Regex(""".*resources\.arsc$"""),
+    Regex(""".*AndroidManifest\.xml$"""),
+)
+
+// === SAFE TO REMOVE — pure build metadata, no runtime use ===
 private val JUNK_PATTERNS = listOf(
-    // Kotlin metadata
-    Regex(""".*\.kotlin_module$"""),
-    Regex(""".*\.kotlin_builtins$"""),
-    Regex(""".*kotlin-tooling-metadata\.json$"""),
+    // Play Services / Firebase version metadata
+    Regex(""".*play-services-.*\.properties$"""),
+    Regex(""".*firebase-.*\.properties$"""),
+
+    // Other library properties
+    Regex(""".*app-update\.properties$"""),
+    Regex(""".*billing\.properties$"""),
+    Regex(""".*hsdp\.properties$"""),
+    Regex(""".*core-common\.properties$"""),
+    Regex(""".*user-messaging-platform\.properties$"""),
+
+    // Protobuf descriptors
+    Regex(""".*\.proto$"""),
+
+    // Debug probes
     Regex(""".*DebugProbesKt\.bin$"""),
 
     // Version & build metadata
@@ -24,27 +42,17 @@ private val JUNK_PATTERNS = listOf(
     Regex(""".*androidsupportmultidexversion\.txt$"""),
     Regex(""".*stamp-cert-sha256$"""),
     Regex(""".*version-control-info\.textproto$"""),
-    Regex(""".*app-update\.properties$"""),
-    Regex(""".*billing\.properties$"""),
-    Regex(""".*hsdp\.properties$"""),
-    Regex(""".*core-common\.properties$"""),
-    Regex(""".*user-messaging-platform\.properties$"""),
-
-    // Play Services / Firebase version metadata
-    Regex(""".*play-services-.*\.properties$"""),
-    Regex(""".*firebase-.*\.properties$"""),
-
-    // Protobuf descriptors (reflection data, not needed at runtime)
-    Regex(""".*\.proto$"""),
 
     // Misc META-INF clutter
     Regex(""".*META-INF/CHANGES$"""),
     Regex(""".*META-INF/README\.md$"""),
+    Regex(""".*META-INF/NOTICE.*"""),
+    Regex(""".*META-INF/LICENSE.*"""),
 )
 
 val apkCleanupPatch = rawResourcePatch(
     name = "APK Junk Cleanup",
-    description = "Strips build artifacts and metadata (Kotlin modules, version files, protobuf descriptors, library properties) that bloat the APK but are unused at runtime. Optionally keeps native libraries for only one CPU architecture.",
+    description = "Removes build artifacts and metadata that bloat the APK: Play Services / Firebase version files, protobuf descriptors, debug probes, and misc META-INF clutter. Safe — only removes files with no runtime purpose.",
     default = false,
 ) {
     val splitByArch by booleanOption(
@@ -79,6 +87,11 @@ val apkCleanupPatch = rawResourcePatch(
             .filter { it.isFile }
             .forEach { file ->
                 val relativePath = file.relativeTo(apkRoot).path.replace("\\", "/")
+
+                // Safety guard: never delete protected files
+                if (PROTECTED_PATTERNS.any { it.matches(relativePath) }) {
+                    return@forEach
+                }
 
                 if (JUNK_PATTERNS.any { it.matches(relativePath) }) {
                     val size = file.length()
