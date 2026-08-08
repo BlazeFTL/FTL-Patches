@@ -1,3 +1,9 @@
+## [1.10.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.9.0...v1.10.0) (2026-08-08)
+
+### ✨ New Features
+
+* cleanup ([e0f0a5a](https://github.com/BlazeFTL/FTL-Patches/commit/e0f0a5a1c988d54ef44c435a931a40bc5dd452b5))
+
 ## [1.9.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.8.0...v1.9.0) (2026-08-08)
 
 ### ✨ New Features

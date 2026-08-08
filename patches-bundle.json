@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-08-08T10:50:44",
-  "description": "## [1.9.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.8.0...v1.9.0) (2026-08-08)\n\n### ✨ New Features\n\n* update lang,junk clean ([78f4515](https://github.com/BlazeFTL/FTL-Patches/commit/78f4515da8ffb53df617335c0a3abc8f69734c82))",
-  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.9.0/patches-1.9.0.mpp",
+  "created_at": "2026-08-08T12:38:09",
+  "description": "## [1.10.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.9.0...v1.10.0) (2026-08-08)\n\n### ✨ New Features\n\n* cleanup ([e0f0a5a](https://github.com/BlazeFTL/FTL-Patches/commit/e0f0a5a1c988d54ef44c435a931a40bc5dd452b5))",
+  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.10.0/patches-1.10.0.mpp",
   "signature_download_url": "",
-  "version": "1.9.0"
+  "version": "1.10.0"
 }
