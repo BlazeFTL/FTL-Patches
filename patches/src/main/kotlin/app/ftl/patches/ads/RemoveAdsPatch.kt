@@ -220,6 +220,7 @@ private val AD_SDK_PACKAGE_PREFIXES = listOf(
 val removeAdsPatch = bytecodePatch(
     name = "Remove ads",
     description = "Neuters ad-load entry points for major ad SDKs, poisons const-string ad network hosts/unit-id prefixes across all bytecode, and hides leftover ad view containers in layout XML.",
+    default = false,
 ) {
     dependsOn(hideAdLayoutsPatch)
 
