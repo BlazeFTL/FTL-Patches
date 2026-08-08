@@ -1,3 +1,9 @@
+## [1.7.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.6.0...v1.7.0) (2026-08-08)
+
+### ✨ New Features
+
+* add junk clean and split by arch ([b7b7c60](https://github.com/BlazeFTL/FTL-Patches/commit/b7b7c6038fe5be20251eb874038a45407631999e))
+
 ## [1.6.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.5.0...v1.6.0) (2026-08-08)
 
 ### ✨ New Features

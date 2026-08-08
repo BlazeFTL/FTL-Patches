@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-08-08T10:06:49",
-  "description": "## [1.6.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.5.0...v1.6.0) (2026-08-08)\n\n### ✨ New Features\n\n* update png optimizer ([d35d408](https://github.com/BlazeFTL/FTL-Patches/commit/d35d408216cfc52c0b6c75aab8fb41757a2cb0da))",
-  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.6.0/patches-1.6.0.mpp",
+  "created_at": "2026-08-08T10:26:25",
+  "description": "## [1.7.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.6.0...v1.7.0) (2026-08-08)\n\n### ✨ New Features\n\n* add junk clean and split by arch ([b7b7c60](https://github.com/BlazeFTL/FTL-Patches/commit/b7b7c6038fe5be20251eb874038a45407631999e))",
+  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.7.0/patches-1.7.0.mpp",
   "signature_download_url": "",
-  "version": "1.6.0"
+  "version": "1.7.0"
 }

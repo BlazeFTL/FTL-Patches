@@ -1,7 +1,39 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "patches": [
+    {
+      "name": "APK Cleanup",
+      "description": "Strips build artifacts and metadata (Kotlin modules, version files, protobuf descriptors, library properties) that bloat the APK but are unused at runtime. Optionally keeps native libraries for only one CPU architecture.",
+      "default": false,
+      "dependencies": [],
+      "compatiblePackages": null,
+      "options": [
+        {
+          "key": "splitByArch",
+          "title": "Split APK by architecture",
+          "description": "Keep native libraries (.so files) for only one CPU architecture. To generate separate APKs for each architecture, run this patch multiple times with a different architecture selected each time.",
+          "required": false,
+          "type": "kotlin.Boolean",
+          "default": false,
+          "values": null
+        },
+        {
+          "key": "targetArch",
+          "title": "Target architecture",
+          "description": "Which architecture to keep when splitting is enabled.",
+          "required": false,
+          "type": "kotlin.String",
+          "default": "arm64-v8a",
+          "values": {
+            "arm64-v8a": "ARM64 (arm64-v8a)",
+            "armeabi-v7a": "ARMv7 (armeabi-v7a)",
+            "x86": "x86",
+            "x86_64": "x86_64"
+          }
+        }
+      ]
+    },
     {
       "name": "Png Optimizer",
       "description": "Compresses PNG images without losing quality and strips hidden metadata (DPI, timestamps, text) to make the app smaller. Only rewrites files when the result is actually smaller.",
