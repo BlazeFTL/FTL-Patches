@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.20.0-dev.6",
+  "version": "1.20.0-dev.7",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -109,12 +109,58 @@
       ]
     },
     {
-      "name": "Remove all DEX debug info",
-      "description": "Removes .source and all method debug_info data from every original DEX without creating mutable Smali methods.",
+      "name": "Remove debug info",
+      "description": "Removes debug info (.source, .line, .local, .prologue) from every class in all classes*.dex files.",
       "default": false,
       "dependencies": [],
       "compatiblePackages": null,
-      "options": []
+      "options": [
+        {
+          "key": "removeAll",
+          "title": "Remove all debug info",
+          "description": null,
+          "required": false,
+          "type": "kotlin.Boolean",
+          "default": true,
+          "values": null
+        },
+        {
+          "key": "removeSource",
+          "title": "Remove .source",
+          "description": null,
+          "required": false,
+          "type": "kotlin.Boolean",
+          "default": true,
+          "values": null
+        },
+        {
+          "key": "removeLine",
+          "title": "Remove .line",
+          "description": null,
+          "required": false,
+          "type": "kotlin.Boolean",
+          "default": true,
+          "values": null
+        },
+        {
+          "key": "removePrologue",
+          "title": "Remove .prologue",
+          "description": null,
+          "required": false,
+          "type": "kotlin.Boolean",
+          "default": true,
+          "values": null
+        },
+        {
+          "key": "removeLocal",
+          "title": "Remove .xxx local",
+          "description": null,
+          "required": false,
+          "type": "kotlin.Boolean",
+          "default": true,
+          "values": null
+        }
+      ]
     }
   ]
 }
