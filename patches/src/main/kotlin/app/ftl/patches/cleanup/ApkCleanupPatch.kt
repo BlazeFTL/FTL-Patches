@@ -18,7 +18,7 @@ private val PROTECTED_PATTERNS = listOf(
     Regex(""".*AndroidManifest\.xml$"""),
 )
 
-// === SAFE JUNK ===
+// === SAFE JUNK (filename match, scoped away from assets/ and res/) ===
 private val JUNK_PATTERNS = listOf(
     Regex(""".*play-services-.*\.properties$"""),
     Regex(""".*firebase-.*\.properties$"""),
@@ -38,6 +38,10 @@ private val JUNK_PATTERNS = listOf(
     Regex(""".*META-INF/NOTICE.*"""),
     Regex(""".*META-INF/LICENSE.*"""),
 )
+
+// Filenames matched by JUNK_PATTERNS are only ever library/build metadata that lives
+// outside these dirs. Excluding them stops a same-named real app file from being caught.
+private val EXCLUDED_PREFIXES = listOf("assets/", "res/")
 
 val apkCleanupPatch = rawResourcePatch(
     name = "APK Junk Cleanup",
@@ -65,24 +69,47 @@ val apkCleanupPatch = rawResourcePatch(
     )
 
     execute {
-        // In rawResourcePatch, CWD is the decoded APK root.
-        // Do NOT use get().parentFile — it may point to a temp copy.
-        val apkRoot = File(".").absoluteFile.normalize()
-        logger.info("APK root: ${apkRoot.path}")
+        val manifestFile = get("AndroidManifest.xml", false)
+        val apkRoot = manifestFile.parentFile ?: File(".")
 
         var removedFiles = 0
         var removedDirs = 0
         var freedBytes = 0L
 
+        fun isProtected(relativePath: String) = PROTECTED_PATTERNS.any { it.matches(relativePath) }
+
+        // Deletes a directory tree but honors PROTECTED_PATTERNS; returns (filesRemoved, dirsRemoved, bytesFreed).
+        fun deleteUnprotected(dir: File): Triple<Int, Int, Long> {
+            var files = 0
+            var dirs = 0
+            var bytes = 0L
+            dir.walkBottomUp().forEach { entry ->
+                if (entry == dir) return@forEach
+                val relativePath = entry.relativeTo(apkRoot).path.replace("\\", "/")
+                if (isProtected(relativePath)) return@forEach
+                if (entry.isFile) {
+                    val size = entry.length()
+                    if (entry.delete()) {
+                        files++
+                        bytes += size
+                    }
+                } else if (entry.isDirectory && entry.listFiles()?.isEmpty() == true) {
+                    if (entry.delete()) dirs++
+                }
+            }
+            if (dir.listFiles()?.isEmpty() == true && dir.delete()) dirs++
+            return Triple(files, dirs, bytes)
+        }
+
         // --- 1. Remove junk files ---
         apkRoot.walkTopDown()
             .filter { it.isFile }
+            .toList()
             .forEach { file ->
                 val relativePath = file.relativeTo(apkRoot).path.replace("\\", "/")
 
-                if (PROTECTED_PATTERNS.any { it.matches(relativePath) }) {
-                    return@forEach
-                }
+                if (isProtected(relativePath)) return@forEach
+                if (EXCLUDED_PREFIXES.any { relativePath.startsWith(it) }) return@forEach
 
                 if (JUNK_PATTERNS.any { it.matches(relativePath) }) {
                     val size = file.length()
@@ -94,16 +121,14 @@ val apkCleanupPatch = rawResourcePatch(
                 }
             }
 
-        // --- 2. Remove kotlin/ folder ---
+        // --- 2. Remove kotlin/ folder (kotlin_builtins, compile-time only) ---
         val kotlinDir = File(apkRoot, "kotlin")
         if (kotlinDir.isDirectory) {
-            val size = kotlinDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
-            kotlinDir.deleteRecursively()
-            removedDirs++
+            val (f, d, size) = deleteUnprotected(kotlinDir)
+            removedFiles += f
+            removedDirs += d
             freedBytes += size
             logger.info("Removed kotlin/ folder (${size / 1024}KB)")
-        } else {
-            logger.fine("kotlin/ folder not found at ${kotlinDir.path}")
         }
 
         // --- 3. Remove useless META-INF subfolders (keep services/ and signatures) ---
@@ -113,19 +138,18 @@ val apkCleanupPatch = rawResourcePatch(
                 if (!entry.isDirectory) return@forEach
 
                 val name = entry.name.lowercase()
+                // Keep services/ (ServiceLoader) — everything else in subfolders is junk
                 if (name == "services") return@forEach
 
-                val size = entry.walkTopDown().filter { it.isFile }.sumOf { it.length() }
-                entry.deleteRecursively()
-                removedDirs++
+                val (f, d, size) = deleteUnprotected(entry)
+                removedFiles += f
+                removedDirs += d
                 freedBytes += size
                 logger.info("Removed META-INF/$name/ (${size / 1024}KB)")
             }
-        } else {
-            logger.fine("META-INF/ not found at ${metaInfDir.path}")
         }
 
-        // Clean up empty directories left behind
+        // Clean up any remaining empty directories
         apkRoot.walkBottomUp()
             .filter { it.isDirectory && it != apkRoot && it.listFiles()?.isEmpty() == true }
             .forEach { it.delete() }
@@ -133,7 +157,7 @@ val apkCleanupPatch = rawResourcePatch(
         // --- 4. Architecture split ---
         if (splitByArch == true) {
             val archToKeep = targetArch ?: "arm64-v8a"
-            val libDir = File(apkRoot, "lib")
+            val libDir = get("lib", false)
 
             if (libDir.isDirectory) {
                 val archDirs = libDir.listFiles { f -> f.isDirectory }?.toList() ?: emptyList()
@@ -147,6 +171,7 @@ val apkCleanupPatch = rawResourcePatch(
 
                         archDir.deleteRecursively()
                         removedFiles += count
+                        removedDirs++
                         freedBytes += size
                     }
 
