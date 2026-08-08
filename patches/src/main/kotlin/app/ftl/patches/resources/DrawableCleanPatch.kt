@@ -28,8 +28,8 @@ private fun dedupeByBaselineDensity(resDir: File, prefix: String, baseline: Stri
 }
 
 val drawableCleanPatch = rawResourcePatch(
-    name = "Drawable clean",
-    description = "Keeps drawable/mipmap resources only in the target density bucket and removes duplicate-named copies from every other density bucket, relying on Android's density fallback to resolve them.",
+    name = "Remove Duplicate Graphics",
+    description = "Keeps images for only one screen density (like xhdpi) and removes copies for all other densities. Android will automatically scale the kept images, making the app significantly smaller.",
     default = false,
 ) {
     val targetDensity by stringOption(
