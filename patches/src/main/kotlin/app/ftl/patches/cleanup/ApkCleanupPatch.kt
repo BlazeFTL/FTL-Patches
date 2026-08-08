@@ -1,6 +1,6 @@
 package app.ftl.patches.cleanup
 
-import app.morphe.patcher.patch.resourcePatch
+import app.morphe.patcher.patch.rawResourcePatch
 import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.stringOption
 import java.io.File
@@ -8,7 +8,6 @@ import java.util.logging.Logger
 
 private val logger = Logger.getLogger("ApkCleanupPatch")
 
-// === NEVER REMOVE THESE ===
 private val PROTECTED_PATTERNS = listOf(
     Regex(""".*META-INF/MANIFEST\.MF$"""),
     Regex(""".*META-INF/services/.*"""),
@@ -18,7 +17,6 @@ private val PROTECTED_PATTERNS = listOf(
     Regex(""".*AndroidManifest\.xml$"""),
 )
 
-// === SAFE JUNK (filename match, scoped away from assets/ and res/) ===
 private val JUNK_PATTERNS = listOf(
     Regex(""".*play-services-.*\.properties$"""),
     Regex(""".*firebase-.*\.properties$"""),
@@ -85,10 +83,13 @@ val apkCleanupPatch = resourcePatch(
             } else if (entry.isFile) {
                 if (isProtected(path)) return
                 val size = entry.length()
-                delete(path)
-                removedFiles++
-                freedBytes += size
-                logger.fine("Removed: $path (${size}B)")
+                if (entry.delete()) {
+                    removedFiles++
+                    freedBytes += size
+                    logger.fine("Removed: $path (${size}B)")
+                } else {
+                    logger.warning("APK Cleanup: failed to delete $path")
+                }
             } else {
                 logger.info("APK Cleanup: $path -> neither file nor directory")
             }
