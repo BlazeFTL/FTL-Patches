@@ -30,10 +30,11 @@ private fun dedupeByBaselineDensity(resDir: File, prefix: String, baseline: Stri
 val drawableCleanPatch = rawResourcePatch(
     name = "Drawable clean",
     description = "Keeps drawable/mipmap resources only in the target density bucket and removes duplicate-named copies from every other density bucket, relying on Android's density fallback to resolve them.",
+    default = false,
 ) {
     val targetDensity by stringOption(
         key = "targetDensity",
-        default = "xxhdpi",
+        default = "xhdpi",
         values = DENSITIES.associateWith { it },
         title = "Target density",
         description = "Density bucket to keep; duplicates are stripped from every other bucket.",
