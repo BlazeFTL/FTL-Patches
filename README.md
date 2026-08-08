@@ -9,18 +9,18 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, and trims r
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.5.0](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.5.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;5 patches total
+> **[v1.6.0](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.6.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;5 patches total
 <details open>
 <summary>🌐 Universal&nbsp;&nbsp;•&nbsp;&nbsp;5 patches</summary>
 <br>
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
-| [Drawable clean](#drawable-clean) | Keeps drawable/mipmap resources only in the target density bucket and removes duplicate-named copies from every other density bucket, relying on Android's density fallback to resolve them. | • Target density |
-| [Language clean](#language-clean) | Removes language resource directories (values-<lang>) for languages not in the keep list, freeing up space used by unused translations. The default "values" directory is always kept. | • Languages to keep |
-| [Png optimizer](#png-optimizer) | Losslessly recompresses png resources: re-deflates image data at maximum compression and strips non-rendering metadata (tEXt/zTXt/iTXt/tIME). Pure JVM, no native binaries — files are only rewritten when the result is smaller. |  |
-| [Remove ads](#remove-ads) | Neuters ad-load entry points for major ad SDKs, poisons const-string ad network hosts/unit-id prefixes across all bytecode, and hides leftover ad view containers in layout XML. |  |
-| [Remove analytics](#remove-analytics) | Neuters logging entry points for major analytics/crash-reporting SDKs, poisons const-string analytics hosts and component names across all bytecode, and strips Firebase receiver/service declarations from the manifest. |  |
+| [Png Optimizer](#png-optimizer) | Compresses PNG images without losing quality and strips hidden metadata (DPI, timestamps, text) to make the app smaller. Only rewrites files when the result is actually smaller. |  |
+| [Remove Ads](#remove-ads) | Disables ad SDKs, ruins ad network request URLs, and hides empty ad containers across the app. |  |
+| [Remove Analytics](#remove-analytics) | Disables tracking and crash-reporting tools, corrupts analytics web links inside the code, and removes background tracking services. |  |
+| [Remove Duplicate Graphics](#remove-duplicate-graphics) | Keeps images for only one screen density (like xhdpi) and removes copies for all other densities. Android will automatically scale the kept images, making the app significantly smaller. | • Target density |
+| [Remove Languages](#remove-languages) | Removes translations for languages you don't use. Only keeps the languages you pick. The default English strings are always kept. | • Languages to keep |
 
 </details>
 

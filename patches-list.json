@@ -1,10 +1,38 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "patches": [
     {
-      "name": "Drawable clean",
-      "description": "Keeps drawable/mipmap resources only in the target density bucket and removes duplicate-named copies from every other density bucket, relying on Android's density fallback to resolve them.",
+      "name": "Png Optimizer",
+      "description": "Compresses PNG images without losing quality and strips hidden metadata (DPI, timestamps, text) to make the app smaller. Only rewrites files when the result is actually smaller.",
+      "default": false,
+      "dependencies": [],
+      "compatiblePackages": null,
+      "options": []
+    },
+    {
+      "name": "Remove Ads",
+      "description": "Disables ad SDKs, ruins ad network request URLs, and hides empty ad containers across the app.",
+      "default": false,
+      "dependencies": [
+        "ResourcePatch"
+      ],
+      "compatiblePackages": null,
+      "options": []
+    },
+    {
+      "name": "Remove Analytics",
+      "description": "Disables tracking and crash-reporting tools, corrupts analytics web links inside the code, and removes background tracking services.",
+      "default": false,
+      "dependencies": [
+        "ResourcePatch"
+      ],
+      "compatiblePackages": null,
+      "options": []
+    },
+    {
+      "name": "Remove Duplicate Graphics",
+      "description": "Keeps images for only one screen density (like xhdpi) and removes copies for all other densities. Android will automatically scale the kept images, making the app significantly smaller.",
       "default": false,
       "dependencies": [],
       "compatiblePackages": null,
@@ -28,8 +56,8 @@
       ]
     },
     {
-      "name": "Language clean",
-      "description": "Removes language resource directories (values-<lang>) for languages not in the keep list, freeing up space used by unused translations. The default \"values\" directory is always kept.",
+      "name": "Remove Languages",
+      "description": "Removes translations for languages you don't use. Only keeps the languages you pick. The default English strings are always kept.",
       "default": false,
       "dependencies": [],
       "compatiblePackages": null,
@@ -47,34 +75,6 @@
           "values": null
         }
       ]
-    },
-    {
-      "name": "Png optimizer",
-      "description": "Losslessly recompresses png resources: re-deflates image data at maximum compression and strips non-rendering metadata (tEXt/zTXt/iTXt/tIME). Pure JVM, no native binaries — files are only rewritten when the result is smaller.",
-      "default": false,
-      "dependencies": [],
-      "compatiblePackages": null,
-      "options": []
-    },
-    {
-      "name": "Remove ads",
-      "description": "Neuters ad-load entry points for major ad SDKs, poisons const-string ad network hosts/unit-id prefixes across all bytecode, and hides leftover ad view containers in layout XML.",
-      "default": false,
-      "dependencies": [
-        "ResourcePatch"
-      ],
-      "compatiblePackages": null,
-      "options": []
-    },
-    {
-      "name": "Remove analytics",
-      "description": "Neuters logging entry points for major analytics/crash-reporting SDKs, poisons const-string analytics hosts and component names across all bytecode, and strips Firebase receiver/service declarations from the manifest.",
-      "default": false,
-      "dependencies": [
-        "ResourcePatch"
-      ],
-      "compatiblePackages": null,
-      "options": []
     }
   ]
 }

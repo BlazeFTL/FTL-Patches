@@ -1,3 +1,9 @@
+## [1.6.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.5.0...v1.6.0) (2026-08-08)
+
+### ✨ New Features
+
+* update png optimizer ([d35d408](https://github.com/BlazeFTL/FTL-Patches/commit/d35d408216cfc52c0b6c75aab8fb41757a2cb0da))
+
 ## [1.5.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.4.0...v1.5.0) (2026-08-08)
 
 ### ✨ New Features
