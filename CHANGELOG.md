@@ -1,3 +1,9 @@
+## [1.9.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.8.0...v1.9.0) (2026-08-08)
+
+### ✨ New Features
+
+* update lang,junk clean ([78f4515](https://github.com/BlazeFTL/FTL-Patches/commit/78f4515da8ffb53df617335c0a3abc8f69734c82))
+
 ## [1.8.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.7.0...v1.8.0) (2026-08-08)
 
 ### ✨ New Features

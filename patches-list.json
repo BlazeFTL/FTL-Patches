@@ -1,10 +1,10 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "patches": [
     {
       "name": "APK Junk Cleanup",
-      "description": "Strips build artifacts and metadata (Kotlin modules, version files, protobuf descriptors, library properties) that bloat the APK but are unused at runtime. Optionally keeps native libraries for only one CPU architecture.",
+      "description": "Removes build artifacts and metadata that bloat the APK: Play Services / Firebase version files, protobuf descriptors, debug probes, and misc META-INF clutter. Safe — only removes files with no runtime purpose.",
       "default": false,
       "dependencies": [],
       "compatiblePackages": null,
@@ -89,7 +89,7 @@
     },
     {
       "name": "Remove Languages",
-      "description": "Removes translations for languages you don't use. Only keeps the languages you pick. The default English strings are always kept.",
+      "description": "Removes translations for languages you don't use across ALL resource types (strings, drawables, layouts, raw, xml, etc.). Only keeps the languages you pick. Base resources with no language code are always preserved.",
       "default": false,
       "dependencies": [],
       "compatiblePackages": null,
@@ -97,7 +97,7 @@
         {
           "key": "keepLanguages",
           "title": "Languages to keep",
-          "description": "Language codes (e.g. en, ru, es) whose resources should not be removed. Add a code to keep more languages, or remove one to also delete it.",
+          "description": "Language codes (e.g. en, ru, es) to preserve. All other language variants are deleted.",
           "required": false,
           "type": "kotlin.collections.List<kotlin.String>",
           "default": [
