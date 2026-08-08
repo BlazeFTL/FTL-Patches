@@ -95,8 +95,12 @@ val langCleanPatch = rawResourcePatch(
             if (shouldKeep) {
                 keptDirs++
             } else {
-                val size = dir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
-                dir.deleteRecursively()
+                var size = 0L
+                dir.walkTopDown().filter { it.isFile }.forEach { file ->
+                    size += file.length()
+                    val relPath = file.relativeTo(apkRoot).path.replace(File.separatorChar, '/')
+                    delete(relPath)
+                }
                 removedDirs++
                 logger.fine("Removed ${dir.name} (${size / 1024}KB) — languages: ${langs.joinToString()}")
             }
