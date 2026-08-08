@@ -1,3 +1,9 @@
+## [1.8.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.7.0...v1.8.0) (2026-08-08)
+
+### ✨ New Features
+
+* update junk cleaner ([09ec552](https://github.com/BlazeFTL/FTL-Patches/commit/09ec552648710aba1e8d07d24240d298bab092b3))
+
 ## [1.7.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.6.0...v1.7.0) (2026-08-08)
 
 ### ✨ New Features

@@ -1,9 +1,9 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "patches": [
     {
-      "name": "APK Cleanup",
+      "name": "APK Junk Cleanup",
       "description": "Strips build artifacts and metadata (Kotlin modules, version files, protobuf descriptors, library properties) that bloat the APK but are unused at runtime. Optionally keeps native libraries for only one CPU architecture.",
       "default": false,
       "dependencies": [],
@@ -11,7 +11,7 @@
       "options": [
         {
           "key": "splitByArch",
-          "title": "Split APK by architecture",
+          "title": "Keep Only One Architecture",
           "description": "Keep native libraries (.so files) for only one CPU architecture. To generate separate APKs for each architecture, run this patch multiple times with a different architecture selected each time.",
           "required": false,
           "type": "kotlin.Boolean",
