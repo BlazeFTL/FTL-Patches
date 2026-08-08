@@ -2,7 +2,6 @@ package app.ftl.patches.resources
 
 import app.morphe.patcher.patch.resourcePatch
 import app.morphe.patcher.patch.stringsOption
-import java.io.File
 import java.util.logging.Logger
 
 private val logger = Logger.getLogger("LangCleanPatch")
@@ -66,10 +65,7 @@ val langCleanPatch = resourcePatch(
     )
 
     execute {
-        // Get APK root via AndroidManifest.xml to avoid arsclib package lookup issues
-        val manifestFile = get("AndroidManifest.xml", false)
-        val apkRoot = manifestFile.parentFile ?: File(".")
-        val resDir = File(apkRoot, "res")
+        val resDir = get("res")
 
         if (!resDir.isDirectory) {
             logger.warning("Language cleanup: res/ directory not found")
