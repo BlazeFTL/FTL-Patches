@@ -31,8 +31,10 @@ private fun hideAdElements(xml: String): String =
         patched
     }
 
+// name = null keeps this out of PatchLoader's top-level list (removeAdsPatch
+// pulls it in via dependsOn), so it doesn't show as its own toggle in the UI.
 val hideAdLayoutsPatch = resourcePatch(
-    name = "Hide ad layouts",
+    name = null,
     description = "Zeroes size and hides visibility of ad-related view containers in layout XML.",
 ) {
     execute {
