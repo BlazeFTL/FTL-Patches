@@ -1,5 +1,75 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "0.0.0",
-  "patches": []
+  "version": "1.0.0",
+  "patches": [
+    {
+      "name": "Drawable clean",
+      "description": "Strips PNG text, timestamp and color-profile metadata from drawable resources.",
+      "default": false,
+      "dependencies": [],
+      "compatiblePackages": null,
+      "options": []
+    },
+    {
+      "name": "Example Patch",
+      "description": "Example patch to start with.",
+      "default": true,
+      "dependencies": [
+        "BytecodePatch"
+      ],
+      "compatiblePackages": [
+        {
+          "packageName": "com.example.app",
+          "name": "XYZ app",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#FF0045",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.0",
+              "versionCodes": null,
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            },
+            {
+              "version": "1.0.2",
+              "versionCodes": null,
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "Hide ad layouts",
+      "description": "Zeroes size and hides visibility of ad-related view containers in layout XML.",
+      "default": false,
+      "dependencies": [],
+      "compatiblePackages": null,
+      "options": []
+    },
+    {
+      "name": "Remove ads",
+      "description": "Neuters ad-load entry points for major ad SDKs and hides leftover ad view containers in layout XML.",
+      "default": false,
+      "dependencies": [
+        "ResourcePatch"
+      ],
+      "compatiblePackages": null,
+      "options": []
+    },
+    {
+      "name": "Remove analytics",
+      "description": "Neuters logging entry points for Firebase Analytics, Crashlytics, Flurry, legacy Google Analytics, Yandex Metrica, AppsFlyer and Adjust.",
+      "default": false,
+      "dependencies": [],
+      "compatiblePackages": null,
+      "options": []
+    }
+  ]
 }
