@@ -122,31 +122,43 @@ val apkCleanupPatch = rawResourcePatch(
             }
 
         // --- 2. Remove kotlin/ folder (kotlin_builtins, compile-time only) ---
-        val kotlinDir = File(apkRoot, "kotlin")
-        if (kotlinDir.isDirectory) {
-            val (f, d, size) = deleteUnprotected(kotlinDir)
-            removedFiles += f
-            removedDirs += d
-            freedBytes += size
-            logger.info("Removed kotlin/ folder (${size / 1024}KB)")
-        }
-
-        // --- 3. Remove useless META-INF subfolders (keep services/ and signatures) ---
-        val metaInfDir = File(apkRoot, "META-INF")
-        if (metaInfDir.isDirectory) {
-            metaInfDir.listFiles()?.forEach { entry ->
-                if (!entry.isDirectory) return@forEach
-
-                val name = entry.name.lowercase()
-                // Keep services/ (ServiceLoader) — everything else in subfolders is junk
-                if (name == "services") return@forEach
-
-                val (f, d, size) = deleteUnprotected(entry)
+        try {
+            val kotlinDir = File(apkRoot, "kotlin")
+            if (kotlinDir.isDirectory) {
+                val (f, d, size) = deleteUnprotected(kotlinDir)
                 removedFiles += f
                 removedDirs += d
                 freedBytes += size
-                logger.info("Removed META-INF/$name/ (${size / 1024}KB)")
+                logger.info("Removed kotlin/ folder (${size / 1024}KB)")
             }
+        } catch (e: Exception) {
+            logger.severe("APK Cleanup: failed removing kotlin/ folder: ${e.message}")
+        }
+
+        // --- 3. Remove useless META-INF subfolders (keep services/ and signatures) ---
+        try {
+            val metaInfDir = File(apkRoot, "META-INF")
+            if (metaInfDir.isDirectory) {
+                metaInfDir.listFiles()?.forEach { entry ->
+                    if (!entry.isDirectory) return@forEach
+
+                    val name = entry.name.lowercase()
+                    // Keep services/ (ServiceLoader) — everything else in subfolders is junk
+                    if (name == "services") return@forEach
+
+                    try {
+                        val (f, d, size) = deleteUnprotected(entry)
+                        removedFiles += f
+                        removedDirs += d
+                        freedBytes += size
+                        logger.info("Removed META-INF/$name/ (${size / 1024}KB)")
+                    } catch (e: Exception) {
+                        logger.severe("APK Cleanup: failed removing META-INF/$name/: ${e.message}")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            logger.severe("APK Cleanup: failed scanning META-INF/: ${e.message}")
         }
 
         // Clean up any remaining empty directories
