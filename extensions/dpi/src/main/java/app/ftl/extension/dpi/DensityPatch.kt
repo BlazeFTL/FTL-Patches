@@ -13,7 +13,7 @@ import kotlin.math.roundToInt
 object DensityPatch {
     private const val TAG = "MorpheDpi"
     private const val DEFAULT_PERCENT = 100
-    private const val MIN_PERCENT = 50
+    private const val MIN_PERCENT = 25
     private const val MAX_PERCENT = 300
     private const val MIN_DPI = 96
     private const val MAX_DPI = 640
