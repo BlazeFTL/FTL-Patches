@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, and trims r
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.21.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.21.0-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;8 patches total
+> **[v1.21.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.21.0-dev.2)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;8 patches total
 <details open>
 <summary>🌐 Universal&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
 <br>
