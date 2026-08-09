@@ -74,7 +74,7 @@ private fun BytecodePatchContext.injectApplicationInit(applicationClass: Mutable
             it.name == "onCreate" && it.parameters.isEmpty() && it.returnType == "V"
         } ?: return@traverseClassHierarchy
 
-        val register = onCreate.getFreeRegisterProvider(0, 1).getFreeRegister()
+        val register = onCreate.getFreeRegisterProvider(1, 1).getFreeRegister()
         onCreate.addInstructions(
             0,
             """
@@ -103,7 +103,7 @@ private fun BytecodePatchContext.injectActivityInit(activityClass: MutableClass,
                 it.returnType == "V"
         } ?: return@traverseClassHierarchy
 
-        val provider = onCreate.getFreeRegisterProvider(0, 2)
+        val provider = onCreate.getFreeRegisterProvider(1, 2)
         val appRegister = provider.getFreeRegister()
         val dpiRegister = provider.getFreeRegister()
 
