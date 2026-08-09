@@ -3,7 +3,7 @@ package app.ftl.patches.dpi
 import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
-import app.morphe.patcher.patch.intOption
+import app.morphe.patcher.patch.longOption
 import app.morphe.patcher.util.proxy.mutableTypes.MutableClass
 import app.ftl.util.getFreeRegisterProvider
 import app.ftl.util.traverseClassHierarchy
@@ -27,18 +27,18 @@ val universalDpiPatch = bytecodePatch(
 
     extendWith("extensions/dpi.mpe")
 
-    val dpiOption = intOption(
+    val dpiOption = longOption(
         key = "dpi",
-        default = 240,
+        default = 240L,
         title = "Custom DPI",
         description = "Forced display density in dots-per-inch for this app only. " +
             "160 = system default (mdpi), 240 is roughly 1.5x larger. Range 96-640.",
         required = false,
-        validator = { it == null || it in 96..640 },
+        validator = { it == null || it in 96L..640L },
     )
 
     execute {
-        val dpi = dpiOption.value ?: 240
+        val dpi = (dpiOption.value ?: 240L).toInt()
 
         val applicationClass = AppEntryPoint.applicationClassName
             ?.toClassType()
