@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.21.0",
+  "version": "1.22.0-dev.1",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -45,11 +45,11 @@
       "options": [
         {
           "key": "dpi",
-          "title": "Custom DPI",
-          "description": "Forced display density in dots-per-inch for this app only. 160 = system default (mdpi), 240 is roughly 1.5x larger. Range 96-640.",
+          "title": "Display scale",
+          "description": "Scales this app's display relative to the device's own setting. 100% = no change, 150% = 1.5x larger, 50% = half size. Range 25-300%.",
           "required": false,
           "type": "kotlin.Long",
-          "default": 240,
+          "default": 100,
           "values": null
         }
       ]
