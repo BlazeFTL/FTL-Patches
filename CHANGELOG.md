@@ -1,3 +1,10 @@
+## [1.22.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.21.0...v1.22.0) (2026-08-09)
+
+### ✨ New Features
+
+* percentage ([815a042](https://github.com/BlazeFTL/FTL-Patches/commit/815a042c4dbbcb7b1a94a0eca86a324a9f60b2da))
+* switch to percentage ([6c6ee59](https://github.com/BlazeFTL/FTL-Patches/commit/6c6ee598e8ab66bfa93559e38a2c6d22a9909170))
+
 ## [1.22.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.21.0...v1.22.0-dev.1) (2026-08-09)
 
 ### ✨ New Features
