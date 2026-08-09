@@ -1,5 +1,6 @@
 package app.ftl.patches.dpi
 
+import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.intOption
@@ -63,7 +64,7 @@ val universalDpiPatch = bytecodePatch(
 /**
  * @return true if injection succeeded.
  */
-private fun injectApplicationInit(applicationClass: MutableClass, dpi: Int): Boolean {
+private fun BytecodePatchContext.injectApplicationInit(applicationClass: MutableClass, dpi: Int): Boolean {
     var injected = false
 
     traverseClassHierarchy(applicationClass) {
@@ -90,7 +91,7 @@ private fun injectApplicationInit(applicationClass: MutableClass, dpi: Int): Boo
 /**
  * @return true if injection succeeded.
  */
-private fun injectActivityInit(activityClass: MutableClass, dpi: Int): Boolean {
+private fun BytecodePatchContext.injectActivityInit(activityClass: MutableClass, dpi: Int): Boolean {
     var injected = false
 
     traverseClassHierarchy(activityClass) {
