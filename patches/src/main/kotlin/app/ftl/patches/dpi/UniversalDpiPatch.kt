@@ -4,8 +4,8 @@ import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.intOption
 import app.morphe.patcher.util.proxy.mutableTypes.MutableClass
-import app.morphe.util.getFreeRegisterProvider
-import app.morphe.util.traverseClassHierarchy
+import app.ftl.util.getFreeRegisterProvider
+import app.ftl.util.traverseClassHierarchy
 
 private const val EXTENSION_INIT =
     "Lapp/ftl/extension/dpi/DensityPatch;->init(Landroid/app/Application;I)V"
