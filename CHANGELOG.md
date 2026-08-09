@@ -1,3 +1,9 @@
+## [1.21.0-dev.5](https://github.com/BlazeFTL/FTL-Patches/compare/v1.21.0-dev.4...v1.21.0-dev.5) (2026-08-09)
+
+### ✨ New Features
+
+* add custom dpi patch (universal) ([d76ca43](https://github.com/BlazeFTL/FTL-Patches/commit/d76ca43315c719ec0309db56f71aaf5cef55e3be))
+
 ## [1.21.0-dev.4](https://github.com/BlazeFTL/FTL-Patches/compare/v1.21.0-dev.3...v1.21.0-dev.4) (2026-08-09)
 
 ### ✨ New Features
