@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.20.0",
+  "version": "1.21.0-dev.1",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -31,6 +31,26 @@
             "x86": "x86",
             "x86_64": "x86_64"
           }
+        }
+      ]
+    },
+    {
+      "name": "Custom DPI (Universal)",
+      "description": "Forces a higher display density for this app only, so the whole UI scales up without changing the system density. Works on any app that has an onCreate() in its Application class or launcher activity.",
+      "default": false,
+      "dependencies": [
+        "ResourcePatch"
+      ],
+      "compatiblePackages": null,
+      "options": [
+        {
+          "key": "dpi",
+          "title": "Custom DPI",
+          "description": "Forced display density in dots-per-inch for this app only. 160 = system default (mdpi), 240 is roughly 1.5x larger. Range 96-640.",
+          "required": false,
+          "type": "kotlin.Int",
+          "default": 240,
+          "values": null
         }
       ]
     },
