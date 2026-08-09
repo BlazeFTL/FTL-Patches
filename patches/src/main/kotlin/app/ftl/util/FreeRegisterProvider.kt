@@ -377,7 +377,7 @@ private fun Method.findFreeRegistersInternal(
             // If it appears more than once, it's also read.
             if (occurrences <= 1) {
                 if (logFreeRegisterSearch) println("Found free register at $i: $writeRegister " +
-                        "opcode: " + instruction.opcode + " reference: " + (instruction.getReference()))
+                        "opcode: " + instruction.opcode)
                 freeRegisters.add(writeRegister)
                 // If the requested number of free registers is found and this is not a branch,
                 // then no additional searching is needed.
