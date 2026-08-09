@@ -18,9 +18,9 @@ private fun String.toClassType() = "L${replace('.', '/')};"
 @Suppress("unused")
 val universalDpiPatch = bytecodePatch(
     "Custom DPI (Universal)",
-    "Forces a higher display density for this app only, so the whole UI scales up " +
-        "without changing the system density. Works on any app that has an onCreate() " +
-        "in its Application class or launcher activity.",
+    "Change this app's display size without touching your phone's system settings. " +
+        "Make it bigger if things look too small, or smaller to fit more on screen. " +
+        "Works on any app.",
     false,
 ) {
     dependsOn(findAppEntryPointPatch)
