@@ -123,7 +123,7 @@ class FreeRegisterProvider internal constructor(
         if (freeRegisters.isEmpty()) {
             throw IllegalStateException("No free registers available")
         }
-        val register = freeRegisters.removeFirst()
+        val register = freeRegisters.removeAt(0)
         allocatedFreeRegisters.add(register)
         return register
     }
