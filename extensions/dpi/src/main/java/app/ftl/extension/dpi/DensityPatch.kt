@@ -8,34 +8,44 @@ import android.content.res.Configuration
 import android.content.res.Resources
 import android.os.Bundle
 import android.util.Log
+import kotlin.math.roundToInt
 
 object DensityPatch {
     private const val TAG = "MorpheDpi"
-    private const val DEFAULT_DPI = 240
+    private const val DEFAULT_PERCENT = 100
+    private const val MIN_PERCENT = 50
+    private const val MAX_PERCENT = 300
     private const val MIN_DPI = 96
     private const val MAX_DPI = 640
     private const val BASELINE_DPI = 160f
 
     @Volatile
-    private var targetDpi = DEFAULT_DPI
+    private var targetDpi = 0
 
     @Volatile
     private var initialized = false
 
     @JvmStatic
-    fun init(application: Application, dpi: Int) {
+    fun init(application: Application, percent: Int) {
         if (initialized) return
         try {
-            register(application, dpi)
+            register(application, percent)
         } catch (t: Throwable) {
             Log.e(TAG, "init failed", t)
         }
     }
 
-    private fun register(application: Application, dpi: Int) {
+    private fun register(application: Application, percent: Int) {
         initialized = true
-        targetDpi = if (dpi in MIN_DPI..MAX_DPI) dpi else DEFAULT_DPI
-        Log.i(TAG, "init targetDpi=$targetDpi")
+
+        val clampedPercent = if (percent in MIN_PERCENT..MAX_PERCENT) percent else DEFAULT_PERCENT
+        val originalDpi = application.resources.displayMetrics.densityDpi
+        val scaled = (originalDpi * clampedPercent / 100f).roundToInt()
+        targetDpi = scaled.coerceIn(MIN_DPI, MAX_DPI)
+
+        Log.i(TAG, "init originalDpi=$originalDpi percent=$clampedPercent targetDpi=$targetDpi")
+
+        if (targetDpi == originalDpi) return
 
         applyTo(application.resources)
 
