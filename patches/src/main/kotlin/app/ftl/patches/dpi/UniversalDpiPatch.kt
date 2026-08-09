@@ -29,16 +29,16 @@ val universalDpiPatch = bytecodePatch(
 
     val dpiOption = longOption(
         key = "dpi",
-        default = 240L,
-        title = "Custom DPI",
-        description = "Forced display density in dots-per-inch for this app only. " +
-            "160 = system default (mdpi), 240 is roughly 1.5x larger. Range 96-640.",
+        default = 100L,
+        title = "Display scale",
+        description = "Scales this app's display relative to the device's own setting. " +
+            "100% = no change, 150% = 1.5x larger, 50% = half size. Range 25-300%.",
         required = false,
-        validator = { it == null || it in 96L..640L },
+        validator = { it == null || it in 25L..300L },
     )
 
     execute {
-        val dpi = (dpiOption.value ?: 240L).toInt()
+        val dpi = (dpiOption.value ?: 100L).toInt()
 
         val applicationClass = AppEntryPoint.applicationClassName
             ?.toClassType()
