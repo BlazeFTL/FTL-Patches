@@ -1,3 +1,9 @@
+## [1.23.0-dev.7](https://github.com/BlazeFTL/FTL-Patches/compare/v1.23.0-dev.6...v1.23.0-dev.7) (2026-08-10)
+
+### ✨ New Features
+
+* snaptube ([b5eb173](https://github.com/BlazeFTL/FTL-Patches/commit/b5eb173941ff655eb8009420e6a4fbd5cc894b74))
+
 ## [1.23.0-dev.6](https://github.com/BlazeFTL/FTL-Patches/compare/v1.23.0-dev.5...v1.23.0-dev.6) (2026-08-10)
 
 ### ✨ New Features
