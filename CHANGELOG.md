@@ -1,3 +1,9 @@
+## [1.23.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/compare/v1.23.0-dev.1...v1.23.0-dev.2) (2026-08-10)
+
+### ✨ New Features
+
+* add toast ([5958979](https://github.com/BlazeFTL/FTL-Patches/commit/59589794209db83797195624dff890dc95765ff7))
+
 ## [1.23.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.22.0...v1.23.0-dev.1) (2026-08-10)
 
 ### ✨ New Features
