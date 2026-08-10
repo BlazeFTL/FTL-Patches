@@ -1,6 +1,5 @@
 package app.ftl.patches.snaptube
 
-import app.ftl.util.ensureRegisters
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.methodCall
@@ -30,6 +29,7 @@ internal object DefaultNotificationChannelFingerprint : Fingerprint(
     returnType = "Z",
     parameters = listOf("Ljava/lang/String;"),
     filters = listOf(
+        opcode(Opcode.CONST_4),
         methodCall(smali = "Lo/vj7;->r(Landroid/content/Context;Ljava/lang/String;Z)Z"),
     ),
 )
@@ -52,32 +52,36 @@ val disableSnaptubeNotificationDefaultsPatch = bytecodePatch(
         }
 
         DefaultNotificationChannelFingerprint.let {
-            val callIndex = it.instructionMatches[0].index
+            val defaultTrueIndex = it.instructionMatches[0].index
 
-            it.method.ensureRegisters(4)
             it.method.addInstructions(
-                callIndex,
+                defaultTrueIndex + 1,
                 """
-                const-string v2, "Channel_Id_Push"
+                const-string v1, "Channel_Id_Push"
 
-                invoke-virtual {v2, p0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+                invoke-virtual {v1, p0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
 
-                move-result v2
+                move-result v1
 
-                if-nez v2, :force_off
+                if-nez v1, :is_off
 
-                const-string v2, "Channel_Id_Cleaner"
+                const-string v1, "Channel_Id_Cleaner"
 
-                invoke-virtual {v2, p0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+                invoke-virtual {v1, p0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
 
-                move-result v2
+                move-result v1
 
-                if-eqz v2, :skip_force
+                if-eqz v1, :not_special
 
-                :force_off
+                :is_off
                 const/4 v1, 0x0
 
-                :skip_force
+                goto :done
+
+                :not_special
+                const/4 v1, 0x1
+
+                :done
                 """.trimIndent(),
             )
         }
