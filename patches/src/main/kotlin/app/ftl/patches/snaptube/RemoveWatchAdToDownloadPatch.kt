@@ -1,5 +1,6 @@
 package app.ftl.patches.snaptube
 
+import app.ftl.util.returnEarly
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.methodCall
@@ -40,10 +41,11 @@ internal val COMPATIBILITY_SNAPTUBE = Compatibility(
     name = "SnapTube",
     packageName = "com.snaptube.premium",
     targets = listOf(
-        AppTarget(version = "7.64.0.76450210"),
+        AppTarget(version = "7.64.0.76450210", versionCode = 76450210),
     ),
 )
 
+@Suppress("unused")
 val removeSnaptubeWatchAdToDownloadPatch = bytecodePatch(
     name = "Remove Watch Ad To Download",
     description = "Removes the requirement to watch a rewarded ad before a download starts.",
@@ -64,6 +66,6 @@ val removeSnaptubeWatchAdToDownloadPatch = bytecodePatch(
             it.method.addInstructions(ifEqz.index, "const/4 v$register, 0x0")
         }
 
-        ChooseFormatAdRewardH0Fingerprint.method.addInstructions(0, "const/4 v0, 0x0\nreturn v0")
+        ChooseFormatAdRewardH0Fingerprint.method.returnEarly(false)
     }
 }
