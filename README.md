@@ -4,7 +4,7 @@ Personal collection of my Morphe Patches
 
 ## ❓ About
 
-Strips ads and analytics/crash-reporting SDKs at the bytecode level, and trims resource bloat — unused density buckets, unused language packs, and lossless PNG recompression — for smaller, cleaner APKs.
+Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans build artifacts and dex debug info, trims resource bloat — unused density buckets, unused language packs, lossless PNG recompression — and lets you scale the app's display density independent of system settings, for smaller, cleaner APKs.
 
 ## 🩹 Patches list
 
