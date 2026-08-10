@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.23.0-dev.3",
+  "version": "1.23.0-dev.4",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -82,6 +82,37 @@
           "values": null
         }
       ]
+    },
+    {
+      "name": "Hide Settings & Turn Off Default Notifications",
+      "description": "Hides specific settings (Download tools, Phone clean items) and disables default push notifications for recommended contents, tool notifications, and toolbar.",
+      "default": true,
+      "dependencies": [],
+      "compatiblePackages": [
+        {
+          "packageName": "com.snaptube.premium",
+          "name": "SnapTube",
+          "description": null,
+          "apkFileType": null,
+          "appIconColor": null,
+          "signatures": null,
+          "targets": [
+            {
+              "version": "7.64.0.76450210",
+              "versionCodes": {
+                "ARM64_V8A": 76450210,
+                "ARMEABI_V7A": 76450210,
+                "X86_64": 76450210,
+                "X86": 76450210
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": []
     },
     {
       "name": "Png Optimizer",

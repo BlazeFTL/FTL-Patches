@@ -9,9 +9,9 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.23.0-dev.3](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.23.0-dev.3)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;10 patches total
+> **[v1.23.0-dev.4](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.23.0-dev.4)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;11 patches total
 <details open>
-<summary>📦 SnapTube&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<summary>📦 SnapTube&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -21,6 +21,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
+| [Hide Settings & Turn Off Default Notifications](#hide-settings-turn-off-default-notifications) | Hides specific settings (Download tools, Phone clean items) and disables default push notifications for recommended contents, tool notifications, and toolbar. |  |
 | [Remove Watch Ad To Download](#remove-watch-ad-to-download) | Removes the requirement to watch a rewarded ad before a download starts. |  |
 
 </details>
