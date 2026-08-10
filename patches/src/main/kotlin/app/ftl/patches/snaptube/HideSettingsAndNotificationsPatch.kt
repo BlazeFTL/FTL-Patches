@@ -6,8 +6,6 @@ import app.morphe.patcher.extensions.InstructionExtensions.instructionsOrNull
 import app.morphe.patcher.extensions.InstructionExtensions.removeInstruction
 import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.methodCall
-import app.morphe.patcher.patch.AppTarget
-import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.bytecodePatch
 import com.android.tools.smali.dexlib2.Opcode
 
@@ -39,21 +37,13 @@ internal object ToolbarNotificationDefaultShowFingerprint : Fingerprint(
     )
 )
 
-// Define compatibility for SnapTube
-internal val COMPATIBILITY_SNAPTUBE = Compatibility(
-    name = "SnapTube",
-    packageName = "com.snaptube.premium",
-    targets = listOf(
-        AppTarget(version = "7.64.0.76450210", versionCode = 76450210),
-    ),
-)
-
 @Suppress("unused")
 val hideSettingsAndNotificationsPatch = bytecodePatch(
     name = "Hide Settings & Turn Off Default Notifications",
     description = "Hides specific settings (Download tools, Phone clean items) and disables default push notifications for recommended contents, tool notifications, and toolbar.",
     default = true,
 ) {
+    // Uses the COMPATIBILITY_SNAPTUBE defined in RemoveWatchAdToDownloadPatch.kt
     compatibleWith(COMPATIBILITY_SNAPTUBE)
 
     execute {
