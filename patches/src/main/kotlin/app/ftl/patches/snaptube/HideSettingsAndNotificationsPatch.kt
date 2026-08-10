@@ -24,9 +24,9 @@ internal object SettingsOnViewCreatedFingerprint : Fingerprint(
 // 3. Disables default push notification channels
 internal object NotificationChannelSFingerprint : Fingerprint(
     definingClass = "Lo/vj7;",
+    name = "s",
     returnType = "Z",
     parameters = listOf("Ljava/lang/String;"),
-    filters = listOf(methodCall(smali = "Lo/vj7;->r(Landroid/content/Context;Ljava/lang/String;Z)Z"))
 )
 
 // 4. Disables Toolbar Notification defaults
@@ -43,7 +43,6 @@ val hideSettingsAndNotificationsPatch = bytecodePatch(
     description = "Hides specific settings (Download tools, Phone clean items) and disables default push notifications for recommended contents, tool notifications, and toolbar.",
     default = true,
 ) {
-    // Uses the COMPATIBILITY_SNAPTUBE defined in RemoveWatchAdToDownloadPatch.kt
     compatibleWith(COMPATIBILITY_SNAPTUBE)
 
     execute {
@@ -52,7 +51,7 @@ val hideSettingsAndNotificationsPatch = bytecodePatch(
             val a2Index = method.instructionsOrNull?.indexOfFirst { 
                 it.opcode == Opcode.INVOKE_VIRTUAL && it.toString().contains("Landroidx/preference/PreferenceFragmentCompat;->A2(I)V") 
             }
-            if (a2Index != null) {
+            if (a2Index != null && a2Index != -1) {
                 method.addInstructions(a2Index + 1, """
                     invoke-virtual {p0}, Landroidx/preference/PreferenceFragmentCompat;->E2()Landroidx/preference/PreferenceScreen;
                     move-result-object v0
@@ -94,7 +93,7 @@ val hideSettingsAndNotificationsPatch = bytecodePatch(
             val superIndex = method.instructionsOrNull?.indexOfFirst { 
                 it.opcode == Opcode.INVOKE_SUPER && it.toString().contains("Landroidx/preference/PreferenceFragmentCompat;->onViewCreated(Landroid/view/View;Landroid/os/Bundle;)V") 
             }
-            if (superIndex != null) {
+            if (superIndex != null && superIndex != -1) {
                 method.addInstructions(superIndex + 1, """
                     const-string v0, "recover_deleted_files_settings"
                     invoke-virtual {p0, v0}, Landroidx/preference/PreferenceFragmentCompat;->w1(Ljava/lang/CharSequence;)Landroidx/preference/Preference;
@@ -170,7 +169,7 @@ val hideSettingsAndNotificationsPatch = bytecodePatch(
                 
                 // Hide "clean_trash" right before return-void as seen in your diff
                 val returnIndex = method.instructionsOrNull?.indexOfFirst { it.opcode == Opcode.RETURN_VOID }
-                if (returnIndex != null) {
+                if (returnIndex != null && returnIndex != -1) {
                     method.addInstructions(returnIndex, """
                         const-string v0, "clean_trash"
                         invoke-virtual {p0, v0}, Landroidx/preference/PreferenceFragmentCompat;->w1(Ljava/lang/CharSequence;)Landroidx/preference/Preference;
@@ -186,32 +185,31 @@ val hideSettingsAndNotificationsPatch = bytecodePatch(
 
         // 3. Turn Off Default Push Notifications (Channels)
         NotificationChannelSFingerprint.methodOrNull?.let { method ->
-            val rIndex = method.instructionsOrNull?.indexOfFirst { 
-                it.opcode == Opcode.INVOKE_STATIC && it.toString().contains("Lo/vj7;->r(Landroid/content/Context;Ljava/lang/String;Z)Z") 
-            }
-            if (rIndex != null) {
-                val constV1Index = rIndex - 1
-                method.addInstructions(constV1Index + 1, """
-                    const-string v1, "Channel_Id_Push"
-                    invoke-virtual {v1, p0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-                    move-result v1
-                    if-eqz v1, :match_1
-                    const-string v1, "Channel_Id_Cleaner"
-                    invoke-virtual {v1, p0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-                    move-result v1
-                    if-eqz v1, :match_1
-                    const-string v1, "Channel_Id_Tools_Bar"
-                    invoke-virtual {v1, p0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-                    move-result v1
-                    if-eqz v1, :match_1
-                    const/4 v1, 0x1
-                    goto :end_check
-                    :match_1
-                    const/4 v1, 0x0
-                    :end_check
-                """.trimIndent())
-                method.removeInstruction(constV1Index)
-            }
+            method.addInstructions(0, """
+                const-string v0, "Channel_Id_Push"
+                invoke-virtual {v0, p0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+                move-result v0
+                if-eqz v0, :label_5
+                const/4 v1, 0x0
+                goto :label_20
+                :label_5
+                const-string v0, "Channel_Id_Cleaner"
+                invoke-virtual {v0, p0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+                move-result v0
+                if-eqz v0, :label_0
+                const/4 v1, 0x0
+                goto :label_20
+                :label_0
+                const-string v0, "Channel_Id_Tools_Bar"
+                invoke-virtual {v0, p0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+                move-result v0
+                if-eqz v0, :label_6
+                const/4 v1, 0x0
+                goto :label_20
+                :label_6
+                const/4 v1, 0x1
+                :label_20
+            """.trimIndent())
         }
 
         // 4. Toolbar Notification Default Show
@@ -219,15 +217,18 @@ val hideSettingsAndNotificationsPatch = bytecodePatch(
             val isToolbarIndex = method.instructionsOrNull?.indexOfFirst { 
                 it.toString().contains("isToolbarNotificationDefaultShow()Z") 
             }
-            if (isToolbarIndex != null) {
+            if (isToolbarIndex != null && isToolbarIndex != -1) {
                 method.replaceInstruction(isToolbarIndex, "const/4 v0, 0x0")
-                method.removeInstruction(isToolbarIndex + 1) // Removes the dangling move-result v0
+                val nextInst = method.instructionsOrNull?.getOrNull(isToolbarIndex + 1)
+                if (nextInst != null && nextInst.opcode.name.startsWith("MOVE_RESULT")) {
+                    method.removeInstruction(isToolbarIndex + 1)
+                }
             }
 
             val instructions2 = method.instructionsOrNull ?: return@let
             for (j in 0 until instructions2.size) {
                 val inst = instructions2[j]
-                if (inst.toString().contains("const/4 v0, 0x1")) {
+                if (inst.opcode == Opcode.CONST_4 && inst.toString().contains("0x1")) {
                     val nextInst = instructions2.getOrNull(j + 1)
                     if (nextInst != null && nextInst.opcode == Opcode.GOTO) {
                         method.replaceInstruction(j, "const/4 v0, 0x0")
