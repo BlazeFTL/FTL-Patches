@@ -30,15 +30,16 @@ object DensityPatch {
     @JvmStatic
     fun setPercent(value: Int) { percent = value }
 
+    // DensityPatch.kt — add alongside existing init(application: Application)
     @JvmStatic
-    fun init(application: Application) {
-        if (initialized) return
-        try {
-            register(application, percent)
-        } catch (t: Throwable) {
-            Log.e(TAG, "init failed", t)
-        }
+    fun init(activity: Activity) {
+    init(activity.application)
+    try {
+        forceDensity(activity)
+    } catch (t: Throwable) {
+        Log.e(TAG, "init(activity) failed", t)
     }
+}
 
     private fun register(application: Application, percent: Int) {
         initialized = true
