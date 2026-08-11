@@ -8,8 +8,10 @@ import app.morphe.patcher.util.proxy.mutableTypes.MutableClass
 import app.ftl.util.getFreeRegisterProvider
 import app.ftl.util.traverseClassHierarchy
 
+private const val EXTENSION_SET_PERCENT =
+    "Lapp/ftl/extension/dpi/DensityPatch;->setPercent(I)V"
 private const val EXTENSION_INIT =
-    "Lapp/ftl/extension/dpi/DensityPatch;->init(Landroid/app/Application;I)V"
+    "Lapp/ftl/extension/dpi/DensityPatch;->init(Landroid/app/Application;)V"
 
 private fun String.toClassType() = "L${replace('.', '/')};"
 
@@ -107,13 +109,55 @@ private fun BytecodePatchContext.injectActivityInit(activityClass: MutableClass,
         val appRegister = provider.getFreeRegister()
         val dpiRegister = provider.getFreeRegister()
 
+private fun BytecodePatchContext.injectApplicationInit(applicationClass: MutableClass, dpi: Int): Boolean {
+    var injected = false
+
+    traverseClassHierarchy(applicationClass) {
+        if (injected) return@traverseClassHierarchy
+
+        val onCreate = methods.firstOrNull {
+            it.name == "onCreate" && it.parameters.isEmpty() && it.returnType == "V"
+        } ?: return@traverseClassHierarchy
+
+        val register = onCreate.getFreeRegisterProvider(1, 1).getFreeRegister()
         onCreate.addInstructions(
             0,
             """
-                invoke-virtual { p0 }, Landroid/app/Activity;->getApplication()Landroid/app/Application;
+                const v$register, $dpi
+                invoke-static/range { v$register .. v$register }, $EXTENSION_SET_PERCENT
+                invoke-static/range { p0 .. p0 }, $EXTENSION_INIT
+            """,
+        )
+        injected = true
+    }
+
+    return injected
+}
+
+private fun BytecodePatchContext.injectActivityInit(activityClass: MutableClass, dpi: Int): Boolean {
+    var injected = false
+
+    traverseClassHierarchy(activityClass) {
+        if (injected) return@traverseClassHierarchy
+
+        val onCreate = methods.firstOrNull {
+            it.name == "onCreate" &&
+                it.parameters == listOf("Landroid/os/Bundle;") &&
+                it.returnType == "V"
+        } ?: return@traverseClassHierarchy
+
+        val provider = onCreate.getFreeRegisterProvider(1, 2)
+        val appRegister = provider.getFreeRegister()
+        val dpiRegister = provider.getFreeRegister()
+
+        onCreate.addInstructions(
+            0,
+            """
+                invoke-virtual/range { p0 .. p0 }, Landroid/app/Activity;->getApplication()Landroid/app/Application;
                 move-result-object v$appRegister
                 const v$dpiRegister, $dpi
-                invoke-static { v$appRegister, v$dpiRegister }, $EXTENSION_INIT
+                invoke-static/range { v$dpiRegister .. v$dpiRegister }, $EXTENSION_SET_PERCENT
+                invoke-static/range { v$appRegister .. v$appRegister }, $EXTENSION_INIT
             """,
         )
         injected = true
