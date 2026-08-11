@@ -1,3 +1,29 @@
+## [1.23.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.22.0...v1.23.0) (2026-08-11)
+
+### ✨ New Features
+
+* add mxplayer ([e4d986f](https://github.com/BlazeFTL/FTL-Patches/commit/e4d986fc0f3f7437db4eb53f884a564a12dab661))
+* add toast ([5958979](https://github.com/BlazeFTL/FTL-Patches/commit/59589794209db83797195624dff890dc95765ff7))
+* fix mx skip ([5c29797](https://github.com/BlazeFTL/FTL-Patches/commit/5c297974ca4291df2e463850fc39745f4b94ec7e))
+* skip mx player splash/welcome ([fbbd3f7](https://github.com/BlazeFTL/FTL-Patches/commit/fbbd3f74c6277e4a32e3e51b655c22e3c4f9453b))
+* snaptube ([b5eb173](https://github.com/BlazeFTL/FTL-Patches/commit/b5eb173941ff655eb8009420e6a4fbd5cc894b74))
+* snaptube ([d26b94c](https://github.com/BlazeFTL/FTL-Patches/commit/d26b94c7e61ac2a3b2c90a1bab5bb3fb7da626a3))
+* snaptube ([8691447](https://github.com/BlazeFTL/FTL-Patches/commit/86914475c07eeb7b90f18478afcdfc2f440496ed))
+* snaptube ([5de71a6](https://github.com/BlazeFTL/FTL-Patches/commit/5de71a6f83c9efe4dfd11bb6098fe4c545ef59e0))
+* snapTube ([ad3403d](https://github.com/BlazeFTL/FTL-Patches/commit/ad3403dc957c1469280f7537d768ac6255e79a88))
+* snaptube new patch ([dcd0af0](https://github.com/BlazeFTL/FTL-Patches/commit/dcd0af080f20ba6f958183e266ca2f4feee6bd98))
+* up ([321ccd7](https://github.com/BlazeFTL/FTL-Patches/commit/321ccd762224d05c8989d01ef069715f6f7f79aa))
+* up ([16ce516](https://github.com/BlazeFTL/FTL-Patches/commit/16ce5167d328fb1a1a3b8b2a8034ddad817329a1))
+* up ([e365064](https://github.com/BlazeFTL/FTL-Patches/commit/e365064cdd6097fabdf8a22d0d51e7a3287ed586))
+* up ([10a9467](https://github.com/BlazeFTL/FTL-Patches/commit/10a9467dbe34c192f82a98f9e1c1ba8f620340cf))
+* up ([ed607af](https://github.com/BlazeFTL/FTL-Patches/commit/ed607afb30c3087cd12106c720fe5ecb1da14248))
+* up ([bb4fb48](https://github.com/BlazeFTL/FTL-Patches/commit/bb4fb4826d51501fc8e3865c9a9bb7d3272d4583))
+* up ([da662eb](https://github.com/BlazeFTL/FTL-Patches/commit/da662ebb128595431a645dfe03bfb08686ecd7ac))
+* up ([0f94f1a](https://github.com/BlazeFTL/FTL-Patches/commit/0f94f1a87ffbac8dd95998524690d587498cfe1c))
+* up ([a8b8385](https://github.com/BlazeFTL/FTL-Patches/commit/a8b8385a7e62736a3a2f6955af41d84ed96144f8))
+* up snaptube ([f556119](https://github.com/BlazeFTL/FTL-Patches/commit/f556119ad38e27732d38f4dc76f03a8820189966))
+* update SnapTube ([1067f78](https://github.com/BlazeFTL/FTL-Patches/commit/1067f78b3872e24f1a1f73fdaec6358ea2a75a8c))
+
 ## [1.23.0-dev.19](https://github.com/BlazeFTL/FTL-Patches/compare/v1.23.0-dev.18...v1.23.0-dev.19) (2026-08-11)
 
 ### ✨ New Features
