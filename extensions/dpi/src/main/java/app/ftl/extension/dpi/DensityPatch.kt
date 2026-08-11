@@ -22,11 +22,13 @@ object DensityPatch {
     @Volatile
     private var targetDpi = 0
 
-    @Volatile
-    private var initialized = false
+    @Volatile private var percent = DEFAULT_PERCENT
 
     @JvmStatic
-    fun init(application: Application, percent: Int) {
+    fun setPercent(value: Int) { percent = value }
+
+    @JvmStatic
+    fun init(application: Application) {
         if (initialized) return
         try {
             register(application, percent)
