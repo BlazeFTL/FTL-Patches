@@ -1,3 +1,9 @@
+## [1.23.0-dev.17](https://github.com/BlazeFTL/FTL-Patches/compare/v1.23.0-dev.16...v1.23.0-dev.17) (2026-08-11)
+
+### ✨ New Features
+
+* add mxplayer ([e4d986f](https://github.com/BlazeFTL/FTL-Patches/commit/e4d986fc0f3f7437db4eb53f884a564a12dab661))
+
 ## [1.23.0-dev.16](https://github.com/BlazeFTL/FTL-Patches/compare/v1.23.0-dev.15...v1.23.0-dev.16) (2026-08-11)
 
 ### ✨ New Features
