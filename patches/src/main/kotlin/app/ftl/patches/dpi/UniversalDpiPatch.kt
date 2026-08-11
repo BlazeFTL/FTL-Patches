@@ -12,6 +12,8 @@ private const val EXTENSION_SET_PERCENT =
     "Lapp/ftl/extension/dpi/DensityPatch;->setPercent(I)V"
 private const val EXTENSION_INIT =
     "Lapp/ftl/extension/dpi/DensityPatch;->init(Landroid/app/Application;)V"
+private const val EXTENSION_INIT_ACTIVITY =
+    "Lapp/ftl/extension/dpi/DensityPatch;->init(Landroid/app/Activity;)V"
 
 private fun String.toClassType() = "L${replace('.', '/')};"
 
@@ -91,10 +93,9 @@ private fun BytecodePatchContext.injectApplicationInit(applicationClass: Mutable
     return injected
 }
 
-// UniversalDpiPatch.kt
-private const val EXTENSION_INIT_ACTIVITY =
-    "Lapp/ftl/extension/dpi/DensityPatch;->init(Landroid/app/Activity;)V"
-
+/**
+ * @return true if injection succeeded.
+ */
 private fun BytecodePatchContext.injectActivityInit(activityClass: MutableClass, dpi: Int): Boolean {
     var injected = false
 
@@ -107,6 +108,9 @@ private fun BytecodePatchContext.injectActivityInit(activityClass: MutableClass,
                 it.returnType == "V"
         } ?: return@traverseClassHierarchy
 
+        // Only 1 register needed: init(Activity) resolves the Application itself,
+        // and also applies density to this activity directly (register()'s
+        // ActivityLifecycleCallbacks only cover activities created afterward).
         val register = onCreate.getFreeRegisterProvider(1, 1).getFreeRegister()
 
         onCreate.addInstructions(
