@@ -89,17 +89,20 @@ private fun BytecodePatchContext.injectToast(targetClass: MutableClass, message:
         val messageRegister = provider.getFreeRegister()
         val onceRegister = provider.getFreeRegister()
 
-        onCreate.addInstructions(
-            0,
-            """
-                const-string v$messageRegister, "$message"
-                invoke-static/range { v$messageRegister .. v$messageRegister }, $EXTENSION_SET_MESSAGE
-                const v$onceRegister, ${if (once) "0x1" else "0x0"}
-                invoke-static/range { v$onceRegister .. v$onceRegister }, $EXTENSION_SET_SHOW_ONCE
-                invoke-static/range { p0 .. p0 }, $EXTENSION_SHOW
-            """,
-        )
-        injected = true
+        // AddToastPatch.kt — injectToast, cut 2 registers to 1
+val register = onCreate.getFreeRegisterProvider(1, 1).getFreeRegister()
+
+onCreate.addInstructions(
+    0,
+    """
+        const-string v$register, "$message"
+        invoke-static/range { v$register .. v$register }, $EXTENSION_SET_MESSAGE
+        const v$register, ${if (once) "0x1" else "0x0"}
+        invoke-static/range { v$register .. v$register }, $EXTENSION_SET_SHOW_ONCE
+        invoke-static/range { p0 .. p0 }, $EXTENSION_SHOW
+    """,
+)
+injected = true
     }
 
     return injected
