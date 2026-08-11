@@ -24,6 +24,9 @@ object DensityPatch {
 
     @Volatile private var percent = DEFAULT_PERCENT
 
+    @Volatile
+    private var initialized = false
+
     @JvmStatic
     fun setPercent(value: Int) { percent = value }
 
