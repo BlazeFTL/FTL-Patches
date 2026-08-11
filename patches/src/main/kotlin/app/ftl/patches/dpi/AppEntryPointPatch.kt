@@ -23,27 +23,29 @@ private fun Element.childElements(tag: String) = getElementsByTagName(tag).let {
 }
 
 private fun Document.findLauncherActivity(packageName: String): String? {
-    val activities = getElementsByTagName("activity")
+    for (tag in listOf("activity", "activity-alias")) {
+        val elements = getElementsByTagName(tag)
 
-    for (i in 0 until activities.length) {
-        val activity = activities.item(i) as Element
+        for (i in 0 until elements.length) {
+            val element = elements.item(i) as Element
 
-        val isLauncher = activity.childElements("intent-filter").any { filter ->
-            val hasMain = filter.childElements("action")
-                .any { it.getAttribute("android:name") == "android.intent.action.MAIN" }
-            val hasLauncher = filter.childElements("category")
-                .any { it.getAttribute("android:name") == "android.intent.category.LAUNCHER" }
-            hasMain && hasLauncher
-        }
+            val isLauncher = element.childElements("intent-filter").any { filter ->
+                val hasMain = filter.childElements("action")
+                    .any { it.getAttribute("android:name") == "android.intent.action.MAIN" }
+                val hasLauncher = filter.childElements("category")
+                    .any { it.getAttribute("android:name") == "android.intent.category.LAUNCHER" }
+                hasMain && hasLauncher
+            }
 
-        if (isLauncher) {
-            return resolveClassName(activity.getAttribute("android:name"), packageName)
+            if (isLauncher) {
+                val nameAttr = if (tag == "activity-alias") "android:targetActivity" else "android:name"
+                return resolveClassName(element.getAttribute(nameAttr), packageName)
+            }
         }
     }
 
     return null
 }
-
 // Universal patch (no compatibleWith), so `default` must be false.
 // Unnamed: this only ever runs as a dependency of universalDpiPatch, never selected on its own.
 internal val findAppEntryPointPatch = resourcePatch(
