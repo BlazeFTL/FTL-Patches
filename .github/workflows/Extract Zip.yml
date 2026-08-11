@@ -1,0 +1,37 @@
+name: Extract Repo Root Zip
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '*.zip'
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Extract and remove zip(s)
+        run: |
+          shopt -s nullglob
+          zips=(*.zip)
+          if [ ${#zips[@]} -eq 0 ]; then
+            echo "No zip files in repo root."
+            exit 0
+          fi
+          for z in "${zips[@]}"; do
+            unzip -o "$z" -d .
+            rm -f "$z"
+          done
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "Extract zip from repo root"
+          git push
