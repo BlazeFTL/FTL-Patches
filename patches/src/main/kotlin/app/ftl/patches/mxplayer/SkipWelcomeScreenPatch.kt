@@ -31,8 +31,13 @@ val skipWelcomeScreenPatch = resourcePatch(
             val mainActivity = main ?: return@use
 
             val children = welcomeActivity.childNodes
-            while (children.length > 0) {
-                mainActivity.appendChild(children.item(0))
+            val movedChildren = buildList {
+                for (i in 0 until children.length) add(children.item(i))
+            }
+
+            movedChildren.forEach { child ->
+                welcomeActivity.removeChild(child)
+                mainActivity.appendChild(child)
             }
 
             welcomeActivity.removeAttribute("android:theme")
