@@ -11,8 +11,12 @@ import app.ftl.patches.dpi.findAppEntryPointPatch
 import app.ftl.util.getFreeRegisterProvider
 import app.ftl.util.traverseClassHierarchy
 
+private const val EXTENSION_SET_MESSAGE =
+    "Lapp/ftl/extension/toast/ToastPatch;->setMessage(Ljava/lang/String;)V"
+private const val EXTENSION_SET_SHOW_ONCE =
+    "Lapp/ftl/extension/toast/ToastPatch;->setShowOnce(Z)V"
 private const val EXTENSION_SHOW =
-    "Lapp/ftl/extension/toast/ToastPatch;->show(Landroid/content/Context;Ljava/lang/String;Z)V"
+    "Lapp/ftl/extension/toast/ToastPatch;->show(Landroid/content/Context;)V"
 
 private fun String.toClassType() = "L${replace('.', '/')};"
 
@@ -89,8 +93,10 @@ private fun BytecodePatchContext.injectToast(targetClass: MutableClass, message:
             0,
             """
                 const-string v$messageRegister, "$message"
-                const/4 v$onceRegister, ${if (once) "0x1" else "0x0"}
-                invoke-static { p0, v$messageRegister, v$onceRegister }, $EXTENSION_SHOW
+                invoke-static/range { v$messageRegister .. v$messageRegister }, $EXTENSION_SET_MESSAGE
+                const v$onceRegister, ${if (once) "0x1" else "0x0"}
+                invoke-static/range { v$onceRegister .. v$onceRegister }, $EXTENSION_SET_SHOW_ONCE
+                invoke-static/range { p0 .. p0 }, $EXTENSION_SHOW
             """,
         )
         injected = true
