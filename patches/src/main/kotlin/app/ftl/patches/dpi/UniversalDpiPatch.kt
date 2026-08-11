@@ -81,49 +81,6 @@ private fun BytecodePatchContext.injectApplicationInit(applicationClass: Mutable
             0,
             """
                 const v$register, $dpi
-                invoke-static { p0, v$register }, $EXTENSION_INIT
-            """,
-        )
-        injected = true
-    }
-
-    return injected
-}
-
-/**
- * @return true if injection succeeded.
- */
-private fun BytecodePatchContext.injectActivityInit(activityClass: MutableClass, dpi: Int): Boolean {
-    var injected = false
-
-    traverseClassHierarchy(activityClass) {
-        if (injected) return@traverseClassHierarchy
-
-        val onCreate = methods.firstOrNull {
-            it.name == "onCreate" &&
-                it.parameters == listOf("Landroid/os/Bundle;") &&
-                it.returnType == "V"
-        } ?: return@traverseClassHierarchy
-
-        val provider = onCreate.getFreeRegisterProvider(1, 2)
-        val appRegister = provider.getFreeRegister()
-        val dpiRegister = provider.getFreeRegister()
-
-private fun BytecodePatchContext.injectApplicationInit(applicationClass: MutableClass, dpi: Int): Boolean {
-    var injected = false
-
-    traverseClassHierarchy(applicationClass) {
-        if (injected) return@traverseClassHierarchy
-
-        val onCreate = methods.firstOrNull {
-            it.name == "onCreate" && it.parameters.isEmpty() && it.returnType == "V"
-        } ?: return@traverseClassHierarchy
-
-        val register = onCreate.getFreeRegisterProvider(1, 1).getFreeRegister()
-        onCreate.addInstructions(
-            0,
-            """
-                const v$register, $dpi
                 invoke-static/range { v$register .. v$register }, $EXTENSION_SET_PERCENT
                 invoke-static/range { p0 .. p0 }, $EXTENSION_INIT
             """,
