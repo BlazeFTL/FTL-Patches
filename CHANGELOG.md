@@ -1,3 +1,9 @@
+## [1.23.0-dev.19](https://github.com/BlazeFTL/FTL-Patches/compare/v1.23.0-dev.18...v1.23.0-dev.19) (2026-08-11)
+
+### ✨ New Features
+
+* fix mx skip ([5c29797](https://github.com/BlazeFTL/FTL-Patches/commit/5c297974ca4291df2e463850fc39745f4b94ec7e))
+
 ## [1.23.0-dev.18](https://github.com/BlazeFTL/FTL-Patches/compare/v1.23.0-dev.17...v1.23.0-dev.18) (2026-08-11)
 
 ### ✨ New Features
