@@ -56,7 +56,7 @@ val addToastPatch = bytecodePatch(
             ?.toClassType()
             ?.let { mutableClassDefByOrNull(it) }
 
-        if (applicationClass != null && injectToast(applicationClass, text, once)) {
+        if (applicationClass != null && injectApplicationToast(applicationClass, text, once)) {
             return@execute
         }
 
@@ -66,29 +66,67 @@ val addToastPatch = bytecodePatch(
             ?.let { mutableClassDefByOrNull(it) }
             ?: return@execute
 
-        injectToast(launcherClass, text, once)
+        injectActivityToast(launcherClass, text, once)
     }
 }
 
 /**
  * @return true if injection succeeded.
  */
-private fun BytecodePatchContext.injectToast(targetClass: MutableClass, message: String, once: Boolean): Boolean {
+private fun BytecodePatchContext.injectApplicationToast(
+    applicationClass: MutableClass,
+    message: String,
+    once: Boolean,
+): Boolean {
     var injected = false
 
-    traverseClassHierarchy(targetClass) {
+    traverseClassHierarchy(applicationClass) {
+        if (injected) return@traverseClassHierarchy
+
+        // Strictly no-arg: Application.onCreate() never takes a Bundle. A looser filter
+        // here can latch onto an unrelated onCreate(Bundle) higher in the hierarchy
+        // (e.g. from some SDK's lifecycle interface) before reaching the real one.
+        val onCreate = methods.firstOrNull {
+            it.name == "onCreate" && it.parameters.isEmpty() && it.returnType == "V"
+        } ?: return@traverseClassHierarchy
+
+        val register = onCreate.getFreeRegisterProvider(1, 1).getFreeRegister()
+
+        onCreate.addInstructions(
+            0,
+            """
+                const-string v$register, "$message"
+                invoke-static/range { v$register .. v$register }, $EXTENSION_SET_MESSAGE
+                const v$register, ${if (once) "0x1" else "0x0"}
+                invoke-static/range { v$register .. v$register }, $EXTENSION_SET_SHOW_ONCE
+                invoke-static/range { p0 .. p0 }, $EXTENSION_SHOW
+            """,
+        )
+        injected = true
+    }
+
+    return injected
+}
+
+/**
+ * @return true if injection succeeded.
+ */
+private fun BytecodePatchContext.injectActivityToast(
+    activityClass: MutableClass,
+    message: String,
+    once: Boolean,
+): Boolean {
+    var injected = false
+
+    traverseClassHierarchy(activityClass) {
         if (injected) return@traverseClassHierarchy
 
         val onCreate = methods.firstOrNull {
             it.name == "onCreate" &&
-                (it.parameters.isEmpty() || it.parameters == listOf("Landroid/os/Bundle;")) &&
+                it.parameters == listOf("Landroid/os/Bundle;") &&
                 it.returnType == "V"
         } ?: return@traverseClassHierarchy
 
-        // Only 1 register needed: set message and invoke, then reuse the same
-        // register for the once-flag and invoke again, instead of holding 2
-        // free registers live simultaneously. Avoids "No free registers available"
-        // on small onCreate() overrides that only have 1 register to spare.
         val register = onCreate.getFreeRegisterProvider(1, 1).getFreeRegister()
 
         onCreate.addInstructions(
