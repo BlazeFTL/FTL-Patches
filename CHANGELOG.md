@@ -1,3 +1,9 @@
+## [1.23.0-dev.18](https://github.com/BlazeFTL/FTL-Patches/compare/v1.23.0-dev.17...v1.23.0-dev.18) (2026-08-11)
+
+### ✨ New Features
+
+* skip mx player splash/welcome ([fbbd3f7](https://github.com/BlazeFTL/FTL-Patches/commit/fbbd3f74c6277e4a32e3e51b655c22e3c4f9453b))
+
 ## [1.23.0-dev.17](https://github.com/BlazeFTL/FTL-Patches/compare/v1.23.0-dev.16...v1.23.0-dev.17) (2026-08-11)
 
 ### ✨ New Features
