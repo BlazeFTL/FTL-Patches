@@ -85,24 +85,23 @@ private fun BytecodePatchContext.injectToast(targetClass: MutableClass, message:
                 it.returnType == "V"
         } ?: return@traverseClassHierarchy
 
-        val provider = onCreate.getFreeRegisterProvider(1, 2)
-        val messageRegister = provider.getFreeRegister()
-        val onceRegister = provider.getFreeRegister()
+        // Only 1 register needed: set message and invoke, then reuse the same
+        // register for the once-flag and invoke again, instead of holding 2
+        // free registers live simultaneously. Avoids "No free registers available"
+        // on small onCreate() overrides that only have 1 register to spare.
+        val register = onCreate.getFreeRegisterProvider(1, 1).getFreeRegister()
 
-        // AddToastPatch.kt — injectToast, cut 2 registers to 1
-val register = onCreate.getFreeRegisterProvider(1, 1).getFreeRegister()
-
-onCreate.addInstructions(
-    0,
-    """
-        const-string v$register, "$message"
-        invoke-static/range { v$register .. v$register }, $EXTENSION_SET_MESSAGE
-        const v$register, ${if (once) "0x1" else "0x0"}
-        invoke-static/range { v$register .. v$register }, $EXTENSION_SET_SHOW_ONCE
-        invoke-static/range { p0 .. p0 }, $EXTENSION_SHOW
-    """,
-)
-injected = true
+        onCreate.addInstructions(
+            0,
+            """
+                const-string v$register, "$message"
+                invoke-static/range { v$register .. v$register }, $EXTENSION_SET_MESSAGE
+                const v$register, ${if (once) "0x1" else "0x0"}
+                invoke-static/range { v$register .. v$register }, $EXTENSION_SET_SHOW_ONCE
+                invoke-static/range { p0 .. p0 }, $EXTENSION_SHOW
+            """,
+        )
+        injected = true
     }
 
     return injected
