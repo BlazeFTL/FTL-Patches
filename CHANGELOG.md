@@ -1,3 +1,10 @@
+## [1.24.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.23.0...v1.24.0-dev.1) (2026-08-11)
+
+### ✨ New Features
+
+* update dpi toast ([b9fc3e8](https://github.com/BlazeFTL/FTL-Patches/commit/b9fc3e8d265b900601e663b8536223f6f7132525))
+* update toast dpi ([981901f](https://github.com/BlazeFTL/FTL-Patches/commit/981901faf51fbaf66297e895d877088628499a2b))
+
 ## [1.23.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.22.0...v1.23.0) (2026-08-11)
 
 ### ✨ New Features
