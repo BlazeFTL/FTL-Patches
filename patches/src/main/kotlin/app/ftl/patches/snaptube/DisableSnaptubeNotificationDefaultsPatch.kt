@@ -42,6 +42,8 @@ val disableSnaptubeNotificationDefaultsPatch = bytecodePatch(
 ) {
     compatibleWith(COMPATIBILITY_SNAPTUBE)
 
+    extendWith("extensions/snaptube.mpe")
+
     execute {
         ToolbarNotificationDefaultFingerprint.let {
             val constTrueIndex = it.instructionMatches[3].index
@@ -54,36 +56,11 @@ val disableSnaptubeNotificationDefaultsPatch = bytecodePatch(
         DefaultNotificationChannelFingerprint.let {
             val defaultTrueIndex = it.instructionMatches[0].index
 
-            it.method.addInstructions(
-                defaultTrueIndex + 1,
-                """
-                const-string v1, "Channel_Id_Push"
-
-                invoke-virtual {v1, p0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-
-                move-result v1
-
-                if-nez v1, :is_off
-
-                const-string v1, "Channel_Id_Cleaner"
-
-                invoke-virtual {v1, p0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-
-                move-result v1
-
-                if-eqz v1, :not_special
-
-                :is_off
-                const/4 v1, 0x0
-
-                goto :done
-
-                :not_special
-                const/4 v1, 0x1
-
-                :done
-                """.trimIndent(),
+            it.method.replaceInstruction(
+                defaultTrueIndex,
+                "invoke-static {p0}, Lapp/ftl/extension/snaptube/SnaptubeSettingsHider;->defaultChannelEnabled(Ljava/lang/String;)Z",
             )
+            it.method.addInstructions(defaultTrueIndex + 1, "move-result v1")
         }
     }
 }
