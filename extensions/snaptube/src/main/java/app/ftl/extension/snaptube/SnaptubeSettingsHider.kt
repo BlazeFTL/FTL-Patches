@@ -8,9 +8,9 @@ import androidx.preference.PreferenceGroup
 object SnaptubeSettingsHider {
     private const val TAG = "MorpheSnaptube"
 
-    private val HIDDEN_CATEGORY_PREFIXES = listOf("Download tools", "Phone clean")
+    private val HIDDEN_CATEGORY_PREFIXES = arrayOf("Download tools", "Phone clean")
 
-    private val HIDDEN_PREFERENCE_KEYS = listOf(
+    private val HIDDEN_PREFERENCE_KEYS = arrayOf(
         "recover_deleted_files_settings",
         "whatsapp_status_saver",
         "vault_settings",
@@ -36,9 +36,9 @@ object SnaptubeSettingsHider {
             var i = 0
             while (i < (getCount.invoke(screen) as Int)) {
                 val pref = getPref.invoke(screen, i) as Preference
-                val title = (getTitle.invoke(pref) as? CharSequence)?.toString()
+                val title = getTitle.invoke(pref) as? CharSequence
 
-                if (title != null && HIDDEN_CATEGORY_PREFIXES.any { title.startsWith(it) }) {
+                if (title != null && startsWithAny(title.toString(), HIDDEN_CATEGORY_PREFIXES)) {
                     removePref.invoke(screen, pref)
                 } else {
                     i++
@@ -59,12 +59,23 @@ object SnaptubeSettingsHider {
             val findPref = PreferenceFragmentCompat::class.java.getMethod("w1", CharSequence::class.java)
             val setVisible = Preference::class.java.getMethod("x0", Boolean::class.javaPrimitiveType)
 
-            for (key in HIDDEN_PREFERENCE_KEYS) {
-                val pref = findPref.invoke(fragment, key) as? Preference ?: continue
-                setVisible.invoke(pref, false)
+            var i = 0
+            while (i < HIDDEN_PREFERENCE_KEYS.size) {
+                val pref = findPref.invoke(fragment, HIDDEN_PREFERENCE_KEYS[i]) as? Preference
+                if (pref != null) setVisible.invoke(pref, false)
+                i++
             }
         } catch (t: Throwable) {
             Log.e(TAG, "hidePreferences failed, target methods may have been renamed", t)
         }
+    }
+
+    private fun startsWithAny(value: String, prefixes: Array<String>): Boolean {
+        var i = 0
+        while (i < prefixes.size) {
+            if (value.startsWith(prefixes[i])) return true
+            i++
+        }
+        return false
     }
 }
