@@ -50,6 +50,10 @@ object SnaptubeSettingsHider {
     }
 
     @JvmStatic
+    fun defaultChannelEnabled(channelId: String?): Boolean =
+        channelId != "Channel_Id_Push" && channelId != "Channel_Id_Cleaner"
+
+    @JvmStatic
     fun hidePreferences(fragment: PreferenceFragmentCompat) {
         try {
             val findPref = PreferenceFragmentCompat::class.java.getMethod("w1", CharSequence::class.java)
