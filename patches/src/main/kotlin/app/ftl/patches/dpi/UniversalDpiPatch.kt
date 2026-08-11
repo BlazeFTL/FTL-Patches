@@ -91,6 +91,10 @@ private fun BytecodePatchContext.injectApplicationInit(applicationClass: Mutable
     return injected
 }
 
+// UniversalDpiPatch.kt
+private const val EXTENSION_INIT_ACTIVITY =
+    "Lapp/ftl/extension/dpi/DensityPatch;->init(Landroid/app/Activity;)V"
+
 private fun BytecodePatchContext.injectActivityInit(activityClass: MutableClass, dpi: Int): Boolean {
     var injected = false
 
@@ -103,18 +107,14 @@ private fun BytecodePatchContext.injectActivityInit(activityClass: MutableClass,
                 it.returnType == "V"
         } ?: return@traverseClassHierarchy
 
-        val provider = onCreate.getFreeRegisterProvider(1, 2)
-        val appRegister = provider.getFreeRegister()
-        val dpiRegister = provider.getFreeRegister()
+        val register = onCreate.getFreeRegisterProvider(1, 1).getFreeRegister()
 
         onCreate.addInstructions(
             0,
             """
-                invoke-virtual/range { p0 .. p0 }, Landroid/app/Activity;->getApplication()Landroid/app/Application;
-                move-result-object v$appRegister
-                const v$dpiRegister, $dpi
-                invoke-static/range { v$dpiRegister .. v$dpiRegister }, $EXTENSION_SET_PERCENT
-                invoke-static/range { v$appRegister .. v$appRegister }, $EXTENSION_INIT
+                const v$register, $dpi
+                invoke-static/range { v$register .. v$register }, $EXTENSION_SET_PERCENT
+                invoke-static/range { p0 .. p0 }, $EXTENSION_INIT_ACTIVITY
             """,
         )
         injected = true
