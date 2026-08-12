@@ -1,3 +1,18 @@
+## [1.24.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.23.0...v1.24.0) (2026-08-12)
+
+### ✨ New Features
+
+* up ([1705d96](https://github.com/BlazeFTL/FTL-Patches/commit/1705d96911cc177f75053f232f0ee9163bed3b6e))
+* up ([305f779](https://github.com/BlazeFTL/FTL-Patches/commit/305f779ff155d48951e369dace5f77e1f3f9ec72))
+* up ([9bb5141](https://github.com/BlazeFTL/FTL-Patches/commit/9bb5141eef063f9cb1d21d758c060681e2195396))
+* up ([14ccee0](https://github.com/BlazeFTL/FTL-Patches/commit/14ccee0369da3b3cfb31fd50f5594fd9f6be6165))
+* up ([900c319](https://github.com/BlazeFTL/FTL-Patches/commit/900c319fe383f7a24d4eb1e21858fd79181e5e02))
+* up ([af227e4](https://github.com/BlazeFTL/FTL-Patches/commit/af227e4f9dee8d36fa7e370c05a81cfa1e9ee086))
+* up ([69ac4cb](https://github.com/BlazeFTL/FTL-Patches/commit/69ac4cb4135d9e4e00a1c0cad2b2127a6c48d0dc))
+* update dpi toast ([b9fc3e8](https://github.com/BlazeFTL/FTL-Patches/commit/b9fc3e8d265b900601e663b8536223f6f7132525))
+* update toast dpi ([981901f](https://github.com/BlazeFTL/FTL-Patches/commit/981901faf51fbaf66297e895d877088628499a2b))
+* update toast, dpi ([c7f799c](https://github.com/BlazeFTL/FTL-Patches/commit/c7f799c3ac2bc2d3d811075c153d33c168a46df7))
+
 ## [1.24.0-dev.7](https://github.com/BlazeFTL/FTL-Patches/compare/v1.24.0-dev.6...v1.24.0-dev.7) (2026-08-12)
 
 ### ✨ New Features
