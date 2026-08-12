@@ -8,11 +8,17 @@ import app.morphe.patcher.patch.stringOption
 import app.morphe.patcher.util.proxy.mutableTypes.MutableClass
 import app.ftl.patches.dpi.AppEntryPoint
 import app.ftl.patches.dpi.findAppEntryPointPatch
+import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.ftl.util.getFreeRegisterProvider
+import app.ftl.util.registersUsed
 import app.ftl.util.traverseClassHierarchy
 
+private const val EXTENSION_SET_MESSAGE =
+    "Lapp/ftl/extension/toast/ToastPatch;->setMessage(Ljava/lang/String;)V"
+private const val EXTENSION_SET_SHOW_ONCE =
+    "Lapp/ftl/extension/toast/ToastPatch;->setShowOnce(Z)V"
 private const val EXTENSION_SHOW =
-    "Lapp/ftl/extension/toast/ToastPatch;->show(Landroid/content/Context;Ljava/lang/String;Z)V"
+    "Lapp/ftl/extension/toast/ToastPatch;->show(Landroid/content/Context;)V"
 
 private fun String.toClassType() = "L${replace('.', '/')};"
 
@@ -52,7 +58,7 @@ val addToastPatch = bytecodePatch(
             ?.toClassType()
             ?.let { mutableClassDefByOrNull(it) }
 
-        if (applicationClass != null && injectToast(applicationClass, text, once)) {
+        if (applicationClass != null && injectApplicationToast(applicationClass, text, once)) {
             return@execute
         }
 
@@ -62,35 +68,85 @@ val addToastPatch = bytecodePatch(
             ?.let { mutableClassDefByOrNull(it) }
             ?: return@execute
 
-        injectToast(launcherClass, text, once)
+        injectActivityToast(launcherClass, text, once)
     }
 }
 
 /**
  * @return true if injection succeeded.
  */
-private fun BytecodePatchContext.injectToast(targetClass: MutableClass, message: String, once: Boolean): Boolean {
+private fun BytecodePatchContext.injectApplicationToast(
+    applicationClass: MutableClass,
+    message: String,
+    once: Boolean,
+): Boolean {
     var injected = false
 
-    traverseClassHierarchy(targetClass) {
+    traverseClassHierarchy(applicationClass) {
         if (injected) return@traverseClassHierarchy
 
+        // Strictly no-arg: Application.onCreate() never takes a Bundle. A looser filter
+        // here can latch onto an unrelated onCreate(Bundle) higher in the hierarchy
+        // (e.g. from some SDK's lifecycle interface) before reaching the real one.
         val onCreate = methods.firstOrNull {
-            it.name == "onCreate" &&
-                (it.parameters.isEmpty() || it.parameters == listOf("Landroid/os/Bundle;")) &&
-                it.returnType == "V"
+            it.name == "onCreate" && it.parameters.isEmpty() && it.returnType == "V"
         } ?: return@traverseClassHierarchy
 
-        val provider = onCreate.getFreeRegisterProvider(1, 2)
-        val messageRegister = provider.getFreeRegister()
-        val onceRegister = provider.getFreeRegister()
+        val register = try {
+            onCreate.getFreeRegisterProvider(1, 1, onCreate.getInstruction(0).registersUsed).getFreeRegister()
+        } catch (e: IllegalArgumentException) {
+            return@traverseClassHierarchy
+        }
 
         onCreate.addInstructions(
             0,
             """
-                const-string v$messageRegister, "$message"
-                const/4 v$onceRegister, ${if (once) "0x1" else "0x0"}
-                invoke-static { p0, v$messageRegister, v$onceRegister }, $EXTENSION_SHOW
+                const-string v$register, "$message"
+                invoke-static/range { v$register .. v$register }, $EXTENSION_SET_MESSAGE
+                const v$register, ${if (once) "0x1" else "0x0"}
+                invoke-static/range { v$register .. v$register }, $EXTENSION_SET_SHOW_ONCE
+                invoke-static/range { p0 .. p0 }, $EXTENSION_SHOW
+            """,
+        )
+        injected = true
+    }
+
+    return injected
+}
+
+/**
+ * @return true if injection succeeded.
+ */
+private fun BytecodePatchContext.injectActivityToast(
+    activityClass: MutableClass,
+    message: String,
+    once: Boolean,
+): Boolean {
+    var injected = false
+
+    traverseClassHierarchy(activityClass) {
+        if (injected) return@traverseClassHierarchy
+
+        val onCreate = methods.firstOrNull {
+            it.name == "onCreate" &&
+                it.parameters == listOf("Landroid/os/Bundle;") &&
+                it.returnType == "V"
+        } ?: return@traverseClassHierarchy
+
+        val register = try {
+            onCreate.getFreeRegisterProvider(1, 1, onCreate.getInstruction(0).registersUsed).getFreeRegister()
+        } catch (e: IllegalArgumentException) {
+            return@traverseClassHierarchy
+        }
+
+        onCreate.addInstructions(
+            0,
+            """
+                const-string v$register, "$message"
+                invoke-static/range { v$register .. v$register }, $EXTENSION_SET_MESSAGE
+                const v$register, ${if (once) "0x1" else "0x0"}
+                invoke-static/range { v$register .. v$register }, $EXTENSION_SET_SHOW_ONCE
+                invoke-static/range { p0 .. p0 }, $EXTENSION_SHOW
             """,
         )
         injected = true

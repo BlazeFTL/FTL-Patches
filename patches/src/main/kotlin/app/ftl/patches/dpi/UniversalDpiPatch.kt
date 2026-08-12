@@ -5,11 +5,17 @@ import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.longOption
 import app.morphe.patcher.util.proxy.mutableTypes.MutableClass
+import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.ftl.util.getFreeRegisterProvider
+import app.ftl.util.registersUsed
 import app.ftl.util.traverseClassHierarchy
 
+private const val EXTENSION_SET_PERCENT =
+    "Lapp/ftl/extension/dpi/DensityPatch;->setPercent(I)V"
 private const val EXTENSION_INIT =
-    "Lapp/ftl/extension/dpi/DensityPatch;->init(Landroid/app/Application;I)V"
+    "Lapp/ftl/extension/dpi/DensityPatch;->init(Landroid/app/Application;)V"
+private const val EXTENSION_INIT_ACTIVITY =
+    "Lapp/ftl/extension/dpi/DensityPatch;->init(Landroid/app/Activity;)V"
 
 private fun String.toClassType() = "L${replace('.', '/')};"
 
@@ -74,12 +80,18 @@ private fun BytecodePatchContext.injectApplicationInit(applicationClass: Mutable
             it.name == "onCreate" && it.parameters.isEmpty() && it.returnType == "V"
         } ?: return@traverseClassHierarchy
 
-        val register = onCreate.getFreeRegisterProvider(1, 1).getFreeRegister()
+        val register = try {
+            onCreate.getFreeRegisterProvider(1, 1, onCreate.getInstruction(0).registersUsed).getFreeRegister()
+        } catch (e: IllegalArgumentException) {
+            return@traverseClassHierarchy
+        }
+
         onCreate.addInstructions(
             0,
             """
                 const v$register, $dpi
-                invoke-static { p0, v$register }, $EXTENSION_INIT
+                invoke-static/range { v$register .. v$register }, $EXTENSION_SET_PERCENT
+                invoke-static/range { p0 .. p0 }, $EXTENSION_INIT
             """,
         )
         injected = true
@@ -103,17 +115,21 @@ private fun BytecodePatchContext.injectActivityInit(activityClass: MutableClass,
                 it.returnType == "V"
         } ?: return@traverseClassHierarchy
 
-        val provider = onCreate.getFreeRegisterProvider(1, 2)
-        val appRegister = provider.getFreeRegister()
-        val dpiRegister = provider.getFreeRegister()
+        // Only 1 register needed: init(Activity) resolves the Application itself,
+        // and also applies density to this activity directly (register()'s
+        // ActivityLifecycleCallbacks only cover activities created afterward).
+        val register = try {
+            onCreate.getFreeRegisterProvider(1, 1, onCreate.getInstruction(0).registersUsed).getFreeRegister()
+        } catch (e: IllegalArgumentException) {
+            return@traverseClassHierarchy
+        }
 
         onCreate.addInstructions(
             0,
             """
-                invoke-virtual { p0 }, Landroid/app/Activity;->getApplication()Landroid/app/Application;
-                move-result-object v$appRegister
-                const v$dpiRegister, $dpi
-                invoke-static { v$appRegister, v$dpiRegister }, $EXTENSION_INIT
+                const v$register, $dpi
+                invoke-static/range { v$register .. v$register }, $EXTENSION_SET_PERCENT
+                invoke-static/range { p0 .. p0 }, $EXTENSION_INIT_ACTIVITY
             """,
         )
         injected = true

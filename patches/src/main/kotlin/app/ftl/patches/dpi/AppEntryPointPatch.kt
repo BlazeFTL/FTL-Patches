@@ -29,6 +29,9 @@ private fun Document.findLauncherActivity(packageName: String): String? {
         for (i in 0 until elements.length) {
             val element = elements.item(i) as Element
 
+            if (element.getAttribute("android:enabled") == "false") continue
+            if (element.getAttribute("android:exported") == "false") continue
+
             val isLauncher = element.childElements("intent-filter").any { filter ->
                 val hasMain = filter.childElements("action")
                     .any { it.getAttribute("android:name") == "android.intent.action.MAIN" }

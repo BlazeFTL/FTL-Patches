@@ -22,16 +22,38 @@ object DensityPatch {
     @Volatile
     private var targetDpi = 0
 
+    @Volatile private var percent = DEFAULT_PERCENT
+
     @Volatile
     private var initialized = false
 
     @JvmStatic
-    fun init(application: Application, percent: Int) {
+    fun setPercent(value: Int) { percent = value }
+
+    @JvmStatic
+    fun init(application: Application) {
         if (initialized) return
         try {
             register(application, percent)
         } catch (t: Throwable) {
             Log.e(TAG, "init failed", t)
+        }
+    }
+
+    /**
+     * Used when the patch injects into an Activity.onCreate() instead of
+     * Application.onCreate() (e.g. no usable custom Application subclass was found).
+     * This ensures the activity that's actually running gets patched immediately,
+     * since [register]'s ActivityLifecycleCallbacks only cover activities created
+     * AFTER registration and would otherwise miss this one.
+     */
+    @JvmStatic
+    fun init(activity: Activity) {
+        init(activity.application)
+        try {
+            forceDensity(activity)
+        } catch (t: Throwable) {
+            Log.e(TAG, "init(activity) failed", t)
         }
     }
 
