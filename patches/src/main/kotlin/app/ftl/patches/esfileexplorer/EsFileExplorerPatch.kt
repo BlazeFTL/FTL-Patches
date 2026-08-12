@@ -7,7 +7,6 @@ import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.removeInstruction
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
-import app.morphe.patcher.extensions.InstructionExtensions.getInstructions
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.bytecodePatch
@@ -262,7 +261,7 @@ val esFileExplorerPatch = bytecodePatch(
         MediaHandlerFingerprint.methodOrNull?.let { method ->
             MediaHandlerFingerprint.instructionMatches.firstOrNull()?.let { match ->
                 val startIndex = match.index + 1
-                val x53Index = (startIndex until method.getInstructions().count()).firstOrNull { index ->
+                val x53Index = (startIndex until method.implementation!!.instructions.size).firstOrNull { index ->
                     val instruction = method.getInstruction(index)
                     instruction.opcode == Opcode.NEW_INSTANCE &&
                         (instruction as? ReferenceInstruction)?.reference.let { reference ->
