@@ -27,6 +27,9 @@ object DensityPatch {
     @Volatile
     private var initialized = false
 
+    private val activeActivities =
+        java.util.Collections.newSetFromMap(java.util.WeakHashMap<Activity, Boolean>())
+
     @JvmStatic
     fun setPercent(value: Int) { percent = value }
 
@@ -52,6 +55,7 @@ object DensityPatch {
         init(activity.application)
         try {
             forceDensity(activity)
+            activeActivities.add(activity)
         } catch (t: Throwable) {
             Log.e(TAG, "init(activity) failed", t)
         }
@@ -78,6 +82,7 @@ object DensityPatch {
 
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
                 forceDensity(activity)
+                activeActivities.add(activity)
             }
 
             override fun onActivityStarted(activity: Activity) {}
@@ -85,12 +90,15 @@ object DensityPatch {
             override fun onActivityPaused(activity: Activity) {}
             override fun onActivityStopped(activity: Activity) {}
             override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
-            override fun onActivityDestroyed(activity: Activity) {}
+            override fun onActivityDestroyed(activity: Activity) {
+                activeActivities.remove(activity)
+            }
         })
 
         application.registerComponentCallbacks(object : ComponentCallbacks2 {
             override fun onConfigurationChanged(newConfig: Configuration) {
                 applyTo(application.resources)
+                activeActivities.toList().forEach { forceDensity(it) }
             }
 
             override fun onLowMemory() {}
