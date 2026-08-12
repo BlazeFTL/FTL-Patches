@@ -3,7 +3,7 @@ package app.ftl.patches.dpi
 import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
-import app.morphe.patcher.patch.stringOption
+import app.morphe.patcher.patch.longOption
 import app.morphe.patcher.util.proxy.mutableTypes.MutableClass
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.ftl.util.getFreeRegisterProvider
@@ -33,18 +33,18 @@ val universalDpiPatch = bytecodePatch(
 
     extendWith("extensions/dpi.mpe")
 
-    val dpiOption by stringOption(
+    val dpiOption = longOption(
         key = "dpi",
-        default = "100",
+        default = 100L,
         title = "Display scale",
         description = "Scales this app's display relative to the device's own setting. " +
             "100% = no change, 150% = 1.5x larger, 50% = half size. Range 25-300%.",
         required = true,
-        validator = { it?.toIntOrNull()?.let { v -> v in 25..300 } ?: false },
+        validator = { it != null && it in 25L..300L },
     )
 
     execute {
-        val dpi = dpiOption?.toIntOrNull() ?: 100
+        val dpi = (dpiOption.value ?: 100L).toInt()
 
         val applicationClass = AppEntryPoint.applicationClassName
             ?.toClassType()
