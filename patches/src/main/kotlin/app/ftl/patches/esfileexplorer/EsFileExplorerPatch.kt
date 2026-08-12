@@ -10,7 +10,6 @@ import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.bytecodePatch
 import com.android.tools.smali.dexlib2.Opcode
-import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 
 private val COMPATIBILITY_ES_FILE_EXPLORER = Compatibility(
     packageName = "com.estrongs.android.pop",
@@ -90,6 +89,16 @@ private object MediaHandlerFingerprint : Fingerprint(
         opcode(Opcode.SGET_BOOLEAN),
         opcode(Opcode.IF_NEZ, location = MatchAfterImmediately()),
         opcode(Opcode.NEW_INSTANCE, location = MatchAfterImmediately()),
+    ),
+)
+
+private object MediaHandlerEndFingerprint : Fingerprint(
+    definingClass = "Les/f33;",
+    name = "d",
+    returnType = "V",
+    parameters = listOf("Z"),
+    filters = listOf(
+        methodCall(smali = "Les/x53;-><init>()V"),
     ),
 )
 
@@ -258,13 +267,11 @@ val esFileExplorerPatch = bytecodePatch(
                 // Remove the conditional media-handler block through the stable x53 block.
                 // This reproduces the reference mod without injecting a goto to an enclosing label.
                 val startIndex = match.index + 1
-                val x53Index = (startIndex until method.instructions.count()).firstOrNull { index ->
-                    val instruction = method.getInstruction(index)
-                    instruction.opcode == Opcode.NEW_INSTANCE &&
-                        (instruction as? ReferenceInstruction)?.reference.toString() == "Les/x53;"
-                } ?: error("ES File Explorer media-handler end anchor not found")
+                val x53InvokeIndex = MediaHandlerEndFingerprint.instructionMatches.firstOrNull()?.index
+                    ?: error("ES File Explorer media-handler end anchor not found")
+                val x53StartIndex = x53InvokeIndex - 1
 
-                for (index in x53Index - 1 downTo startIndex) {
+                for (index in x53StartIndex - 1 downTo startIndex) {
                     method.removeInstruction(index)
                 }
             }
