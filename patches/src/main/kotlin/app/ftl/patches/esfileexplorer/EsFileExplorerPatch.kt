@@ -6,6 +6,8 @@ import app.morphe.patcher.methodCall
 import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.removeInstruction
+import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
+import app.morphe.patcher.extensions.InstructionExtensions.getInstructions
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.bytecodePatch
@@ -260,7 +262,7 @@ val esFileExplorerPatch = bytecodePatch(
         MediaHandlerFingerprint.methodOrNull?.let { method ->
             MediaHandlerFingerprint.instructionMatches.firstOrNull()?.let { match ->
                 val startIndex = match.index + 1
-                val x53Index = (startIndex until method.instructions.count()).firstOrNull { index ->
+                val x53Index = (startIndex until method.getInstructions().count()).firstOrNull { index ->
                     val instruction = method.getInstruction(index)
                     instruction.opcode == Opcode.NEW_INSTANCE &&
                         (instruction as? ReferenceInstruction)?.reference.let { reference ->
@@ -280,6 +282,10 @@ val esFileExplorerPatch = bytecodePatch(
             }
         }
 
+        // Modded target skips the map lookup entirely for the "web_search" key by jumping to the
+        // existing loop-continue label. Referencing that label by its disassembled name is unsafe
+        // to inject directly, so instead null the key: map.get(null) returns null, which the method's
+        // own existing `if-eqz v6, :cond_1f` check (right after the cast) already routes to skip/continue.
         WebSearchFingerprint.methodOrNull?.let { method ->
             WebSearchFingerprint.instructionMatches.firstOrNull()?.let { match ->
                 method.addInstructions(
@@ -288,7 +294,9 @@ val esFileExplorerPatch = bytecodePatch(
                 const-string v6, "web_search"
                 invoke-virtual {v6, v5}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
                 move-result v6
-                if-nez v6, :cond_1f
+                if-eqz v6, :ftl_web_search_keep_key
+                const/4 v5, 0x0
+                :ftl_web_search_keep_key
                 """.trimIndent(),
                 )
             }
