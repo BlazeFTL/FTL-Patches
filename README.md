@@ -1,6 +1,6 @@
 # 👋🧩 FTL Patches
 
-Personal collection of my Morphe Patches
+Personal collection of my Morphe Patches.
 
 ## ❓ About
 
@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.24.0](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.24.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;18 patches total
+> **[v1.25.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.25.0-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;20 patches total
 <details open>
 <summary>📦 SnapTube&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
 <br>
@@ -28,11 +28,12 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 </details>
 
 <details open>
-<summary>📦 MX Player Pro&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
+<summary>📦 MX Player Pro&nbsp;&nbsp;•&nbsp;&nbsp;4 patches</summary>
 <br>
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
+| [Hide File Transfer, Video Playlist, Private Folder tiles](#hide-file-transfer-video-playlist-private-folder-tiles) | Removes the File Transfer, Video Playlist, and Private Folder tiles from the tools tile list. |  |
 | [Hide Me tab promo items](#hide-me-tab-promo-items) | Collapses the WhatsApp, Legal, and Help entries on the Me tab. |  |
 | [Hide local tiles banner](#hide-local-tiles-banner) | Collapses the local device tiles banner. |  |
 | [Skip welcome screen](#skip-welcome-screen) | Moves the launcher intent filters and app shortcuts from the welcome/splash activity to the main activity, so the app boots straight past the splash and update screen. |  |
@@ -40,11 +41,12 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 </details>
 
 <details open>
-<summary>📦 MX Player&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
+<summary>📦 MX Player&nbsp;&nbsp;•&nbsp;&nbsp;4 patches</summary>
 <br>
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
+| [Hide File Transfer, Video Playlist, Private Folder tiles](#hide-file-transfer-video-playlist-private-folder-tiles) | Removes the File Transfer, Video Playlist, and Private Folder tiles from the tools tile list. |  |
 | [Hide Me tab promo items](#hide-me-tab-promo-items) | Collapses the WhatsApp, Legal, and Help entries on the Me tab. |  |
 | [Hide local tiles banner](#hide-local-tiles-banner) | Collapses the local device tiles banner. |  |
 | [Skip welcome screen](#skip-welcome-screen) | Moves the launcher intent filters and app shortcuts from the welcome/splash activity to the main activity, so the app boots straight past the splash and update screen. |  |
