@@ -106,7 +106,7 @@ private object WebSearchFingerprint : Fingerprint(
     filters = listOf(opcode(Opcode.AGET_OBJECT)),
 )
 
-private const val MENU_FILTER = """
+private val MENU_FILTER = """
     invoke-interface {p1}, Ljava/util/List;->iterator()Ljava/util/Iterator;
     move-result-object v2
     :ftl_menu_loop
@@ -179,11 +179,10 @@ val esFileExplorerPatch = bytecodePatch(
     compatibleWith(COMPATIBILITY_ES_FILE_EXPLORER)
 
     execute {
-        HomeGetItemCountAdapterFingerprint.instructionMatches.getOrNull(1)?.let {
-            it.method.addInstructions(
-                it.index + 1,
-                "xor-int/lit8 v0, v0, 0x1",
-            )
+        HomeGetItemCountAdapterFingerprint.methodOrNull?.let { method ->
+            HomeGetItemCountAdapterFingerprint.instructionMatches.getOrNull(1)?.let { match ->
+                method.addInstructions(match.index + 1, "xor-int/lit8 v0, v0, 0x1")
+            }
         }
 
         HomeSkipLogHeaderFingerprint.methodOrNull?.addInstructions(
@@ -197,37 +196,43 @@ val esFileExplorerPatch = bytecodePatch(
             """.trimIndent(),
         )
 
-        HomeBindMediaFingerprint.instructionMatches.firstOrNull()?.let {
-            it.method.addInstructions(
-                it.index + 1,
+        HomeBindMediaFingerprint.methodOrNull?.let { method ->
+            HomeBindMediaFingerprint.instructionMatches.firstOrNull()?.let { match ->
+                method.addInstructions(
+                    match.index + 1,
                 """
                 iget-object p2, p1, Landroidx/recyclerview/widget/RecyclerView${'$'}ViewHolder;->itemView:Landroid/view/View;
                 const/16 v3, 0x8
                 invoke-virtual {p2, v3}, Landroid/view/View;->setVisibility(I)V
                 """.trimIndent(),
-            )
+                )
+            }
         }
 
-        HomeCreateMediaFingerprint.instructionMatches.firstOrNull()?.let {
-            it.method.addInstructions(
-                it.index + 1,
+        HomeCreateMediaFingerprint.methodOrNull?.let { method ->
+            HomeCreateMediaFingerprint.instructionMatches.firstOrNull()?.let { match ->
+                method.addInstructions(
+                    match.index + 1,
                 """
                 iget-object v0, p2, Landroidx/recyclerview/widget/RecyclerView${'$'}ViewHolder;->itemView:Landroid/view/View;
                 const/16 v1, 0x8
                 invoke-virtual {v0, v1}, Landroid/view/View;->setVisibility(I)V
                 """.trimIndent(),
-            )
+                )
+            }
         }
 
-        HomeCreateFavoriteFingerprint.instructionMatches.firstOrNull()?.let {
-            it.method.addInstructions(
-                it.index + 1,
+        HomeCreateFavoriteFingerprint.methodOrNull?.let { method ->
+            HomeCreateFavoriteFingerprint.instructionMatches.firstOrNull()?.let { match ->
+                method.addInstructions(
+                    match.index + 1,
                 """
                 iget-object v0, p2, Landroidx/recyclerview/widget/RecyclerView${'$'}ViewHolder;->itemView:Landroid/view/View;
                 const/16 v1, 0x8
                 invoke-virtual {v0, v1}, Landroid/view/View;->setVisibility(I)V
                 """.trimIndent(),
-            )
+                )
+            }
         }
 
         MenuListFingerprint.methodOrNull?.addInstructions(0, MENU_FILTER)
@@ -246,24 +251,30 @@ val esFileExplorerPatch = bytecodePatch(
             """.trimIndent(),
         )
 
-        MediaHandlerFingerprint.instructionMatches.firstOrNull()?.let {
-            it.method.addInstructions(it.index + 1, "goto :goto_2")
+        MediaHandlerFingerprint.methodOrNull?.let { method ->
+            MediaHandlerFingerprint.instructionMatches.firstOrNull()?.let { match ->
+                method.addInstructions(match.index + 1, "goto :goto_2")
+            }
         }
 
-        NavigationHeaderFingerprint.instructionMatches.firstOrNull()?.let {
-            it.method.addInstructions(it.index + 1, "goto :goto_0")
+        NavigationHeaderFingerprint.methodOrNull?.let { method ->
+            NavigationHeaderFingerprint.instructionMatches.firstOrNull()?.let { match ->
+                method.addInstructions(match.index + 1, "goto :goto_0")
+            }
         }
 
-        WebSearchFingerprint.instructionMatches.firstOrNull()?.let {
-            it.method.addInstructions(
-                it.index + 1,
+        WebSearchFingerprint.methodOrNull?.let { method ->
+            WebSearchFingerprint.instructionMatches.firstOrNull()?.let { match ->
+                method.addInstructions(
+                    match.index + 1,
                 """
                 const-string v6, "web_search"
                 invoke-virtual {v6, v5}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
                 move-result v6
                 if-nez v6, :cond_1f
                 """.trimIndent(),
-            )
+                )
+            }
         }
     }
 }
