@@ -5,10 +5,13 @@ import app.morphe.patcher.opcode
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.removeInstruction
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.bytecodePatch
 import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 
 private val COMPATIBILITY_ES_FILE_EXPLORER = Compatibility(
     packageName = "com.estrongs.android.pop",
@@ -253,10 +256,20 @@ val esFileExplorerPatch = bytecodePatch(
 
         MediaHandlerFingerprint.methodOrNull?.let { method ->
             MediaHandlerFingerprint.instructionMatches.firstOrNull()?.let { match ->
-                // Force the existing `if-nez v0, :cond_3` branch to skip the media handler.
-                // Do not inject `goto :goto_2`: inline smali compilation cannot resolve labels
-                // that belong to the enclosing method.
-                method.addInstructions(match.index + 1, "const/4 v0, 0x1")
+                // Remove the conditional media-handler block through the stable x53 block.
+                // This reproduces the reference mod without injecting a goto to an enclosing label.
+                val startIndex = match.index + 1
+                val x53Index = (startIndex until method.instructions.count()).firstOrNull { index ->
+                    val instruction = method.getInstruction(index)
+                    instruction.opcode == Opcode.NEW_INSTANCE &&
+                        (instruction as? ReferenceInstruction)?.reference.let { reference ->
+                            (reference as? TypeReference)?.type == "Les/x53;"
+                        }
+                } ?: error("ES File Explorer media-handler end anchor not found")
+
+                for (index in x53Index - 1 downTo startIndex) {
+                    method.removeInstruction(index)
+                }
             }
         }
 
