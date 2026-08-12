@@ -11,7 +11,6 @@ import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.bytecodePatch
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
-import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 
 private val COMPATIBILITY_ES_FILE_EXPLORER = Compatibility(
     packageName = "com.estrongs.android.pop",
@@ -262,9 +261,7 @@ val esFileExplorerPatch = bytecodePatch(
                 val x53Index = (startIndex until method.instructions.count()).firstOrNull { index ->
                     val instruction = method.getInstruction(index)
                     instruction.opcode == Opcode.NEW_INSTANCE &&
-                        (instruction as? ReferenceInstruction)?.reference.let { reference ->
-                            (reference as? TypeReference)?.type == "Les/x53;"
-                        }
+                        (instruction as? ReferenceInstruction)?.reference.toString() == "Les/x53;"
                 } ?: error("ES File Explorer media-handler end anchor not found")
 
                 for (index in x53Index - 1 downTo startIndex) {
