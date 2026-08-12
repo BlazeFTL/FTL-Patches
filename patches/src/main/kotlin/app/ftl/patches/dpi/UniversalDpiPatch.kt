@@ -35,7 +35,7 @@ val universalDpiPatch = bytecodePatch(
 
     val dpiOption by stringOption(
         key = "dpi",
-        default = "90",
+        default = "100",
         title = "Display scale",
         description = "Scales this app's display relative to the device's own setting. " +
             "100% = no change, 150% = 1.5x larger, 50% = half size. Range 25-300%.",
@@ -45,9 +45,6 @@ val universalDpiPatch = bytecodePatch(
 
     execute {
         val dpi = dpiOption?.toIntOrNull() ?: 100
-
-    execute {
-        val dpi = (dpiOption.value ?: 100L).toInt()
 
         val applicationClass = AppEntryPoint.applicationClassName
             ?.toClassType()
