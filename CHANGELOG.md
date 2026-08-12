@@ -1,3 +1,9 @@
+## [1.25.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.24.0...v1.25.0) (2026-08-12)
+
+### ✨ New Features
+
+* add mx player hide file transfer, private video,video playlist ([2618076](https://github.com/BlazeFTL/FTL-Patches/commit/26180762887a604a1487f5b4707288bc25b12085))
+
 ## [1.25.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.24.0...v1.25.0-dev.1) (2026-08-12)
 
 ### ✨ New Features
