@@ -1,3 +1,9 @@
+## [1.26.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/compare/v1.26.0-dev.1...v1.26.0-dev.2) (2026-08-12)
+
+### ✨ New Features
+
+* up ([f687330](https://github.com/BlazeFTL/FTL-Patches/commit/f68733052321ed28e67dc66f24299a3b15c7bb83))
+
 ## [1.26.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.25.0...v1.26.0-dev.1) (2026-08-12)
 
 ### ✨ New Features
