@@ -39,7 +39,7 @@ private object HomeBindMediaFingerprint : Fingerprint(
     definingClass = "Lcom/estrongs/android/ui/homepage/HomeAdapter;",
     name = "onBindViewHolder",
     returnType = "V",
-    parameters = listOf("Landroidx/recyclerview/widget/RecyclerView$ViewHolder;", "I"),
+    parameters = listOf("Landroidx/recyclerview/widget/RecyclerView\$ViewHolder;", "I"),
     filters = listOf(
         methodCall(smali = "Lcom/estrongs/android/ui/homepage/viewholder/MediaViewHolder;->e(Ljava/lang/Object;)V"),
     ),
@@ -48,7 +48,7 @@ private object HomeBindMediaFingerprint : Fingerprint(
 private object HomeCreateMediaFingerprint : Fingerprint(
     definingClass = "Lcom/estrongs/android/ui/homepage/HomeAdapter;",
     name = "onCreateViewHolder",
-    returnType = "Landroidx/recyclerview/widget/RecyclerView$ViewHolder;",
+    returnType = "Landroidx/recyclerview/widget/RecyclerView\$ViewHolder;",
     parameters = listOf("Landroid/view/ViewGroup;", "I"),
     filters = listOf(
         methodCall(smali = "Lcom/estrongs/android/ui/homepage/viewholder/MediaViewHolder;-><init>(Landroid/view/ViewGroup;Ljava/util/List;)V"),
@@ -58,7 +58,7 @@ private object HomeCreateMediaFingerprint : Fingerprint(
 private object HomeCreateFavoriteFingerprint : Fingerprint(
     definingClass = "Lcom/estrongs/android/ui/homepage/HomeAdapter;",
     name = "onCreateViewHolder",
-    returnType = "Landroidx/recyclerview/widget/RecyclerView$ViewHolder;",
+    returnType = "Landroidx/recyclerview/widget/RecyclerView\$ViewHolder;",
     parameters = listOf("Landroid/view/ViewGroup;", "I"),
     filters = listOf(
         methodCall(smali = "Lcom/estrongs/android/ui/homepage/viewholder/FavoriteHolder;-><init>(Landroid/view/ViewGroup;)V"),
@@ -76,7 +76,7 @@ private object MenuBindFingerprint : Fingerprint(
     definingClass = "Les/f00;",
     name = "v",
     returnType = "V",
-    parameters = listOf("Les/f00$f;", "Les/fe1;", "I"),
+    parameters = listOf("Les/f00\$f;", "Les/fe1;", "I"),
 )
 
 private object MediaHandlerFingerprint : Fingerprint(
@@ -201,7 +201,7 @@ val esFileExplorerPatch = bytecodePatch(
             it.method.addInstructions(
                 it.index + 1,
                 """
-                iget-object p2, p1, Landroidx/recyclerview/widget/RecyclerView$ViewHolder;->itemView:Landroid/view/View;
+                iget-object p2, p1, Landroidx/recyclerview/widget/RecyclerView${'$'}ViewHolder;->itemView:Landroid/view/View;
                 const/16 v3, 0x8
                 invoke-virtual {p2, v3}, Landroid/view/View;->setVisibility(I)V
                 """.trimIndent(),
@@ -212,7 +212,7 @@ val esFileExplorerPatch = bytecodePatch(
             it.method.addInstructions(
                 it.index + 1,
                 """
-                iget-object v0, p2, Landroidx/recyclerview/widget/RecyclerView$ViewHolder;->itemView:Landroid/view/View;
+                iget-object v0, p2, Landroidx/recyclerview/widget/RecyclerView${'$'}ViewHolder;->itemView:Landroid/view/View;
                 const/16 v1, 0x8
                 invoke-virtual {v0, v1}, Landroid/view/View;->setVisibility(I)V
                 """.trimIndent(),
@@ -223,7 +223,7 @@ val esFileExplorerPatch = bytecodePatch(
             it.method.addInstructions(
                 it.index + 1,
                 """
-                iget-object v0, p2, Landroidx/recyclerview/widget/RecyclerView$ViewHolder;->itemView:Landroid/view/View;
+                iget-object v0, p2, Landroidx/recyclerview/widget/RecyclerView${'$'}ViewHolder;->itemView:Landroid/view/View;
                 const/16 v1, 0x8
                 invoke-virtual {v0, v1}, Landroid/view/View;->setVisibility(I)V
                 """.trimIndent(),
@@ -239,10 +239,10 @@ val esFileExplorerPatch = bytecodePatch(
             move-result v0
             const v1, 0x7f130808
             if-ne v0, v1, :ftl_menu_bind_continue
-            invoke-virtual {p1}, Les/f00$f;->a()V
+            invoke-virtual {p1}, Les/f00${'$'}f;->a()V
             return-void
             :ftl_menu_bind_continue
-            invoke-virtual {p1}, Les/f00$f;->c()V
+            invoke-virtual {p1}, Les/f00${'$'}f;->c()V
             """.trimIndent(),
         )
 
