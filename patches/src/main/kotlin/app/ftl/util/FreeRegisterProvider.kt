@@ -294,6 +294,10 @@ private fun Method.findFreeRegisters(
 ): List<Int> {
     if (logFreeRegisterSearch) println("Searching startIndex: $startIndex method: $this")
 
+    if (implementation!!.tryBlocks.isNotEmpty()) {
+        throw IllegalArgumentException("Method has try/catch blocks, free register search unsupported: $this")
+    }
+
     val freeRegisters = findFreeRegistersInternal(
         startIndex = startIndex,
         numberOfFreeRegistersNeeded = numberOfFreeRegistersNeeded,
