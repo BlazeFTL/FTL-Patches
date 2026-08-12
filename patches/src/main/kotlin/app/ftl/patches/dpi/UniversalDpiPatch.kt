@@ -5,7 +5,9 @@ import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.longOption
 import app.morphe.patcher.util.proxy.mutableTypes.MutableClass
+import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.ftl.util.getFreeRegisterProvider
+import app.ftl.util.registersUsed
 import app.ftl.util.traverseClassHierarchy
 
 private const val EXTENSION_SET_PERCENT =
@@ -79,7 +81,7 @@ private fun BytecodePatchContext.injectApplicationInit(applicationClass: Mutable
         } ?: return@traverseClassHierarchy
 
         val register = try {
-            onCreate.getFreeRegisterProvider(1, 1).getFreeRegister()
+            onCreate.getFreeRegisterProvider(1, 1, onCreate.getInstruction(0).registersUsed).getFreeRegister()
         } catch (e: IllegalArgumentException) {
             return@traverseClassHierarchy
         }
@@ -117,7 +119,7 @@ private fun BytecodePatchContext.injectActivityInit(activityClass: MutableClass,
         // and also applies density to this activity directly (register()'s
         // ActivityLifecycleCallbacks only cover activities created afterward).
         val register = try {
-            onCreate.getFreeRegisterProvider(1, 1).getFreeRegister()
+            onCreate.getFreeRegisterProvider(1, 1, onCreate.getInstruction(0).registersUsed).getFreeRegister()
         } catch (e: IllegalArgumentException) {
             return@traverseClassHierarchy
         }
