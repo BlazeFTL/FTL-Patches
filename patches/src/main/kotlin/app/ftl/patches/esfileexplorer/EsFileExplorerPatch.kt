@@ -253,13 +253,18 @@ val esFileExplorerPatch = bytecodePatch(
 
         MediaHandlerFingerprint.methodOrNull?.let { method ->
             MediaHandlerFingerprint.instructionMatches.firstOrNull()?.let { match ->
-                method.addInstructions(match.index + 1, "goto :goto_2")
+                // Force the existing `if-nez v0, :cond_3` branch to skip the media handler.
+                // Do not inject `goto :goto_2`: inline smali compilation cannot resolve labels
+                // that belong to the enclosing method.
+                method.addInstructions(match.index + 1, "const/4 v0, 0x1")
             }
         }
 
         NavigationHeaderFingerprint.methodOrNull?.let { method ->
             NavigationHeaderFingerprint.instructionMatches.firstOrNull()?.let { match ->
-                method.addInstructions(match.index + 1, "goto :goto_0")
+                // Force the existing `if-nez v0, :cond_2` branch to skip the header setup.
+                // This preserves the method's own label table and avoids unresolved labels.
+                method.addInstructions(match.index + 1, "const/4 v0, 0x1")
             }
         }
 
