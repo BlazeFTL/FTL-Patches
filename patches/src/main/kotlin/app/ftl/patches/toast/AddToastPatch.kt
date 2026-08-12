@@ -90,7 +90,11 @@ private fun BytecodePatchContext.injectApplicationToast(
             it.name == "onCreate" && it.parameters.isEmpty() && it.returnType == "V"
         } ?: return@traverseClassHierarchy
 
-        val register = onCreate.getFreeRegisterProvider(1, 1).getFreeRegister()
+        val register = try {
+            onCreate.getFreeRegisterProvider(1, 1).getFreeRegister()
+        } catch (e: IllegalArgumentException) {
+            return@traverseClassHierarchy
+        }
 
         onCreate.addInstructions(
             0,
@@ -127,7 +131,11 @@ private fun BytecodePatchContext.injectActivityToast(
                 it.returnType == "V"
         } ?: return@traverseClassHierarchy
 
-        val register = onCreate.getFreeRegisterProvider(1, 1).getFreeRegister()
+        val register = try {
+            onCreate.getFreeRegisterProvider(1, 1).getFreeRegister()
+        } catch (e: IllegalArgumentException) {
+            return@traverseClassHierarchy
+        }
 
         onCreate.addInstructions(
             0,
