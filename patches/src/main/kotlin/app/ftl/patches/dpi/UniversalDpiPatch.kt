@@ -78,7 +78,12 @@ private fun BytecodePatchContext.injectApplicationInit(applicationClass: Mutable
             it.name == "onCreate" && it.parameters.isEmpty() && it.returnType == "V"
         } ?: return@traverseClassHierarchy
 
-        val register = onCreate.getFreeRegisterProvider(1, 1).getFreeRegister()
+        val register = try {
+            onCreate.getFreeRegisterProvider(1, 1).getFreeRegister()
+        } catch (e: IllegalArgumentException) {
+            return@traverseClassHierarchy
+        }
+
         onCreate.addInstructions(
             0,
             """
@@ -111,7 +116,11 @@ private fun BytecodePatchContext.injectActivityInit(activityClass: MutableClass,
         // Only 1 register needed: init(Activity) resolves the Application itself,
         // and also applies density to this activity directly (register()'s
         // ActivityLifecycleCallbacks only cover activities created afterward).
-        val register = onCreate.getFreeRegisterProvider(1, 1).getFreeRegister()
+        val register = try {
+            onCreate.getFreeRegisterProvider(1, 1).getFreeRegister()
+        } catch (e: IllegalArgumentException) {
+            return@traverseClassHierarchy
+        }
 
         onCreate.addInstructions(
             0,
