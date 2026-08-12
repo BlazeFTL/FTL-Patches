@@ -276,7 +276,9 @@ val esFileExplorerPatch = bytecodePatch(
                 const-string v6, "web_search"
                 invoke-virtual {v6, v5}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
                 move-result v6
-                if-nez v6, :cond_1f
+                if-eqz v6, :ftl_web_search_keep_key
+                const/4 v5, 0x0
+                :ftl_web_search_keep_key
                 """.trimIndent(),
                 )
             }
