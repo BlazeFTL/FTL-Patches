@@ -55,19 +55,6 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 </details>
 
-<details>
-<summary>📦 MX Player&nbsp;&nbsp;•&nbsp;&nbsp;4 patches(Not Supported</summary>
-<br>
-
-| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
-|----------|----------------|-----------|
-| [Hide File Transfer, Video Playlist, Private Folder tiles](#hide-file-transfer-video-playlist-private-folder-tiles) | Removes the File Transfer, Video Playlist, and Private Folder tiles from the tools tile list. |  |
-| [Hide Me tab promo items](#hide-me-tab-promo-items) | Collapses the WhatsApp, Legal, and Help entries on the Me tab. |  |
-| [Hide local tiles banner](#hide-local-tiles-banner) | Collapses the local device tiles banner. |  |
-| [Skip welcome screen](#skip-welcome-screen) | Moves the launcher intent filters and app shortcuts from the welcome/splash activity to the main activity, so the app boots straight past the splash and update screen. |  |
-
-</details>
-
 <details open>
 <summary>🌐 Universal&nbsp;&nbsp;•&nbsp;&nbsp;9 patches</summary>
 <br>
