@@ -5,6 +5,7 @@ import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
+import com.android.tools.smali.dexlib2.Opcode
 
 private const val EXTENSION_HIDE_CATEGORIES =
     "Lapp/ftl/extension/snaptube/SnaptubeSettingsHider;->hideCategories(Landroidx/preference/PreferenceGroup;)V"
@@ -12,12 +13,23 @@ private const val EXTENSION_HIDE_CATEGORIES =
 private const val EXTENSION_HIDE_PREFERENCES =
     "Lapp/ftl/extension/snaptube/SnaptubeSettingsHider;->hidePreferences(Landroidx/preference/PreferenceFragmentCompat;)V"
 
+internal object PreferenceScreenGetterFingerprint : Fingerprint(
+    definingClass = "Landroidx/preference/PreferenceFragmentCompat;",
+    returnType = "Landroidx/preference/PreferenceScreen;",
+    parameters = emptyList(),
+)
+
 internal object SettingsOnCreatePreferencesFingerprint : Fingerprint(
     definingClass = "Lcom/snaptube/premium/settings/SettingsPreferenceFragment;",
     returnType = "V",
     parameters = listOf("Landroid/os/Bundle;", "Ljava/lang/String;"),
     filters = listOf(
-        methodCall(smali = "Landroidx/preference/PreferenceFragmentCompat;->A2(I)V"),
+        methodCall(
+            definingClass = "Landroidx/preference/PreferenceFragmentCompat;",
+            parameters = listOf("I"),
+            returnType = "V",
+            opcodes = listOf(Opcode.INVOKE_VIRTUAL),
+        ),
     ),
 )
 
@@ -47,10 +59,12 @@ val hideSnaptubeSettingsPatch = bytecodePatch(
             val anchor = it.instructionMatches[0].index
             val register = it.method.getFreeRegisterProvider(anchor + 1, 1).getFreeRegister()
 
+            val screenGetterName = PreferenceScreenGetterFingerprint.method.name
+
             it.method.addInstructions(
                 anchor + 1,
                 """
-                invoke-virtual {p0}, Landroidx/preference/PreferenceFragmentCompat;->E2()Landroidx/preference/PreferenceScreen;
+                invoke-virtual {p0}, Landroidx/preference/PreferenceFragmentCompat;->$screenGetterName()Landroidx/preference/PreferenceScreen;
 
                 move-result-object v$register
 
