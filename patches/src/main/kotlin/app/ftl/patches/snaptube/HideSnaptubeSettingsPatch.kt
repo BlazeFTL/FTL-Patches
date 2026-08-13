@@ -13,6 +13,9 @@ private const val EXTENSION_HIDE_CATEGORIES =
 private const val EXTENSION_HIDE_PREFERENCES =
     "Lapp/ftl/extension/snaptube/SnaptubeSettingsHider;->hidePreferences(Landroidx/preference/PreferenceFragmentCompat;)V"
 
+/** Matches the no-argument PreferenceScreen getter without hard-coding its obfuscated name.
+ *  For the supplied builds this resolves to E2 on the old build and F2 on the new build.
+ */
 internal object PreferenceScreenGetterFingerprint : Fingerprint(
     definingClass = "Landroidx/preference/PreferenceFragmentCompat;",
     returnType = "Landroidx/preference/PreferenceScreen;",
@@ -58,7 +61,6 @@ val hideSnaptubeSettingsPatch = bytecodePatch(
         SettingsOnCreatePreferencesFingerprint.let {
             val anchor = it.instructionMatches[0].index
             val register = it.method.getFreeRegisterProvider(anchor + 1, 1).getFreeRegister()
-
             val screenGetterName = PreferenceScreenGetterFingerprint.method.name
 
             it.method.addInstructions(
@@ -77,8 +79,10 @@ val hideSnaptubeSettingsPatch = bytecodePatch(
             val superCallIndex = it.instructionMatches[0].index
             val e3CallIndex = it.instructionMatches[1].index
 
-            it.method.addInstructions(e3CallIndex + 1, "invoke-static {p0}, $EXTENSION_HIDE_PREFERENCES")
+            // Run after super and again after the normal setup so both early and late
+            // preference inflation paths are covered without touching p0/register types.
             it.method.addInstructions(superCallIndex + 1, "invoke-static {p0}, $EXTENSION_HIDE_PREFERENCES")
+            it.method.addInstructions(e3CallIndex + 1, "invoke-static {p0}, $EXTENSION_HIDE_PREFERENCES")
         }
     }
 }
