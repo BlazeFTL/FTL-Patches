@@ -1,3 +1,9 @@
+## [1.26.0-dev.15](https://github.com/BlazeFTL/FTL-Patches/compare/v1.26.0-dev.14...v1.26.0-dev.15) (2026-08-13)
+
+### ✨ New Features
+
+* fix Snaptube ad reward for new version ([254f477](https://github.com/BlazeFTL/FTL-Patches/commit/254f4772e28b597de293fb1740708a75e20a39ae))
+
 ## [1.26.0-dev.14](https://github.com/BlazeFTL/FTL-Patches/compare/v1.26.0-dev.13...v1.26.0-dev.14) (2026-08-13)
 
 ### ✨ New Features
