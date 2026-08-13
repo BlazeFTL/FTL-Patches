@@ -1,3 +1,9 @@
+## [1.26.0-dev.14](https://github.com/BlazeFTL/FTL-Patches/compare/v1.26.0-dev.13...v1.26.0-dev.14) (2026-08-13)
+
+### ✨ New Features
+
+* dpi ([7c03525](https://github.com/BlazeFTL/FTL-Patches/commit/7c035255ce09769d44e815d2b1a35c2391c7be3d))
+
 ## [1.26.0-dev.13](https://github.com/BlazeFTL/FTL-Patches/compare/v1.26.0-dev.12...v1.26.0-dev.13) (2026-08-13)
 
 ### ✨ New Features
