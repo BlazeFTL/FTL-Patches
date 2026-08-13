@@ -1,3 +1,15 @@
+## [1.28.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.27.0...v1.28.0) (2026-08-13)
+
+### ✨ New Features
+
+* back to f es ([3f4ac2b](https://github.com/BlazeFTL/FTL-Patches/commit/3f4ac2b24b0bed75ea6a4023b09574ab59ef7c84))
+* f es ([7abc8d6](https://github.com/BlazeFTL/FTL-Patches/commit/7abc8d657e51a2494ef87af098afe3a66985f67c))
+* f es ([b11b8c3](https://github.com/BlazeFTL/FTL-Patches/commit/b11b8c30bb81da5e4fc9f15d605f4166d547171d))
+* f es ([62452d2](https://github.com/BlazeFTL/FTL-Patches/commit/62452d2436f65b5a7db049ce67db665cd534750e))
+* snap hide settings ([5b10c50](https://github.com/BlazeFTL/FTL-Patches/commit/5b10c503b52bc8d3f6c41e88b3d4f67f77268daf))
+* snaptube settings f ([e86c731](https://github.com/BlazeFTL/FTL-Patches/commit/e86c731158e19d2eb3c5252395d84a045c0183ed))
+* up ([319bb02](https://github.com/BlazeFTL/FTL-Patches/commit/319bb020e59e8454818753253cbe8256d2d4e662))
+
 ## [1.28.0-dev.7](https://github.com/BlazeFTL/FTL-Patches/compare/v1.28.0-dev.6...v1.28.0-dev.7) (2026-08-13)
 
 ### ✨ New Features
