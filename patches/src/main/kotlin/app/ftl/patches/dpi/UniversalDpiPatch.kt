@@ -3,7 +3,7 @@ package app.ftl.patches.dpi
 import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
-import app.morphe.patcher.patch.longOption
+import app.morphe.patcher.patch.stringOption
 import app.morphe.patcher.util.proxy.mutableTypes.MutableClass
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.ftl.util.getFreeRegisterProvider
@@ -33,18 +33,18 @@ val universalDpiPatch = bytecodePatch(
 
     extendWith("extensions/dpi.mpe")
 
-    val dpiOption = longOption(
+    val dpiOption by stringOption(
         key = "dpi",
-        default = 100L,
+        default = "100",
         title = "Display scale",
         description = "Scales this app's display relative to the device's own setting. " +
             "100% = no change, 150% = 1.5x larger, 50% = half size. Range 25-300%.",
-        required = false,
-        validator = { it == null || it in 25L..300L },
+        required = true,
+        validator = { it?.toIntOrNull()?.let { v -> v in 25..300 } ?: false },
     )
 
     execute {
-        val dpi = (dpiOption.value ?: 100L).toInt()
+        val dpi = dpiOption?.toIntOrNull() ?: 100
 
         val applicationClass = AppEntryPoint.applicationClassName
             ?.toClassType()
@@ -54,16 +54,21 @@ val universalDpiPatch = bytecodePatch(
             return@execute
         }
 
-        // No usable Application.onCreate() found (either no custom Application subclass
-        // is declared, or it doesn't override onCreate() anywhere in its hierarchy that's
-        // part of this APK). Fall back to the launcher activity, the earliest point that's
-        // guaranteed to run and is reliably findable from the manifest.
-        val launcherClass = AppEntryPoint.launcherActivityClassName
-            ?.toClassType()
-            ?.let { mutableClassDefByOrNull(it) }
-            ?: return@execute
+        // No usable Application.onCreate() found. Fall back to injecting into one
+        // activity per distinct process declared in the manifest (falling back further
+        // to just the launcher activity if manifest parsing found nothing), so apps that
+        // isolate any component (e.g. a splash/ad screen) into its own process still get
+        // DensityPatch initialized in every process it runs in, not just whichever one
+        // happens to host the launcher activity.
+        val entryActivities = AppEntryPoint.processEntryActivities.values.toMutableSet()
+        AppEntryPoint.launcherActivityClassName?.let { entryActivities.add(it) }
 
-        injectActivityInit(launcherClass, dpi)
+        if (entryActivities.isEmpty()) return@execute
+
+        entryActivities.forEach { className ->
+            val activityClass = className.toClassType().let { mutableClassDefByOrNull(it) } ?: return@forEach
+            injectActivityInit(activityClass, dpi)
+        }
     }
 }
 

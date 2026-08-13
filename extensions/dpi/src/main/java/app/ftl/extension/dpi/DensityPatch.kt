@@ -27,11 +27,15 @@ object DensityPatch {
     @Volatile
     private var initialized = false
 
+    private val activeActivities =
+        java.util.Collections.newSetFromMap(java.util.WeakHashMap<Activity, Boolean>())
+
     @JvmStatic
     fun setPercent(value: Int) { percent = value }
 
     @JvmStatic
     fun init(application: Application) {
+        Log.i(TAG, "init(application) called, alreadyInitialized=$initialized")
         if (initialized) return
         try {
             register(application, percent)
@@ -49,9 +53,11 @@ object DensityPatch {
      */
     @JvmStatic
     fun init(activity: Activity) {
+        Log.i(TAG, "init(activity) path used, activity=${activity.javaClass.name}")
         init(activity.application)
         try {
             forceDensity(activity)
+            activeActivities.add(activity)
         } catch (t: Throwable) {
             Log.e(TAG, "init(activity) failed", t)
         }
@@ -73,24 +79,51 @@ object DensityPatch {
 
         application.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityPreCreated(activity: Activity, savedInstanceState: Bundle?) {
+                Log.i(TAG, "preCreated ${activity.javaClass.name} before=${activity.resources.displayMetrics.densityDpi}")
                 forceDensity(activity)
+                Log.i(TAG, "preCreated ${activity.javaClass.name} after=${activity.resources.displayMetrics.densityDpi}")
             }
 
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
                 forceDensity(activity)
+                activeActivities.add(activity)
+                Log.i(TAG, "created ${activity.javaClass.name} dpi=${activity.resources.displayMetrics.densityDpi}")
             }
 
             override fun onActivityStarted(activity: Activity) {}
-            override fun onActivityResumed(activity: Activity) {}
+
+            // Added in API 29. Fire before the activity's own onStart()/onResume() run,
+            // to beat whatever re-reads real display metrics inside them (observed:
+            // FileExplorerActivity resets to the true device dpi on every resume, not
+            // just once, so this has to run ahead of it every time, not just react after).
+            override fun onActivityPreStarted(activity: Activity) {
+                forceDensity(activity)
+            }
+
+            override fun onActivityPreResumed(activity: Activity) {
+                forceDensity(activity)
+            }
+
+            override fun onActivityResumed(activity: Activity) {
+                Log.i(
+                    TAG,
+                    "resumed ${activity.javaClass.name} raw=" +
+                        "${activity.resources.displayMetrics.densityDpi} target=$targetDpi",
+                )
+                forceDensity(activity)
+            }
             override fun onActivityPaused(activity: Activity) {}
             override fun onActivityStopped(activity: Activity) {}
             override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
-            override fun onActivityDestroyed(activity: Activity) {}
+            override fun onActivityDestroyed(activity: Activity) {
+                activeActivities.remove(activity)
+            }
         })
 
         application.registerComponentCallbacks(object : ComponentCallbacks2 {
             override fun onConfigurationChanged(newConfig: Configuration) {
                 applyTo(application.resources)
+                activeActivities.toList().forEach { forceDensity(it) }
             }
 
             override fun onLowMemory() {}

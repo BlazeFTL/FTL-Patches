@@ -15,7 +15,11 @@ internal object ChooseFormatAdRewardH0Fingerprint : Fingerprint(
     definingClass = "Lcom/snaptube/plugin/extension/nonlifecycle/ad/ChooseFormatAdRewardViewModel;",
     returnType = "Z",
     filters = listOf(
-        methodCall(smali = "Lo/re4;->b0()Lcom/snaptube/player_guide/IPlayerGuide;"),
+        methodCall(
+            parameters = emptyList(),
+            returnType = "Lcom/snaptube/player_guide/IPlayerGuide;",
+            opcodes = listOf(Opcode.INVOKE_STATIC),
+        ),
     ),
 )
 

@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.25.0](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.25.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;20 patches total
+> **[v1.26.0-dev.15](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.26.0-dev.15)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;21 patches total
 <details open>
 <summary>📦 SnapTube&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
 <br>
@@ -24,6 +24,21 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Disable Notification Defaults](#disable-notification-defaults) | Turns off the Toolbar, Recommended contents, and Tool notifications channels by default. |  |
 | [Hide Settings Items](#hide-settings-items) | Hides the Download tools and Phone clean categories, and their sub-items, from Settings. |  |
 | [Remove Watch Ad To Download](#remove-watch-ad-to-download) | Removes the requirement to watch a rewarded ad before a download starts. |  |
+
+</details>
+
+<details open>
+<summary>📦 ES File Explorer&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<br>
+
+**🎯 Supported versions:**
+
+| 4.4.3.7 |
+| :---: |
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [ES File Explorer Cleanup](#es-file-explorer-cleanup) | Removes ES File Explorer home tiles/media, menu actions, navigation header, media handler, and web-search entry. |  |
 
 </details>
 
