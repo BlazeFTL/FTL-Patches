@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-08-13T08:04:47",
-  "description": "## [1.28.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.27.0...v1.28.0-dev.1) (2026-08-13)\n\n### ✨ New Features\n\n* snaptube settings f ([e86c731](https://github.com/BlazeFTL/FTL-Patches/commit/e86c731158e19d2eb3c5252395d84a045c0183ed))",
-  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.28.0-dev.1/patches-1.28.0-dev.1.mpp",
+  "created_at": "2026-08-13T09:45:18",
+  "description": "## [1.28.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/compare/v1.28.0-dev.1...v1.28.0-dev.2) (2026-08-13)\n\n### ✨ New Features\n\n* snap hide settings ([5b10c50](https://github.com/BlazeFTL/FTL-Patches/commit/5b10c503b52bc8d3f6c41e88b3d4f67f77268daf))",
+  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.28.0-dev.2/patches-1.28.0-dev.2.mpp",
   "signature_download_url": "",
-  "version": "1.28.0-dev.1"
+  "version": "1.28.0-dev.2"
 }

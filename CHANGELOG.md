@@ -1,3 +1,9 @@
+## [1.28.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/compare/v1.28.0-dev.1...v1.28.0-dev.2) (2026-08-13)
+
+### ✨ New Features
+
+* snap hide settings ([5b10c50](https://github.com/BlazeFTL/FTL-Patches/commit/5b10c503b52bc8d3f6c41e88b3d4f67f77268daf))
+
 ## [1.28.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.27.0...v1.28.0-dev.1) (2026-08-13)
 
 ### ✨ New Features
