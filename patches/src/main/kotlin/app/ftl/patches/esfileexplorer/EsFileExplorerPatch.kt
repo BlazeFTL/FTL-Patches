@@ -281,21 +281,30 @@ val esFileExplorerPatch = bytecodePatch(
             }
         }
 
-        // Modded target skips the map lookup entirely for the "web_search" key by jumping to the
-        // existing loop-continue label. Referencing that label by its disassembled name is unsafe
-        // to inject directly, so instead null the key: map.get(null) returns null, which the method's
-        // own existing `if-eqz v6, :cond_1f` check (right after the cast) already routes to skip/continue.
+        // Reference mod skips the map lookup entirely for the "web_search" key. Calling Map.get with
+        // a null key isn't guaranteed safe for every Map implementation, so branch around the lookup
+        // instead of nulling the key and letting it run. Only self-contained labels are used here.
         WebSearchFingerprint.methodOrNull?.let { method ->
             WebSearchFingerprint.instructionMatches.firstOrNull()?.let { match ->
+                val removeStart = match.index + 1
+                for (index in removeStart + 3 downTo removeStart) {
+                    method.removeInstruction(index)
+                }
                 method.addInstructions(
-                    match.index + 1,
+                    removeStart,
                 """
                 const-string v6, "web_search"
                 invoke-virtual {v6, v5}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
                 move-result v6
-                if-eqz v6, :ftl_web_search_keep_key
-                const/4 v5, 0x0
-                :ftl_web_search_keep_key
+                if-nez v6, :ftl_web_search_null
+                iget-object v6, p0, Les/x2;->a:Ljava/util/Map;
+                invoke-interface {v6, v5}, Ljava/util/Map;->get(Ljava/lang/Object;)Ljava/lang/Object;
+                move-result-object v6
+                check-cast v6, Les/fe1;
+                goto :ftl_web_search_done
+                :ftl_web_search_null
+                const/4 v6, 0x0
+                :ftl_web_search_done
                 """.trimIndent(),
                 )
             }
