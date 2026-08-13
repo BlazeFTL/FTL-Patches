@@ -10,11 +10,14 @@ import app.morphe.patcher.patch.bytecodePatch
 import com.android.tools.smali.dexlib2.Opcode
 
 internal object ToolbarNotificationDefaultFingerprint : Fingerprint(
-    definingClass = "Lo/vj7;",
     returnType = "Z",
     parameters = listOf("Landroid/content/Context;"),
     filters = listOf(
-        methodCall(smali = "Lo/nqa;->R(Landroid/content/Context;)I"),
+        methodCall(
+            parameters = listOf("Landroid/content/Context;"),
+            returnType = "I",
+            opcodes = listOf(Opcode.INVOKE_STATIC),
+        ),
         opcode(Opcode.MOVE_RESULT, location = MatchAfterImmediately()),
         opcode(Opcode.IF_EQ, location = MatchAfterImmediately()),
         opcode(Opcode.CONST_4, location = MatchAfterImmediately()),
@@ -24,13 +27,19 @@ internal object ToolbarNotificationDefaultFingerprint : Fingerprint(
 )
 
 internal object DefaultNotificationChannelFingerprint : Fingerprint(
-    definingClass = "Lo/vj7;",
-    name = "s",
     returnType = "Z",
     parameters = listOf("Ljava/lang/String;"),
     filters = listOf(
-        opcode(Opcode.CONST_4),
-        methodCall(smali = "Lo/vj7;->r(Landroid/content/Context;Ljava/lang/String;Z)Z"),
+        methodCall(smali = "Lcom/wandoujia/base/config/GlobalConfig;->getAppContext()Landroid/content/Context;"),
+        opcode(Opcode.MOVE_RESULT_OBJECT, location = MatchAfterImmediately()),
+        opcode(Opcode.CONST_4, location = MatchAfterImmediately()),
+        methodCall(
+            definingClass = "this",
+            parameters = listOf("Landroid/content/Context;", "Ljava/lang/String;", "Z"),
+            returnType = "Z",
+            opcodes = listOf(Opcode.INVOKE_STATIC),
+            location = MatchAfterImmediately(),
+        ),
     ),
 )
 
@@ -54,7 +63,7 @@ val disableSnaptubeNotificationDefaultsPatch = bytecodePatch(
         }
 
         DefaultNotificationChannelFingerprint.let {
-            val defaultTrueIndex = it.instructionMatches[0].index
+            val defaultTrueIndex = it.instructionMatches[2].index
 
             it.method.replaceInstruction(
                 defaultTrueIndex,
