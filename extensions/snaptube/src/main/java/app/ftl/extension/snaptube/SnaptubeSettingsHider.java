@@ -38,13 +38,27 @@ public final class SnaptubeSettingsHider {
     public static void hideCategories(PreferenceGroup screen) {
         if (screen == null) return;
         try {
-            Method getCount = PreferenceGroup.class.getMethod("J0");
-            Method getPref = PreferenceGroup.class.getMethod("I0", int.class);
-            Method removePref = PreferenceGroup.class.getMethod("M0", Preference.class);
-            Method getTitle = Preference.class.getMethod("C");
+            Method getCount = findMethod(
+                PreferenceGroup.class,
+                new String[]{"J0", "getPreferenceCount"}
+            );
+            Method getPref = findMethod(
+                PreferenceGroup.class,
+                new String[]{"I0", "getPreference"},
+                int.class
+            );
+            Method removePref = findMethod(
+                PreferenceGroup.class,
+                new String[]{"M0", "removePreference"},
+                Preference.class
+            );
+            Method getTitle = findMethod(
+                Preference.class,
+                new String[]{"C", "getTitle"}
+            );
 
             int i = 0;
-            while (i < (Integer) getCount.invoke(screen)) {
+            while (i < ((Number) getCount.invoke(screen)).intValue()) {
                 Preference pref = (Preference) getPref.invoke(screen, i);
                 Object title = getTitle.invoke(pref);
                 String titleText = title != null ? title.toString() : null;
@@ -56,26 +70,49 @@ public final class SnaptubeSettingsHider {
                 }
             }
         } catch (Throwable t) {
-            Log.e(TAG, "hideCategories failed, target methods may have been renamed", t);
+            Log.e(TAG, "hideCategories failed; target methods may have changed", t);
         }
     }
 
     public static boolean defaultChannelEnabled(String channelId) {
-        return !"Channel_Id_Push".equals(channelId) && !"Channel_Id_Cleaner".equals(channelId);
+        return !"Channel_Id_Push".equals(channelId)
+            && !"Channel_Id_Cleaner".equals(channelId);
     }
 
     public static void hidePreferences(PreferenceFragmentCompat fragment) {
+        if (fragment == null) return;
         try {
-            Method findPref = PreferenceFragmentCompat.class.getMethod("w1", CharSequence.class);
-            Method setVisible = Preference.class.getMethod("x0", boolean.class);
+            // Newer SnapTube builds use x1; older builds used w1.
+            Method findPref = findMethod(
+                PreferenceFragmentCompat.class,
+                new String[]{"x1", "w1", "findPreference"},
+                CharSequence.class
+            );
+            Method setVisible = findMethod(
+                Preference.class,
+                new String[]{"x0", "setVisible"},
+                boolean.class
+            );
 
             for (String key : HIDDEN_PREFERENCE_KEYS) {
                 Object pref = findPref.invoke(fragment, key);
                 if (pref != null) setVisible.invoke(pref, false);
             }
         } catch (Throwable t) {
-            Log.e(TAG, "hidePreferences failed, target methods may have been renamed", t);
+            Log.e(TAG, "hidePreferences failed; target methods may have changed", t);
         }
+    }
+
+    private static Method findMethod(Class<?> owner, String[] names, Class<?>... parameterTypes)
+        throws NoSuchMethodException {
+        for (String name : names) {
+            try {
+                return owner.getMethod(name, parameterTypes);
+            } catch (NoSuchMethodException ignored) {
+                // Try the next mapping used by another SnapTube/AndroidX build.
+            }
+        }
+        throw new NoSuchMethodException(owner.getName());
     }
 
     private static boolean startsWithAny(String value, String[] prefixes) {

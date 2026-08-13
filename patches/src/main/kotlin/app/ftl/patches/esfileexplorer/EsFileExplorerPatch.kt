@@ -6,13 +6,10 @@ import app.morphe.patcher.methodCall
 import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.removeInstruction
-import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.bytecodePatch
 import com.android.tools.smali.dexlib2.Opcode
-import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
-import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 
 private val COMPATIBILITY_ES_FILE_EXPLORER = Compatibility(
     packageName = "com.estrongs.android.pop",
@@ -22,13 +19,13 @@ private val COMPATIBILITY_ES_FILE_EXPLORER = Compatibility(
     ),
 )
 
-private object HomeItemCountFingerprint : Fingerprint(
+private object HomeAdapterPresenceBranchFingerprint : Fingerprint(
     definingClass = "Lcom/estrongs/android/ui/homepage/HomeAdapter;",
     name = "getItemCount",
     returnType = "I",
     filters = listOf(
         opcode(Opcode.IGET_OBJECT),
-        methodCall(smali = "Les/fx4;->Y2()Z"),
+        opcode(Opcode.IF_EQZ, location = MatchAfterImmediately()),
     ),
 )
 
@@ -92,6 +89,16 @@ private object MediaHandlerFingerprint : Fingerprint(
         opcode(Opcode.SGET_BOOLEAN),
         opcode(Opcode.IF_NEZ, location = MatchAfterImmediately()),
         opcode(Opcode.NEW_INSTANCE, location = MatchAfterImmediately()),
+    ),
+)
+
+private object MediaHandlerEndFingerprint : Fingerprint(
+    definingClass = "Les/f33;",
+    name = "d",
+    returnType = "V",
+    parameters = listOf("Z"),
+    filters = listOf(
+        methodCall(smali = "Les/x53;-><init>()V"),
     ),
 )
 
@@ -177,18 +184,19 @@ private val MENU_FILTER = """
 
 val esFileExplorerPatch = bytecodePatch(
     name = "ES File Explorer Cleanup",
-    description = "Removes ES File Explorer home tiles/media, menu actions, navigation header, media handler, and web-search entry.",
+    description = "Removes selected ES File Explorer home tiles, menu actions, navigation header, media handler, and web-search entry.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_ES_FILE_EXPLORER)
 
     execute {
-        // Stock: if (e == null) return list.size(); else check fx4.Y2() to decide full vs list-only count.
-        // Modded target always takes the list-only path when e != null (Y2() branch effectively dead).
-        // Force v0 (e) null right after it's read so the existing `if-eqz v0, :cond_1` always fires.
-        HomeItemCountFingerprint.methodOrNull?.let { method ->
-            HomeItemCountFingerprint.instructionMatches.firstOrNull()?.let { match ->
-                method.addInstructions(match.index + 1, "const/4 v0, 0x0")
+        HomeAdapterPresenceBranchFingerprint.methodOrNull?.let { method ->
+            HomeAdapterPresenceBranchFingerprint.instructionMatches.getOrNull(1)?.let { match ->
+                // Invert only the first adapter-presence branch, matching the hand-modified APK.
+                method.addInstructions(
+                    match.index,
+                    "instance-of v0, v0, Ljava/lang/Object;\nxor-int/lit8 v0, v0, 0x1",
+                )
             }
         }
 
@@ -260,16 +268,14 @@ val esFileExplorerPatch = bytecodePatch(
 
         MediaHandlerFingerprint.methodOrNull?.let { method ->
             MediaHandlerFingerprint.instructionMatches.firstOrNull()?.let { match ->
+                // Remove the conditional media-handler block through the stable x53 block.
+                // This reproduces the reference mod without injecting a goto to an enclosing label.
                 val startIndex = match.index + 1
-                val x53Index = (startIndex until method.implementation!!.instructions.size).firstOrNull { index ->
-                    val instruction = method.getInstruction(index)
-                    instruction.opcode == Opcode.NEW_INSTANCE &&
-                        (instruction as? ReferenceInstruction)?.reference.let { reference ->
-                            (reference as? TypeReference)?.type == "Les/x53;"
-                        }
-                } ?: error("ES File Explorer media-handler end anchor not found")
+                val x53InvokeIndex = MediaHandlerEndFingerprint.instructionMatches.firstOrNull()?.index
+                    ?: error("ES File Explorer media-handler end anchor not found")
+                val x53StartIndex = x53InvokeIndex - 1
 
-                for (index in x53Index - 1 downTo startIndex) {
+                for (index in x53StartIndex - 1 downTo startIndex) {
                     method.removeInstruction(index)
                 }
             }
@@ -277,34 +283,22 @@ val esFileExplorerPatch = bytecodePatch(
 
         NavigationHeaderFingerprint.methodOrNull?.let { method ->
             NavigationHeaderFingerprint.instructionMatches.firstOrNull()?.let { match ->
+                // Force the existing `if-nez v0, :cond_2` branch to skip the header setup.
+                // This preserves the method's own label table and avoids unresolved labels.
                 method.addInstructions(match.index + 1, "const/4 v0, 0x1")
             }
         }
 
-        // Reference mod skips the map lookup entirely for the "web_search" key. Calling Map.get with
-        // a null key isn't guaranteed safe for every Map implementation, so branch around the lookup
-        // instead of nulling the key and letting it run. Only self-contained labels are used here.
         WebSearchFingerprint.methodOrNull?.let { method ->
             WebSearchFingerprint.instructionMatches.firstOrNull()?.let { match ->
-                val removeStart = match.index + 1
-                for (index in removeStart + 3 downTo removeStart) {
-                    method.removeInstruction(index)
-                }
                 method.addInstructions(
-                    removeStart,
+                    match.index + 1,
                 """
                 const-string v6, "web_search"
-                invoke-virtual {v6, v5}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-                move-result v6
-                if-nez v6, :ftl_web_search_null
-                iget-object v6, p0, Les/x2;->a:Ljava/util/Map;
-                invoke-interface {v6, v5}, Ljava/util/Map;->get(Ljava/lang/Object;)Ljava/lang/Object;
-                move-result-object v6
-                check-cast v6, Les/fe1;
-                goto :ftl_web_search_done
-                :ftl_web_search_null
-                const/4 v6, 0x0
-                :ftl_web_search_done
+                const-string v3, ""
+                invoke-virtual {v5, v6, v3}, Ljava/lang/String;->replace(Ljava/lang/CharSequence;Ljava/lang/CharSequence;)Ljava/lang/String;
+                move-result-object v5
+                const/4 v3, 0x0
                 """.trimIndent(),
                 )
             }

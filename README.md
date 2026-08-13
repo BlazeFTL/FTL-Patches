@@ -1,6 +1,6 @@
 # 👋🧩 FTL Patches
 
-Personal collection of my Morphe Patches.
+Personal collection of my Morphe Patches
 
 ## ❓ About
 
@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.27.0](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.27.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;21 patches total
+> **[v1.28.0-dev.7](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.28.0-dev.7)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;21 patches total
 <details open>
 <summary>📦 SnapTube&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
 <br>
@@ -38,7 +38,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
-| [ES File Explorer Cleanup](#es-file-explorer-cleanup) | Removes ES File Explorer home tiles/media, menu actions, navigation header, media handler, and web-search entry. |  |
+| [ES File Explorer Cleanup](#es-file-explorer-cleanup) | Removes selected ES File Explorer home tiles, menu actions, navigation header, media handler, and web-search entry. |  |
 
 </details>
 
