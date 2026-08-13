@@ -30,6 +30,9 @@ object DensityPatch {
     private val activeActivities =
         java.util.Collections.newSetFromMap(java.util.WeakHashMap<Activity, Boolean>())
 
+    private val recreateAttempted =
+        java.util.Collections.newSetFromMap(java.util.WeakHashMap<Activity, Boolean>())
+
     @JvmStatic
     fun setPercent(value: Int) { percent = value }
 
@@ -92,7 +95,15 @@ object DensityPatch {
 
             override fun onActivityStarted(activity: Activity) {}
             override fun onActivityResumed(activity: Activity) {
-                Log.i(TAG, "resumed ${activity.javaClass.name} dpi=${activity.resources.displayMetrics.densityDpi}")
+                val current = activity.resources.displayMetrics.densityDpi
+                Log.i(TAG, "resumed ${activity.javaClass.name} dpi=$current target=$targetDpi")
+
+                if (current == targetDpi) return
+                if (!recreateAttempted.add(activity)) return
+
+                Log.i(TAG, "density reset detected on ${activity.javaClass.name}, recreating once")
+                forceDensity(activity)
+                activity.recreate()
             }
             override fun onActivityPaused(activity: Activity) {}
             override fun onActivityStopped(activity: Activity) {}
