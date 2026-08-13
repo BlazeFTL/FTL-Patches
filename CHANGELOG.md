@@ -1,3 +1,9 @@
+## [1.27.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.26.0...v1.27.0) (2026-08-13)
+
+### ✨ New Features
+
+* snaptube disable notification ([4d0aa98](https://github.com/BlazeFTL/FTL-Patches/commit/4d0aa98d734a85dc8a57d74b6206effe9886f05c))
+
 ## [1.27.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.26.0...v1.27.0-dev.1) (2026-08-13)
 
 ### ✨ New Features
