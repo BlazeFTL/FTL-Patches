@@ -7,7 +7,7 @@ val hideLocalTilesPatch = resourcePatch(
     description = "Collapses the local device tiles banner.",
     default = false,
 ) {
-    compatibleWith(COMPATIBILITY_MX_PLAYER_PRO, COMPATIBILITY_MX_PLAYER_FREE)
+    compatibleWith(COMPATIBILITY_MX_PLAYER_PRO)
 
     execute {
         document("res/layout/layout_local_tiles.xml").use { document ->
@@ -19,5 +19,4 @@ val hideLocalTilesPatch = resourcePatch(
             )
         }
     }
-    
 }
