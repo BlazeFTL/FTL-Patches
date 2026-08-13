@@ -13,7 +13,7 @@ val hideMeTabPromoItemsPatch = resourcePatch(
     description = "Collapses the WhatsApp, Legal, and Help entries on the Me tab.",
     default = false,
 ) {
-    compatibleWith(COMPATIBILITY_MX_PLAYER_PRO, COMPATIBILITY_MX_PLAYER_FREE)
+    compatibleWith(COMPATIBILITY_MX_PLAYER_PRO)
 
     execute {
         FRAGMENT_ME_LAYOUTS.forEach { path ->
@@ -29,6 +29,5 @@ val hideMeTabPromoItemsPatch = resourcePatch(
                 }
             }
         }
-  
     }
 }

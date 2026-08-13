@@ -11,7 +11,7 @@ val skipWelcomeScreenPatch = resourcePatch(
     description = "Moves the launcher intent filters and app shortcuts from the welcome/splash activity to the main activity, so the app boots straight past the splash and update screen.",
     default = false,
 ) {
-    compatibleWith(COMPATIBILITY_MX_PLAYER_PRO, COMPATIBILITY_MX_PLAYER_FREE)
+    compatibleWith(COMPATIBILITY_MX_PLAYER_PRO)
 
     execute {
         document("AndroidManifest.xml").use { document ->

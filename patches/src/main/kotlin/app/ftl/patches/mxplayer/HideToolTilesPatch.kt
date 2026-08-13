@@ -23,7 +23,7 @@ val hideToolTilesPatch = bytecodePatch(
     description = "Removes the File Transfer, Video Playlist, and Private Folder tiles from the tools tile list.",
     default = false,
 ) {
-    compatibleWith(COMPATIBILITY_MX_PLAYER_PRO, COMPATIBILITY_MX_PLAYER_FREE)
+    compatibleWith(COMPATIBILITY_MX_PLAYER_PRO)
 
     execute {
         ToolTilesArrayFingerprint.let {
