@@ -193,7 +193,10 @@ val esFileExplorerPatch = bytecodePatch(
         HomeAdapterPresenceBranchFingerprint.methodOrNull?.let { method ->
             HomeAdapterPresenceBranchFingerprint.instructionMatches.getOrNull(1)?.let { match ->
                 // Invert only the first adapter-presence branch, matching the hand-modified APK.
-                method.addInstructions(match.index, "xor-int/lit8 v0, v0, 0x1")
+                method.addInstructions(
+                    match.index,
+                    "instance-of v0, v0, Ljava/lang/Object;\nxor-int/lit8 v0, v0, 0x1",
+                )
             }
         }
 
