@@ -292,11 +292,9 @@ val esFileExplorerPatch = bytecodePatch(
                     match.index + 1,
                 """
                 const-string v6, "web_search"
-                invoke-virtual {v6, v5}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-                move-result v6
-                if-eqz v6, :ftl_web_search_keep_key
-                const/4 v5, 0x0
-                :ftl_web_search_keep_key
+                const-string v7, ""
+                invoke-virtual {v5, v6, v7}, Ljava/lang/String;->replace(Ljava/lang/CharSequence;Ljava/lang/CharSequence;)Ljava/lang/String;
+                move-result-object v5
                 """.trimIndent(),
                 )
             }
