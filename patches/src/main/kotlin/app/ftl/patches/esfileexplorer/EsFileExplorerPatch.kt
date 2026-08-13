@@ -127,7 +127,26 @@ private val MENU_FILTER = """
     invoke-interface {v2}, Ljava/util/Iterator;->next()Ljava/lang/Object;
     move-result-object v3
     check-cast v3, Les/fe1;
-    invoke-virtual {v3}, Les/fe1;->getTitle()Ljava/lang/CharSequence;
+    move-object v0, v3
+    invoke-virtual {v0}, Les/fe1;->m()I
+    move-result v4
+    const v3, 0x7f1302c4
+    if-eq v4, v3, :ftl_menu_remove
+    const v3, 0x7f1302c7
+    if-eq v4, v3, :ftl_menu_remove
+    const v3, 0x7f1308b2
+    if-eq v4, v3, :ftl_menu_remove
+    const v3, 0x7f13005f
+    if-eq v4, v3, :ftl_menu_remove
+    const v3, 0x7f13027a
+    if-eq v4, v3, :ftl_menu_remove
+    const v3, 0x7f130040
+    if-eq v4, v3, :ftl_menu_remove
+    const v3, 0x7f1301d8
+    if-eq v4, v3, :ftl_menu_remove
+    const v3, 0x7f130dc0
+    if-eq v4, v3, :ftl_menu_remove
+    invoke-virtual {v0}, Les/fe1;->getTitle()Ljava/lang/CharSequence;
     move-result-object v3
     if-eqz v3, :ftl_menu_loop
     invoke-virtual {v3}, Ljava/lang/Object;->toString()Ljava/lang/String;
@@ -174,6 +193,26 @@ private val MENU_FILTER = """
     if-nez v4, :ftl_menu_remove
     const-string v4, "Move to"
     invoke-virtual {v3, v4}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+    move-result v4
+    if-nez v4, :ftl_menu_remove
+    const-string v4, "Chromecast"
+    invoke-virtual {v3, v4}, Ljava/lang/String;->equalsIgnoreCase(Ljava/lang/String;)Z
+    move-result v4
+    if-nez v4, :ftl_menu_remove
+    const-string v4, "Add to Playing"
+    invoke-virtual {v3, v4}, Ljava/lang/String;->equalsIgnoreCase(Ljava/lang/String;)Z
+    move-result v4
+    if-nez v4, :ftl_menu_remove
+    const-string v4, "Play"
+    invoke-virtual {v3, v4}, Ljava/lang/String;->equalsIgnoreCase(Ljava/lang/String;)Z
+    move-result v4
+    if-nez v4, :ftl_menu_remove
+    const-string v4, "Decrypt"
+    invoke-virtual {v3, v4}, Ljava/lang/String;->equalsIgnoreCase(Ljava/lang/String;)Z
+    move-result v4
+    if-nez v4, :ftl_menu_remove
+    const-string v4, "Auto Backup"
+    invoke-virtual {v3, v4}, Ljava/lang/String;->equalsIgnoreCase(Ljava/lang/String;)Z
     move-result v4
     if-eqz v4, :ftl_menu_loop
     :ftl_menu_remove
