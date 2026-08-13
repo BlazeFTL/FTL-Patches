@@ -1,3 +1,10 @@
+## [1.30.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.29.0...v1.30.0) (2026-08-13)
+
+### ✨ New Features
+
+* Keep Only Mx Player Pro ([00a3735](https://github.com/BlazeFTL/FTL-Patches/commit/00a3735435038cddf6ad0b6235c37b41c63227c0))
+* up ([f54d3b2](https://github.com/BlazeFTL/FTL-Patches/commit/f54d3b2e827aad88149d59033265cb72fb834791))
+
 ## [1.30.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.29.0...v1.30.0-dev.1) (2026-08-13)
 
 ### ✨ New Features
