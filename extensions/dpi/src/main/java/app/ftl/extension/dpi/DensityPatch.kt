@@ -91,12 +91,26 @@ object DensityPatch {
             }
 
             override fun onActivityStarted(activity: Activity) {}
+
+            // Added in API 29. Fire before the activity's own onStart()/onResume() run,
+            // to beat whatever re-reads real display metrics inside them (observed:
+            // FileExplorerActivity resets to the true device dpi on every resume, not
+            // just once, so this has to run ahead of it every time, not just react after).
+            override fun onActivityPreStarted(activity: Activity) {
+                forceDensity(activity)
+            }
+
+            override fun onActivityPreResumed(activity: Activity) {
+                forceDensity(activity)
+            }
+
             override fun onActivityResumed(activity: Activity) {
                 Log.i(
                     TAG,
-                    "resumed ${activity.javaClass.name} " +
-                        "dpi=${activity.resources.displayMetrics.densityDpi} target=$targetDpi",
+                    "resumed ${activity.javaClass.name} raw=" +
+                        "${activity.resources.displayMetrics.densityDpi} target=$targetDpi",
                 )
+                forceDensity(activity)
             }
             override fun onActivityPaused(activity: Activity) {}
             override fun onActivityStopped(activity: Activity) {}
