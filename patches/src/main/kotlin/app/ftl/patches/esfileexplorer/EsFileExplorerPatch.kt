@@ -19,25 +19,12 @@ private val COMPATIBILITY_ES_FILE_EXPLORER = Compatibility(
     ),
 )
 
-private object HomeGetItemCountAdapterFingerprint : Fingerprint(
+private object HomeAdapterPresenceBranchFingerprint : Fingerprint(
     definingClass = "Lcom/estrongs/android/ui/homepage/HomeAdapter;",
     name = "getItemCount",
     returnType = "I",
     filters = listOf(
-        methodCall(smali = "Les/fx4;->Y2()Z"),
-        opcode(Opcode.MOVE_RESULT, location = MatchAfterImmediately()),
-    ),
-)
-
-private object HomeGetItemCountBranchFingerprint : Fingerprint(
-    definingClass = "Lcom/estrongs/android/ui/homepage/HomeAdapter;",
-    name = "getItemCount",
-    returnType = "I",
-    filters = listOf(
-        methodCall(smali = "Les/fx4;->L0()Les/fx4;"),
-        opcode(Opcode.MOVE_RESULT, location = MatchAfterImmediately()),
-        methodCall(smali = "Les/fx4;->Y2()Z"),
-        opcode(Opcode.MOVE_RESULT, location = MatchAfterImmediately()),
+        opcode(Opcode.IGET_OBJECT),
         opcode(Opcode.IF_EQZ, location = MatchAfterImmediately()),
     ),
 )
@@ -203,17 +190,10 @@ val esFileExplorerPatch = bytecodePatch(
     compatibleWith(COMPATIBILITY_ES_FILE_EXPLORER)
 
     execute {
-        HomeGetItemCountBranchFingerprint.methodOrNull?.let { method ->
-            HomeGetItemCountBranchFingerprint.instructionMatches.lastOrNull()?.let { match ->
-                // Invert the first adapter-presence branch without injecting an external label.
+        HomeAdapterPresenceBranchFingerprint.methodOrNull?.let { method ->
+            HomeAdapterPresenceBranchFingerprint.instructionMatches.getOrNull(1)?.let { match ->
+                // Invert only the first adapter-presence branch, matching the hand-modified APK.
                 method.addInstructions(match.index, "xor-int/lit8 v0, v0, 0x1")
-            }
-        }
-
-        HomeGetItemCountAdapterFingerprint.methodOrNull?.let { method ->
-            HomeGetItemCountAdapterFingerprint.instructionMatches.getOrNull(1)?.let { match ->
-                // Invert the Y2() result as in the reference mod.
-                method.addInstructions(match.index + 1, "xor-int/lit8 v0, v0, 0x1")
             }
         }
 
