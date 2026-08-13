@@ -55,8 +55,8 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 </details>
 
-<details open>
-<summary>📦 MX Player&nbsp;&nbsp;•&nbsp;&nbsp;4 patches</summary>
+<details>
+<summary>📦 MX Player&nbsp;&nbsp;•&nbsp;&nbsp;4 patches(Not Supported</summary>
 <br>
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
