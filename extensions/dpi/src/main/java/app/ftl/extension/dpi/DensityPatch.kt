@@ -35,6 +35,7 @@ object DensityPatch {
 
     @JvmStatic
     fun init(application: Application) {
+        Log.i(TAG, "init(application) called, alreadyInitialized=$initialized")
         if (initialized) return
         try {
             register(application, percent)
@@ -52,6 +53,7 @@ object DensityPatch {
      */
     @JvmStatic
     fun init(activity: Activity) {
+        Log.i(TAG, "init(activity) path used, activity=${activity.javaClass.name}")
         init(activity.application)
         try {
             forceDensity(activity)
@@ -77,16 +79,21 @@ object DensityPatch {
 
         application.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityPreCreated(activity: Activity, savedInstanceState: Bundle?) {
+                Log.i(TAG, "preCreated ${activity.javaClass.name} before=${activity.resources.displayMetrics.densityDpi}")
                 forceDensity(activity)
+                Log.i(TAG, "preCreated ${activity.javaClass.name} after=${activity.resources.displayMetrics.densityDpi}")
             }
 
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
                 forceDensity(activity)
                 activeActivities.add(activity)
+                Log.i(TAG, "created ${activity.javaClass.name} dpi=${activity.resources.displayMetrics.densityDpi}")
             }
 
             override fun onActivityStarted(activity: Activity) {}
-            override fun onActivityResumed(activity: Activity) {}
+            override fun onActivityResumed(activity: Activity) {
+                Log.i(TAG, "resumed ${activity.javaClass.name} dpi=${activity.resources.displayMetrics.densityDpi}")
+            }
             override fun onActivityPaused(activity: Activity) {}
             override fun onActivityStopped(activity: Activity) {}
             override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
