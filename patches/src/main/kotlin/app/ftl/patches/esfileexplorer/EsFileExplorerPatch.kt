@@ -222,8 +222,8 @@ private val MENU_FILTER = """
 """.trimIndent()
 
 val esFileExplorerPatch = bytecodePatch(
-    name = "ES File Explorer Cleanup",
-    description = "Removes selected ES File Explorer home tiles, menu actions, navigation header, media handler, and web-search entry.",
+    name = "ES File Explorer Ui Cleanup",
+    description = "Removes BookMark, New Files, Cleaner Row In HomePage, Cleans More menu actions",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_ES_FILE_EXPLORER)
