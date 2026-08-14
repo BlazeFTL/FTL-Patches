@@ -1,3 +1,9 @@
+## [1.31.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.30.0...v1.31.0-dev.1) (2026-08-14)
+
+### ✨ New Features
+
+* Add Xender Splash Time Boost ([df92a4b](https://github.com/BlazeFTL/FTL-Patches/commit/df92a4b380753984909135831cf3f19ed862bfc6))
+
 ## [1.30.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.29.0...v1.30.0) (2026-08-13)
 
 ### ✨ New Features
