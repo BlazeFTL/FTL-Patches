@@ -8,7 +8,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 ## 🩹 Patches list
 
-<!-- PATCHES_START EXPANDED -->
+<!-- PATCHES_START -->
 > **[v1.31.0](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.31.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;18 patches total
 <details open>
 <summary>📦 SnapTube&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
