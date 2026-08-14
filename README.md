@@ -10,7 +10,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 <!-- PATCHES_START EXPANDED -->
 > **[v1.31.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.31.0-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;18 patches total
-<details open>
+<details>
 <summary>📦 SnapTube&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
 <br>
 
@@ -27,7 +27,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 </details>
 
-<details open>
+<details>
 <summary>📦 ES File Explorer&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
 
@@ -42,7 +42,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 </details>
 
-<details open>
+<details>
 <summary>📦 MX Player Pro&nbsp;&nbsp;•&nbsp;&nbsp;4 patches</summary>
 <br>
 
@@ -55,7 +55,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 </details>
 
-<details open>
+<details>
 <summary>📦 Xender&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
 
