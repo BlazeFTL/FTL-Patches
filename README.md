@@ -8,9 +8,9 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 ## 🩹 Patches list
 
-<!-- PATCHES_START EXPANDED -->
-> **[v1.31.0](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.31.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;18 patches total
-<details open>
+<!-- PATCHES_START -->
+> **[v1.32.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.32.0-dev.2)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;18 patches total
+<details>
 <summary>📦 SnapTube&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
 <br>
 
@@ -27,7 +27,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 </details>
 
-<details open>
+<details>
 <summary>📦 ES File Explorer&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
 
@@ -38,11 +38,11 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
-| [ES File Explorer Cleanup](#es-file-explorer-cleanup) | Removes selected ES File Explorer home tiles, menu actions, navigation header, media handler, and web-search entry. |  |
+| [ES File Explorer Ui Cleanup](#es-file-explorer-ui-cleanup) | Removes BookMark, New Files, Cleaner Row In HomePage, Cleans More menu actions |  |
 
 </details>
 
-<details open>
+<details>
 <summary>📦 MX Player Pro&nbsp;&nbsp;•&nbsp;&nbsp;4 patches</summary>
 <br>
 
@@ -55,7 +55,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 </details>
 
-<details open>
+<details>
 <summary>📦 Xender&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
 

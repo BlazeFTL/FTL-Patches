@@ -23,10 +23,21 @@ internal object ChooseFormatAdRewardH0Fingerprint : Fingerprint(
     ),
 )
 
+// The old version of this fingerprint pinned the call as
+// `methodCall(smali = "Lo/mg\$a;->a(Lo/mg;)Z")` - Lo/mg is a per-build obfuscated
+// class name (it became Lo/sg in a later build) so that filter broke on update.
+// Matched structurally instead: it's the only Z-returning virtual call in this
+// class that takes exactly one (obfuscated) object argument, immediately
+// followed by move-result + if-eqz. That shape is stable across builds even
+// as the obfuscated class/method names churn.
 internal object ChooseFormatAdRewardMgCheckFingerprint : Fingerprint(
     definingClass = "Lcom/snaptube/plugin/extension/nonlifecycle/ad/ChooseFormatAdRewardViewModel;",
     filters = listOf(
-        methodCall(smali = "Lo/mg\$a;->a(Lo/mg;)Z"),
+        methodCall(
+            parameters = listOf("L"),
+            returnType = "Z",
+            opcodes = listOf(Opcode.INVOKE_VIRTUAL),
+        ),
         opcode(Opcode.MOVE_RESULT, location = MatchAfterImmediately()),
         opcode(Opcode.IF_EQZ, location = MatchAfterImmediately()),
     ),
