@@ -1,3 +1,9 @@
+## [1.33.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.32.0...v1.33.0-dev.1) (2026-08-15)
+
+### ✨ New Features
+
+* update ads ([e737935](https://github.com/BlazeFTL/FTL-Patches/commit/e737935f7e4cb07c61927f273b34dd3b9ed65fed))
+
 ## [1.32.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.31.0...v1.32.0) (2026-08-15)
 
 ### ✨ New Features
