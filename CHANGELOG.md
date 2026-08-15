@@ -1,3 +1,9 @@
+## [1.32.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/compare/v1.32.0-dev.1...v1.32.0-dev.2) (2026-08-15)
+
+### ✨ New Features
+
+* make snaptube watch ad patch more robust ([0378fb2](https://github.com/BlazeFTL/FTL-Patches/commit/0378fb20f57b20e0b27280845ea2fd414fc025fd))
+
 ## [1.32.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.31.0...v1.32.0-dev.1) (2026-08-14)
 
 ### ✨ New Features
