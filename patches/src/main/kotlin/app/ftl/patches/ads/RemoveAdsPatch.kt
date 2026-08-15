@@ -85,59 +85,81 @@ val universalRemoveAdsPatch = bytecodePatch(
         classDefForEach { classDef ->
             val isAdSdkClass = AD_SDK_PACKAGE_PREFIXES.any { classDef.type.startsWith(it) }
 
-            val mutableClass = mutableClassDefBy(classDef)
-            mutableClass.methods.forEach { method ->
-                val instructions = method.instructionsOrNull?.toList() ?: return@forEach
-                if (instructions.isEmpty()) return@forEach
+            var needsInvokeStrip = false
+            var needsStringPoison = false
 
-                val stripTargets = mutableListOf<Pair<Int, Boolean>>()
-                instructions.forEachIndexed { index, instruction ->
-                    if (instruction !is ReferenceInstruction) return@forEachIndexed
-                    val ref = instruction.reference as? MethodReference ?: return@forEachIndexed
+            for (method in classDef.methods) {
+                val instructions = method.instructionsOrNull ?: continue
+                for (instruction in instructions) {
+                    if (instruction !is ReferenceInstruction) continue
 
-                    val isAddView = ref.name == "addView" && isAdOwner(ref.definingClass)
-                    val isAdCall = ref.name in AD_METHOD_NAMES && isAdOwner(ref.definingClass)
-                    if (!isAddView && !isAdCall) return@forEachIndexed
-
-                    val returnsBoolean = ref.returnType == "Z"
-                    val returnsVoid = ref.returnType == "V"
-                    if (!returnsBoolean && !returnsVoid) return@forEachIndexed
-
-                    stripTargets.add(index to returnsBoolean)
-                }
-
-                stripTargets.asReversed().forEach { (index, returnsBoolean) ->
-                    if (returnsBoolean) {
-                        val moveResult = instructions.getOrNull(index + 1)
-                        if (moveResult?.opcode == Opcode.MOVE_RESULT) {
-                            val register = (moveResult as OneRegisterInstruction).registerA
-                            method.replaceInstruction(index + 1, "const/4 v$register, 0x0")
+                    if (!isAdSdkClass && !needsStringPoison && instruction.opcode == Opcode.CONST_STRING) {
+                        val value = (instruction.reference as StringReference).string
+                        if (AD_URL_BLACKLIST.any { value.contains(it, ignoreCase = true) }) {
+                            needsStringPoison = true
                         }
                     }
-                    method.removeInstruction(index)
-                }
-            }
 
-            if (isAdSdkClass) return@classDefForEach
-
-            val hasMatch = classDef.methods.any { method ->
-                (method.instructionsOrNull ?: emptyList()).any { instruction ->
-                    instruction.opcode == Opcode.CONST_STRING &&
-                        AD_URL_BLACKLIST.any { term ->
-                            ((instruction as ReferenceInstruction).reference as StringReference)
-                                .string.contains(term, ignoreCase = true)
+                    if (!needsInvokeStrip) {
+                        val ref = instruction.reference as? MethodReference
+                        if (ref != null && isAdOwner(ref.definingClass) &&
+                            (ref.name == "addView" || ref.name in AD_METHOD_NAMES) &&
+                            (ref.returnType == "V" || ref.returnType == "Z")
+                        ) {
+                            needsInvokeStrip = true
                         }
+                    }
+                }
+                if (needsInvokeStrip && (isAdSdkClass || needsStringPoison)) break
+            }
+
+            if (!needsInvokeStrip && !needsStringPoison) return@classDefForEach
+
+            val mutableClass = mutableClassDefBy(classDef)
+
+            if (needsInvokeStrip) {
+                mutableClass.methods.forEach { method ->
+                    val instructions = method.instructionsOrNull?.toList() ?: return@forEach
+                    if (instructions.isEmpty()) return@forEach
+
+                    val stripTargets = mutableListOf<Pair<Int, Boolean>>()
+                    instructions.forEachIndexed { index, instruction ->
+                        if (instruction !is ReferenceInstruction) return@forEachIndexed
+                        val ref = instruction.reference as? MethodReference ?: return@forEachIndexed
+
+                        val isAddView = ref.name == "addView" && isAdOwner(ref.definingClass)
+                        val isAdCall = ref.name in AD_METHOD_NAMES && isAdOwner(ref.definingClass)
+                        if (!isAddView && !isAdCall) return@forEachIndexed
+
+                        val returnsBoolean = ref.returnType == "Z"
+                        val returnsVoid = ref.returnType == "V"
+                        if (!returnsBoolean && !returnsVoid) return@forEachIndexed
+
+                        stripTargets.add(index to returnsBoolean)
+                    }
+
+                    stripTargets.asReversed().forEach { (index, returnsBoolean) ->
+                        if (returnsBoolean) {
+                            val moveResult = instructions.getOrNull(index + 1)
+                            if (moveResult?.opcode == Opcode.MOVE_RESULT) {
+                                val register = (moveResult as OneRegisterInstruction).registerA
+                                method.replaceInstruction(index + 1, "const/4 v$register, 0x0")
+                            }
+                        }
+                        method.removeInstruction(index)
+                    }
                 }
             }
-            if (!hasMatch) return@classDefForEach
 
-            mutableClass.methods.forEach { method ->
-                (method.instructionsOrNull ?: emptyList()).forEachIndexed { index, instruction ->
-                    if (instruction.opcode != Opcode.CONST_STRING) return@forEachIndexed
-                    val value = ((instruction as ReferenceInstruction).reference as StringReference).string
-                    if (AD_URL_BLACKLIST.none { value.contains(it, ignoreCase = true) }) return@forEachIndexed
-                    val register = (instruction as OneRegisterInstruction).registerA
-                    method.replaceInstruction(index, "const-string v$register, \"${randomAdString()}\"")
+            if (needsStringPoison) {
+                mutableClass.methods.forEach { method ->
+                    (method.instructionsOrNull ?: emptyList()).forEachIndexed { index, instruction ->
+                        if (instruction.opcode != Opcode.CONST_STRING) return@forEachIndexed
+                        val value = ((instruction as ReferenceInstruction).reference as StringReference).string
+                        if (AD_URL_BLACKLIST.none { value.contains(it, ignoreCase = true) }) return@forEachIndexed
+                        val register = (instruction as OneRegisterInstruction).registerA
+                        method.replaceInstruction(index, "const-string v$register, \"${randomAdString()}\"")
+                    }
                 }
             }
         }
