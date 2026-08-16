@@ -1,3 +1,9 @@
+## [1.33.0-dev.3](https://github.com/BlazeFTL/FTL-Patches/compare/v1.33.0-dev.2...v1.33.0-dev.3) (2026-08-16)
+
+### ✨ New Features
+
+* add allvideo downloader ([840b2c6](https://github.com/BlazeFTL/FTL-Patches/commit/840b2c63d51597157ad482f2a032beaf194a7fb8))
+
 ## [1.33.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/compare/v1.33.0-dev.1...v1.33.0-dev.2) (2026-08-15)
 
 ### ✨ New Features
