@@ -1,3 +1,21 @@
+## [1.33.0-dev.3](https://github.com/BlazeFTL/FTL-Patches/compare/v1.33.0-dev.2...v1.33.0-dev.3) (2026-08-16)
+
+### ✨ New Features
+
+* add allvideo downloader ([840b2c6](https://github.com/BlazeFTL/FTL-Patches/commit/840b2c63d51597157ad482f2a032beaf194a7fb8))
+
+## [1.33.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/compare/v1.33.0-dev.1...v1.33.0-dev.2) (2026-08-15)
+
+### ✨ New Features
+
+* ads up 2 ([eb52cd0](https://github.com/BlazeFTL/FTL-Patches/commit/eb52cd03cb9200a765f0b733d505b8fb7def31f9))
+
+## [1.33.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.32.0...v1.33.0-dev.1) (2026-08-15)
+
+### ✨ New Features
+
+* update ads ([e737935](https://github.com/BlazeFTL/FTL-Patches/commit/e737935f7e4cb07c61927f273b34dd3b9ed65fed))
+
 ## [1.32.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.31.0...v1.32.0) (2026-08-15)
 
 ### ✨ New Features
