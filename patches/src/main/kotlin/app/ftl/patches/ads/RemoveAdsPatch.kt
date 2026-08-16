@@ -77,7 +77,7 @@ private fun randomAdString() =
     (1..7).map { ('a'..'z').random(Random) }.joinToString("")
 
 val universalRemoveAdsPatch = bytecodePatch(
-    name = "Universal Remove Ads",
+    name = "Remove Ads",
     description = "Stubs known ad SDK entry points and poisons ad-network URL strings across the whole app.",
     default = false,
 ) {
