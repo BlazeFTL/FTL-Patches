@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.33.0](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.33.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;20 patches total
+> **[v1.34.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.34.0-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;21 patches total
 <details>
 <summary>📦 SnapTube&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
 <br>
@@ -68,6 +68,21 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Hide Me tab promo items](#hide-me-tab-promo-items) | Collapses the WhatsApp, Legal, and Help entries on the Me tab. |  |
 | [Hide local tiles banner](#hide-local-tiles-banner) | Collapses the local device tiles banner. |  |
 | [Skip welcome screen](#skip-welcome-screen) | Moves the launcher intent filters and app shortcuts from the welcome/splash activity to the main activity, so the app boots straight past the splash and update screen. |  |
+
+</details>
+
+<details>
+<summary>📦 RS File Manager&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<br>
+
+**🎯 Supported versions:**
+
+| 2.3.0.4 |
+| :---: |
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Skip splash screen](#skip-splash-screen) | Moves the launcher intent filter from the splash activity to the main activity, so the app boots straight to the file list instead of showing the splash screen. |  |
 
 </details>
 
