@@ -1,9 +1,13 @@
 package app.ftl.patches.rsfileexplorer
 
+import app.morphe.patcher.Fingerprint
+import app.morphe.patcher.fieldAccess
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.removeInstructions
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.resourcePatch
-import org.w3c.dom.Element
+import app.morphe.patcher.patch.bytecodePatch
+import com.android.tools.smali.dexlib2.Opcode
 
 private val COMPATIBILITY_RS_FILE_EXPLORER = Compatibility(
     packageName = "com.rs.explorer.filemanager",
@@ -13,54 +17,62 @@ private val COMPATIBILITY_RS_FILE_EXPLORER = Compatibility(
     ),
 )
 
-private const val SPLASH_ACTIVITY = "com.edili.filemanager.module.activity.FirstActivity"
-private const val MAIN_ACTIVITY = "com.edili.filemanager.MainActivity"
+private const val PERMISSION_ACTIVITY_CLASS = "Lcom/edili/filemanager/base/perm/FeaturedPermissionActivity;"
 
-val skipSplashScreenPatch = resourcePatch(
+/**
+ * Matches the private method that builds and shows the full-screen "grant storage
+ * access" splash dialog. The method name itself is obfuscated and reshuffles every
+ * build, so it's identified instead by the sget of the app's own unobfuscated
+ * resource field for the dialog's theme, which only appears in this one method.
+ */
+private object FullScreenAskStorageDialogFingerprint : Fingerprint(
+    definingClass = PERMISSION_ACTIVITY_CLASS,
+    returnType = "V",
+    parameters = emptyList(),
+    filters = listOf(
+        fieldAccess(
+            smali = "Lcom/edili/filemanager/common/R\$style;->RS_FullScreen_Dialog:I",
+            opcode = Opcode.SGET,
+        ),
+    ),
+)
+
+/**
+ * Matches the private click-handler that the dialog's "Grant" button calls, which
+ * launches the all-files-access settings screen. Also obfuscated, so it's found by
+ * the real Android settings action string it fires instead of its method name — the
+ * exact reference is read back off the match rather than hardcoded.
+ */
+private object GrantAllFilesAccessFingerprint : Fingerprint(
+    definingClass = PERMISSION_ACTIVITY_CLASS,
+    returnType = "V",
+    parameters = listOf("Landroid/view/View;"),
+    strings = listOf("android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION"),
+)
+
+val skipSplashScreenPatch = bytecodePatch(
     name = "Skip splash screen",
-    description = "Moves the launcher intent filter from the splash activity to the main activity, so the app boots straight to the file list instead of showing the splash screen.",
+    description = "Calls the all-files-access permission request directly instead of first showing the full-screen 'grant storage access' splash dialog.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_RS_FILE_EXPLORER)
 
     execute {
-        document("AndroidManifest.xml").use { document ->
-            val activities = document.getElementsByTagName("activity")
-            var splash: Element? = null
-            var main: Element? = null
+        val grantMethod = GrantAllFilesAccessFingerprint.method
+        val paramsSmali = grantMethod.parameterTypes.joinToString("")
+        val grantMethodSmali = "${grantMethod.definingClass}->${grantMethod.name}(${paramsSmali})${grantMethod.returnType}"
 
-            for (i in 0 until activities.length) {
-                val activity = activities.item(i) as? Element ?: continue
-                when (activity.getAttribute("android:name")) {
-                    SPLASH_ACTIVITY -> splash = activity
-                    MAIN_ACTIVITY -> main = activity
-                }
-            }
-
-            val splashActivity = splash ?: return@use
-            val mainActivity = main ?: return@use
-
-            val intentFilters = splashActivity.getElementsByTagName("intent-filter")
-            var launcherFilter: Element? = null
-
-            for (i in 0 until intentFilters.length) {
-                val filter = intentFilters.item(i) as? Element ?: continue
-                val actions = filter.getElementsByTagName("action")
-                val hasMainAction = (0 until actions.length).any { idx ->
-                    (actions.item(idx) as? Element)?.getAttribute("android:name") == "android.intent.action.MAIN"
-                }
-                if (hasMainAction) {
-                    launcherFilter = filter
-                    break
-                }
-            }
-
-            // Only the MAIN/LAUNCHER intent-filter moves; the splash activity keeps
-            // its other intent-filter (com.rs.action.permission.require) untouched,
-            // matching the reference diff.
-            val filterToMove = launcherFilter ?: return@use
-            splashActivity.removeChild(filterToMove)
-            mainActivity.insertBefore(filterToMove, mainActivity.firstChild)
+        FullScreenAskStorageDialogFingerprint.method.let { method ->
+            val instructionCount = method.implementation!!.instructions.size
+            method.removeInstructions(0, instructionCount)
+            method.addInstructions(
+                0,
+                """
+                    const/4 v0, 0x0
+                    invoke-direct {p0, v0}, $grantMethodSmali
+                    return-void
+                """.trimIndent(),
+            )
         }
     }
 }
