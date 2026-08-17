@@ -4,20 +4,10 @@ import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.fieldAccess
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.removeInstructions
-import app.morphe.patcher.patch.AppTarget
-import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.resourcePatch
 import com.android.tools.smali.dexlib2.Opcode
 import org.w3c.dom.Element
-
-private val COMPATIBILITY_RS_FILE_EXPLORER = Compatibility(
-    packageName = "com.rs.explorer.filemanager",
-    name = "RS File Manager",
-    targets = listOf(
-        AppTarget(version = "2.3.0.4", versionCode = 239),
-    ),
-)
 
 private const val PERMISSION_ACTIVITY_CLASS = "Lcom/edili/filemanager/base/perm/FeaturedPermissionActivity;"
 private const val SPLASH_ACTIVITY = "com.edili.filemanager.module.activity.FirstActivity"
