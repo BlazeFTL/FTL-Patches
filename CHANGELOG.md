@@ -1,3 +1,9 @@
+## [1.34.0-dev.3](https://github.com/BlazeFTL/FTL-Patches/compare/v1.34.0-dev.2...v1.34.0-dev.3) (2026-08-17)
+
+### ✨ New Features
+
+* Add Rs File Explorer Skip Splash ([214e2e0](https://github.com/BlazeFTL/FTL-Patches/commit/214e2e07b10f0526ec5036d1479eceb400c2877d))
+
 ## [1.34.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/compare/v1.34.0-dev.1...v1.34.0-dev.2) (2026-08-17)
 
 ### ✨ New Features
