@@ -1,3 +1,9 @@
+## [1.34.0-dev.5](https://github.com/BlazeFTL/FTL-Patches/compare/v1.34.0-dev.4...v1.34.0-dev.5) (2026-08-17)
+
+### ✨ New Features
+
+* Add Clean More Action Rs File ([831c4ec](https://github.com/BlazeFTL/FTL-Patches/commit/831c4ec183d202f33ca28109838e4754b61d18a3))
+
 ## [1.34.0-dev.4](https://github.com/BlazeFTL/FTL-Patches/compare/v1.34.0-dev.3...v1.34.0-dev.4) (2026-08-17)
 
 ### ✨ New Features
