@@ -1,3 +1,9 @@
+## [1.34.0-dev.4](https://github.com/BlazeFTL/FTL-Patches/compare/v1.34.0-dev.3...v1.34.0-dev.4) (2026-08-17)
+
+### ✨ New Features
+
+* Add Hide BookMark,Tools In HomeScreen Rs ([f5cb31a](https://github.com/BlazeFTL/FTL-Patches/commit/f5cb31a2b885da1225ea4bd12167e1f8cbd7ccf5))
+
 ## [1.34.0-dev.3](https://github.com/BlazeFTL/FTL-Patches/compare/v1.34.0-dev.2...v1.34.0-dev.3) (2026-08-17)
 
 ### ✨ New Features
