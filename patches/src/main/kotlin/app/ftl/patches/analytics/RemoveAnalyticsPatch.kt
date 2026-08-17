@@ -1,193 +1,171 @@
-package app.ftl.patches.analytics
+package app.ftl.morphe.patches.analytics
 
-import app.morphe.patcher.Fingerprint
-import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
-import app.morphe.patcher.extensions.InstructionExtensions.instructionsOrNull
-import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
-import app.morphe.patcher.patch.bytecodePatch
-import app.morphe.patcher.patch.resourcePatch
 import com.android.tools.smali.dexlib2.Opcode
-import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
-import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction21c
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction21c
 import com.android.tools.smali.dexlib2.iface.reference.StringReference
-import org.w3c.dom.Element
+import com.android.tools.smali.dexlib2.immutable.reference.ImmutableStringReference
+import com.android.tools.smali.dexlib2.util.MethodUtil
+import kotlin.random.Random
 
-internal object FirebaseAnalyticsLogEventFingerprint : Fingerprint(
-    name = "logEvent",
-    definingClass = "Lcom/google/firebase/analytics/FirebaseAnalytics;",
-    returnType = "V",
+// Adjust package/imports above to match Morphe's actual dexlib2 fork paths.
+// Everything below only touches string-pool references and one real,
+// unobfuscated SDK method (java.security.Signature.verify) — no obfuscated
+// identifiers pinned anywhere, so it needs no per-app fingerprints.
+
+private val CLASS_NAME_BLOCKLIST = Regex(
+    "(audience_network|com\\.google\\.analytics|com\\.google\\.android\\.gms\\.analytics|" +
+    "com\\.google\\.firebase\\.analytics|com\\.google\\.firebase\\.firebase_analytics|" +
+    "com\\.yandex\\.metrica\\.IMetricaService).*"
 )
 
-internal object CrashlyticsRecordExceptionFingerprint : Fingerprint(
-    name = "recordException",
-    definingClass = "Lcom/google/firebase/crashlytics/FirebaseCrashlytics;",
-    returnType = "V",
+private val HOST_BLOCKLIST = Regex(
+    "(api\\.branch\\.io|crashlytics\\.com|wzrkt\\.com|appboy\\.com|appsflyer\\.com|" +
+    "google-analytics\\.com|measurement\\.com|data\\.flurry\\.com|googletagmanager\\.com|" +
+    "hockeyapp\\.net|scorecardresearch\\.com|YandexMetricaNativeModule|amplitude\\.com|" +
+    "azure\\.com|firebaseapp\\.com|startappservice\\.com|startappexchange\\.com|smaato\\.com|" +
+    "api\\.crittercism\\.com|appmetrica\\.yandex\\.ru|app\\.adjust\\.com|cloudfront\\.net|" +
+    "amazonaws\\.com|akamaitechnologies\\.com|microsoft\\.applications\\.telemetry|" +
+    "skype\\.telemetry\\.com|skype\\.android\\.analytics\\.com|skype\\.android\\.crash\\.com|" +
+    "chartboost\\.com|my\\.target\\.com|umeng\\.com|lsdsl\\.ml)"
 )
 
-internal object FlurryAgentLogEventFingerprint : Fingerprint(
-    name = "logEvent",
-    definingClass = "Lcom/flurry/android/FlurryAgent;",
-    returnType = "V",
+private val AD_SDK_BLOCKLIST = Regex(
+    "https?://.*(61\\.145\\.124\\.238|ad\\.api\\.kaffnet|ad\\.mail\\.ru|ad\\.myinstashot\\.com|" +
+    "adc3-launch|adbuddiz|adcolony|addapptr|adincube|adjust|adkmob|adknowledge|admarvel|admob|" +
+    "admost|adnw_logging|adsafeprotected|adsdk|adsert|adserver|adservice|advertising|adview|" +
+    "adz\\.wattpad|aerserv|airpush|altamob|alta\\.eqmob|amazon-adsystem|amazonaws|analytics|" +
+    "appAdForce|appboy|appbrain|appenda|appia|applifier\\.com|applovin|applvn|appnext|" +
+    "appnexus|appodeal|apprupt|apsalar|appsdt|appsflyer|audience_network|avocarrot|azure|" +
+    "boxdigital/sdk/ad|branch|ca-app-pub|certificate\\.mobile\\.yandex\\.net|chartboost|" +
+    "cloudfront|code\\.google\\.com/p/android/issues/detail|crashlytics|csi\\.gstatic\\.com|" +
+    "doubleclick\\.net|dsp\\.batmobil|duapps|firebaseapp|flurry|fyber|g\\.doubleclick|" +
+    "google/android/gms/internal|google\\.com/safebrowsing/clientreport|googleapis\\.com/auth/games|" +
+    "googleads|googlesyndication|graph\\.facebook|greystripe|heyzap|hockeyapp|hyprmx|InlineAd|" +
+    "inmobi|inneractive|instreamatic|integralads|ironsource|jirbo|jumptap|kochava|Leadbolt|" +
+    "localytics|loopme|madnet\\.ru|mdotm|measurement|mediabrix|metrica|millennialmedia|mngads|" +
+    "moat|mobclix|mobfox|mobvista|montexi|moolah|mopub|mp\\.mydas\\.mobi|my/target|" +
+    "NativeInterstitial|net\\.rayjump|network_ads_common|nexage|onelouder/adlib|openx|" +
+    "pagead/ads|plus1\\.wapstart\\.ru|pubmatic|pubnative|r\\.my\\.com/mobile|revmob|" +
+    "sb\\.scorecardresearch|smaato/SOMA|startapp|startup\\.mobile\\.yandex\\.net|supersonicads|" +
+    "tagmanager|tapas|tapjoy|udm\\.scorecardresearch|unity3d/ads|unityads|vdopia|vungle|" +
+    "wzrkt|xtify|yandexadexchange|zestadz).*"
 )
 
-internal object GoogleAnalyticsTrackerSendFingerprint : Fingerprint(
-    name = "send",
-    definingClass = "Lcom/google/android/gms/analytics/Tracker;",
-    returnType = "V",
-)
+private fun String.isBlockedLiteral(): Boolean =
+    length >= 4 && (CLASS_NAME_BLOCKLIST.matches(this) ||
+        HOST_BLOCKLIST.containsMatchIn(this) ||
+        AD_SDK_BLOCKLIST.matches(this))
 
-internal object YandexMetricaReportEventFingerprint : Fingerprint(
-    name = "reportEvent",
-    definingClass = "Lcom/yandex/metrica/YandexMetrica;",
-    returnType = "V",
-)
+private fun randomReplacement(len: Int = 7): String {
+    val charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+    return (1..len).map { charset[Random.nextInt(charset.length)] }.joinToString("")
+}
 
-internal object AppsFlyerLogEventFingerprint : Fingerprint(
-    name = "logEvent",
-    definingClass = "Lcom/appsflyer/AppsFlyerLib;",
-    returnType = "V",
-)
+/**
+ * Universal analytics/ad-SDK string neutralizer.
+ * Walks every method in every class, rewrites any CONST_STRING /
+ * CONST_STRING_JUMBO whose value matches a known tracker/ad-SDK literal.
+ * Call from your BytecodePatch's execute(context: BytecodePatchContext).
+ */
+fun BytecodePatchContext.removeAnalyticsStrings() {
+    for (classDef in classes) {
+        for (method in classDef.methods) {
+            if (MethodUtil.isAbstract(method)) continue
+            val impl = method.implementation ?: continue
+            val mutableMethod = proxy(classDef).mutableClass.methods
+                .first { it.name == method.name && it.parameterTypes == method.parameterTypes }
+            val mutImpl = mutableMethod.implementation ?: continue
 
-internal object AdjustTrackEventFingerprint : Fingerprint(
-    name = "trackEvent",
-    definingClass = "Lcom/adjust/sdk/Adjust;",
-    returnType = "V",
-)
+            mutImpl.instructions.forEachIndexed { index, instruction ->
+                if (instruction.opcode != Opcode.CONST_STRING &&
+                    instruction.opcode != Opcode.CONST_STRING_JUMBO
+                ) return@forEachIndexed
 
-internal val ANALYTICS_STRING_BLACKLIST = listOf(
-    "akamaitechnologies.com",
-    "amazonaws.com",
-    "amplitude.com",
-    "api.branch.io",
-    "api.crittercism.com",
-    "app.adjust.com",
-    "appboy.com",
-    "appmetrica.yandex.ru",
-    "appsflyer.com",
-    "audience_network",
-    "azure.com",
-    "chartboost.com",
-    "cloudfront.net",
-    "com.google.analytics",
-    "com.google.android.gms.analytics",
-    "com.google.firebase.analytics",
-    "com.google.firebase.firebase_analytics",
-    "com.yandex.metrica.IMetricaService",
-    "crashlytics.com",
-    "data.flurry.com",
-    "firebaseapp.com",
-    "google-analytics.com",
-    "googletagmanager.com",
-    "hockeyapp.net",
-    "lsdsl.ml",
-    "measurement.com",
-    "microsoft.applications.telemetry",
-    "my.target.com",
-    "scorecardresearch.com",
-    "skype.android.analytics.com",
-    "skype.android.crash.com",
-    "skype.telemetry.com",
-    "smaato.com",
-    "startappexchange.com",
-    "startappservice.com",
-    "umeng.com",
-    "wzrkt.com",
-    "YandexMetricaNativeModule",
-)
+                val ref = (instruction as Instruction21c).reference as? StringReference ?: return@forEachIndexed
+                if (!ref.string.isBlockedLiteral()) return@forEachIndexed
 
-private const val ANALYTICS_STRING_REPLACEMENT = ""
-
-// SDK's own bytecode: entry points already stubbed via fingerprints above.
-// Poisoning strings inside the SDK's own internals can break its init-time
-// validation and crash the app before any tracking call is even made.
-private val ANALYTICS_SDK_PACKAGE_PREFIXES = listOf(
-    "Lcom/google/firebase/",
-    "Lcom/google/android/gms/analytics/",
-    "Lcom/google/android/gms/measurement/",
-    "Lcom/google/android/gms/internal/measurement/",
-    "Lcom/flurry/android/",
-    "Lcom/yandex/metrica/",
-    "Lcom/appsflyer/",
-    "Lcom/adjust/sdk/",
-)
-
-// name = null keeps this out of PatchLoader's top-level list (removeAnalyticsPatch
-// pulls it in via dependsOn), so it doesn't show as its own toggle in the UI.
-val stripFirebaseManifestComponentsPatch = resourcePatch(
-    name = null,
-    description = "Removes Firebase Analytics/Crashlytics receiver and service declarations from AndroidManifest.xml.",
-) {
-    execute {
-        document("AndroidManifest.xml").use { document ->
-            val application = document.getElementsByTagName("application").item(0) as? Element ?: return@use
-            val children = application.childNodes
-            val toRemove = mutableListOf<Element>()
-
-            for (i in 0 until children.length) {
-                val node = children.item(i) as? Element ?: continue
-                when (node.tagName) {
-                    "receiver" -> {
-                        if (node.getAttribute("android:name").startsWith("com.google.firebase")) {
-                            toRemove += node
-                        }
-                    }
-                    "service" -> {
-                        val name = node.getAttribute("android:name")
-                        val actions = node.getElementsByTagName("action")
-                        val hasFirebaseAction = (0 until actions.length).any { j ->
-                            (actions.item(j) as Element).getAttribute("android:name").startsWith("com.google.firebase")
-                        }
-                        if (name.startsWith("com.google.firebase") || hasFirebaseAction) {
-                            toRemove += node
-                        }
-                    }
-                }
+                mutImpl.replaceInstruction(
+                    index,
+                    BuilderInstruction21c(
+                        instruction.opcode,
+                        instruction.registerA,
+                        ImmutableStringReference(randomReplacement())
+                    )
+                )
             }
-
-            toRemove.forEach { application.removeChild(it) }
         }
     }
 }
 
-val removeAnalyticsPatch = bytecodePatch(
-    name = "Remove Analytics",
-    description = "Disables tracking and crash-reporting tools, corrupts analytics web links inside the code, and removes background tracking services.",
-    default = false,
-) {
-    dependsOn(stripFirebaseManifestComponentsPatch)
+/**
+ * Anti-tamper defeat: forces java.security.Signature.verify(byte[])
+ * to always report success. Real, unobfuscated SDK method — safe to
+ * pin directly.
+ */
+fun BytecodePatchContext.bypassSignatureVerify() {
+    for (classDef in classes) {
+        for (method in classDef.methods) {
+            val impl = method.implementation ?: continue
+            val mutableMethod = proxy(classDef).mutableClass.methods
+                .first { it.name == method.name && it.parameterTypes == method.parameterTypes }
+            val mutImpl = mutableMethod.implementation ?: continue
+            val instructions = mutImpl.instructions
 
-    execute {
-        FirebaseAnalyticsLogEventFingerprint.methodOrNull?.addInstructions(0, "return-void")
-        CrashlyticsRecordExceptionFingerprint.methodOrNull?.addInstructions(0, "return-void")
-        FlurryAgentLogEventFingerprint.methodOrNull?.addInstructions(0, "return-void")
-        GoogleAnalyticsTrackerSendFingerprint.methodOrNull?.addInstructions(0, "return-void")
-        YandexMetricaReportEventFingerprint.methodOrNull?.addInstructions(0, "return-void")
-        AppsFlyerLogEventFingerprint.methodOrNull?.addInstructions(0, "return-void")
-        AdjustTrackEventFingerprint.methodOrNull?.addInstructions(0, "return-void")
+            for (index in instructions.indices) {
+                val insn = instructions[index]
+                if (insn.opcode != Opcode.INVOKE_VIRTUAL) continue
+                val ref = (insn as? com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction35c)
+                    ?.reference as? com.android.tools.smali.dexlib2.iface.reference.MethodReference
+                    ?: continue
+                if (ref.definingClass != "Ljava/security/Signature;" ||
+                    ref.name != "verify" ||
+                    ref.parameterTypes.singleOrNull() != "[B" ||
+                    ref.returnType != "Z"
+                ) continue
 
-        classDefForEach { classDef ->
-            if (ANALYTICS_SDK_PACKAGE_PREFIXES.any { classDef.type.startsWith(it) }) return@classDefForEach
+                val moveResultIndex = index + 1
+                val moveResult = instructions.getOrNull(moveResultIndex) ?: continue
+                if (moveResult.opcode != Opcode.MOVE_RESULT) continue
+                val destRegister =
+                    (moveResult as com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction11x).registerA
 
-            val hasMatch = classDef.methods.any { method ->
-                (method.instructionsOrNull ?: emptyList()).any { instruction ->
-                    instruction.opcode == Opcode.CONST_STRING &&
-                        ANALYTICS_STRING_BLACKLIST.any { term ->
-                            ((instruction as ReferenceInstruction).reference as StringReference)
-                                .string.contains(term, ignoreCase = true)
-                        }
-                }
-            }
-            if (!hasMatch) return@classDefForEach
-
-            mutableClassDefBy(classDef).methods.forEach { method ->
-                (method.instructionsOrNull ?: emptyList()).forEachIndexed { index, instruction ->
-                    if (instruction.opcode != Opcode.CONST_STRING) return@forEachIndexed
-                    val value = ((instruction as ReferenceInstruction).reference as StringReference).string
-                    if (ANALYTICS_STRING_BLACKLIST.none { value.contains(it, ignoreCase = true) }) return@forEachIndexed
-                    val register = (instruction as OneRegisterInstruction).registerA
-                    method.replaceInstruction(index, "const-string v$register, \"$ANALYTICS_STRING_REPLACEMENT\"")
-                }
+                mutImpl.addInstruction(
+                    moveResultIndex + 1,
+                    com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction11n(
+                        Opcode.CONST_4,
+                        destRegister,
+                        1
+                    )
+                )
             }
         }
     }
+}
+
+/**
+ * ResourcePatch step: strips <receiver>/<service> declarations whose
+ * android:name starts with com.google.firebase from AndroidManifest.xml,
+ * disabling Firebase's auto-init components at the registration level.
+ * Call from your ResourcePatch's execute(context: ResourcePatchContext).
+ */
+fun ResourcePatchContext.stripFirebaseManifestComponents() {
+    val manifest = get("AndroidManifest.xml")
+    var text = manifest.readText()
+
+    text = text.replace(
+        Regex("""<receiver\s+android:exported="[^"]+"\s+android:name="com\.google\.firebase[^"]*"\s*/>"""),
+        ""
+    )
+    text = text.replace(
+        Regex(
+            """<service\s+android:exported="[^"]+"\s+android:name="com\.google\.firebase[^"]*">""" +
+            """\s*<intent-filter\s+android:priority="[^"]+">""" +
+            """\s*<action\s+android:name="com\.google\.firebase[^"]*"\s*/>""" +
+            """\s*</intent-filter>\s*</service>"""
+        ),
+        ""
+    )
+
+    manifest.writeText(text)
 }
