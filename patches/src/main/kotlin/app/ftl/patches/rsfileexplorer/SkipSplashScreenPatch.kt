@@ -7,7 +7,9 @@ import app.morphe.patcher.extensions.InstructionExtensions.removeInstructions
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.resourcePatch
 import com.android.tools.smali.dexlib2.Opcode
+import org.w3c.dom.Element
 
 private val COMPATIBILITY_RS_FILE_EXPLORER = Compatibility(
     packageName = "com.rs.explorer.filemanager",
@@ -18,6 +20,8 @@ private val COMPATIBILITY_RS_FILE_EXPLORER = Compatibility(
 )
 
 private const val PERMISSION_ACTIVITY_CLASS = "Lcom/edili/filemanager/base/perm/FeaturedPermissionActivity;"
+private const val SPLASH_ACTIVITY = "com.edili.filemanager.module.activity.FirstActivity"
+private const val MAIN_ACTIVITY = "com.edili.filemanager.MainActivity"
 
 /**
  * Matches the private method that builds and shows the full-screen "grant storage
@@ -50,12 +54,66 @@ private object GrantAllFilesAccessFingerprint : Fingerprint(
     strings = listOf("android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION"),
 )
 
-val skipSplashScreenPatch = bytecodePatch(
-    name = "Skip splash screen",
-    description = "Calls the all-files-access permission request directly instead of first showing the full-screen 'grant storage access' splash dialog.",
+/**
+ * Moves the MAIN/LAUNCHER intent-filter from the splash activity to the main
+ * activity, so the splash activity is never shown on cold start. No `name`, so it
+ * isn't independently toggleable — it only runs as a dependency of skipSplashScreenPatch.
+ */
+internal val moveLauncherToMainActivityPatch = resourcePatch(
+    description = "Moves the launcher intent filter from the splash activity to the main activity.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_RS_FILE_EXPLORER)
+
+    execute {
+        document("AndroidManifest.xml").use { document ->
+            val activities = document.getElementsByTagName("activity")
+            var splash: Element? = null
+            var main: Element? = null
+
+            for (i in 0 until activities.length) {
+                val activity = activities.item(i) as? Element ?: continue
+                when (activity.getAttribute("android:name")) {
+                    SPLASH_ACTIVITY -> splash = activity
+                    MAIN_ACTIVITY -> main = activity
+                }
+            }
+
+            val splashActivity = splash ?: return@use
+            val mainActivity = main ?: return@use
+
+            val intentFilters = splashActivity.getElementsByTagName("intent-filter")
+            var launcherFilter: Element? = null
+
+            for (i in 0 until intentFilters.length) {
+                val filter = intentFilters.item(i) as? Element ?: continue
+                val actions = filter.getElementsByTagName("action")
+                val hasMainAction = (0 until actions.length).any { idx ->
+                    (actions.item(idx) as? Element)?.getAttribute("android:name") == "android.intent.action.MAIN"
+                }
+                if (hasMainAction) {
+                    launcherFilter = filter
+                    break
+                }
+            }
+
+            // Only the MAIN/LAUNCHER intent-filter moves; the splash activity keeps
+            // its other intent-filter (com.rs.action.permission.require) untouched,
+            // matching the reference diff.
+            val filterToMove = launcherFilter ?: return@use
+            splashActivity.removeChild(filterToMove)
+            mainActivity.insertBefore(filterToMove, mainActivity.firstChild)
+        }
+    }
+}
+
+val skipSplashScreenPatch = bytecodePatch(
+    name = "Skip splash screen",
+    description = "Moves the launcher intent filter to the main activity and calls the all-files-access permission request directly, instead of showing the splash activity and its full-screen 'grant storage access' dialog.",
+    default = false,
+) {
+    compatibleWith(COMPATIBILITY_RS_FILE_EXPLORER)
+    dependsOn(moveLauncherToMainActivityPatch)
 
     execute {
         val grantMethod = GrantAllFilesAccessFingerprint.method
