@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.34.0-dev.1",
+  "version": "1.34.0-dev.2",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -429,7 +429,7 @@
     },
     {
       "name": "Skip splash screen",
-      "description": "Moves the launcher intent filter from the splash activity to the main activity, so the app boots straight to the file list instead of showing the splash screen.",
+      "description": "Calls the all-files-access permission request directly instead of first showing the full-screen 'grant storage access' splash dialog.",
       "default": false,
       "dependencies": [],
       "compatiblePackages": [
