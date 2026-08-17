@@ -1,3 +1,9 @@
+## [1.35.0-dev.3](https://github.com/BlazeFTL/FTL-Patches/compare/v1.35.0-dev.2...v1.35.0-dev.3) (2026-08-17)
+
+### ✨ New Features
+
+* add xender skip splash and clean ui Patch ([810e4d8](https://github.com/BlazeFTL/FTL-Patches/commit/810e4d81e618b5b7ecb8444ca02c1a80dedb7d04))
+
 ## [1.35.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/compare/v1.35.0-dev.1...v1.35.0-dev.2) (2026-08-17)
 
 ### ✨ New Features
