@@ -1,3 +1,14 @@
+## [1.34.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.33.0...v1.34.0) (2026-08-17)
+
+### ✨ New Features
+
+* Add Clean More Action Rs File ([831c4ec](https://github.com/BlazeFTL/FTL-Patches/commit/831c4ec183d202f33ca28109838e4754b61d18a3))
+* Add Hide BookMark,Tools In HomeScreen Rs ([f5cb31a](https://github.com/BlazeFTL/FTL-Patches/commit/f5cb31a2b885da1225ea4bd12167e1f8cbd7ccf5))
+* Add Rs File Explorer Skip Splash ([214e2e0](https://github.com/BlazeFTL/FTL-Patches/commit/214e2e07b10f0526ec5036d1479eceb400c2877d))
+* Fix Rs File Explorer Patch ([c2ddab0](https://github.com/BlazeFTL/FTL-Patches/commit/c2ddab0102117e313bb0c57eb496a7507f7cfb4e))
+* Rs File Explorer Skip Splash ([6e476a0](https://github.com/BlazeFTL/FTL-Patches/commit/6e476a065d7ba905fb1f2e11649961687acc3df1))
+* Rs File Explorer Skip Splash Screen ([2e72006](https://github.com/BlazeFTL/FTL-Patches/commit/2e72006b81038142775494402a80db7b7adea991))
+
 ## [1.34.0-dev.6](https://github.com/BlazeFTL/FTL-Patches/compare/v1.34.0-dev.5...v1.34.0-dev.6) (2026-08-17)
 
 ### ✨ New Features
