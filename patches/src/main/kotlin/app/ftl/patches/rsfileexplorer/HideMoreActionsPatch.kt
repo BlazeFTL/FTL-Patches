@@ -10,23 +10,25 @@ import com.android.tools.smali.dexlib2.iface.reference.StringReference
 
 /**
  * The action ids to strip out of the "More actions" menu: Hide, Add to desktop,
- * Encrypt, Add bookmark, Web Search, Copy to, Move to, Transfer.
+ * Encrypt, Decrypt, Add bookmark, Web Search, Copy to, Move to, Transfer, Playing.
  */
 private val HIDDEN_ACTION_IDS = setOf(
     "hide",
     "shortcut",
     "encrypt",
+    "decrypt",
     "add_to_favorite",
     "web_search",
     "copy_to",
     "move_to",
     "transfer",
+    "playing",
 )
 
 /**
  * Matches the "More actions" menu-builder method. Its own name is obfuscated,
  * and the enclosing class has a second, unrelated menu-builder method (for the
- * quick-actions bar) that references these same 8 action-id strings once each
+ * quick-actions bar) that references these same action-id strings once each
  * too — so "image_edit", a string unique to the "More actions" builder, is
  * included to disambiguate the two.
  */
@@ -38,7 +40,7 @@ private object MoreActionsMenuFingerprint : Fingerprint(
 
 val hideMoreActionsPatch = bytecodePatch(
     name = "Hide more actions",
-    description = "Hides Hide, Add to desktop, Encrypt, Add bookmark, Web Search, Copy to, Move to, and Transfer from the \"More actions\" menu.",
+    description = "Hides Hide, Add to desktop, Encrypt, Decrypt, Add bookmark, Web Search, Copy to, Move to, Transfer, and Playing from the \"More actions\" menu.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_RS_FILE_EXPLORER)
