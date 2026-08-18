@@ -9,7 +9,24 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.35.0-dev.7](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.35.0-dev.7)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;24 patches total
+> **[v1.35.0-dev.8](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.35.0-dev.8)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;25 patches total
+<details>
+<summary>📦 Xender&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
+<br>
+
+**🎯 Supported versions:**
+
+| 18.8.0.prime |
+| :---: |
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Clean up main UI](#clean-up-main-ui) | Hides the nav drawer's Guide/Rate/Help/About items and the bottom navigation view, and keeps the Connect/Create/Join buttons on top. |  |
+| [Skip splash screen](#skip-splash-screen) | Jumps straight to the main activity from the splash screen, skipping the splash animation entirely. |  |
+| [Speed up splash screen](#speed-up-splash-screen) | Enters the main activity directly after the splash permission check instead of delaying for the additional external-storage check. |  |
+
+</details>
+
 <details>
 <summary>📦 SnapTube&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
 <br>
@@ -85,22 +102,6 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Hide more actions](#hide-more-actions) | Hides Hide, Add to desktop, Encrypt, Decrypt, Add bookmark, Web Search, Copy to, Move to, Transfer, and Playing from the "More actions" menu. |  |
 | [Hide network, tools and bookmarks on home page](#hide-network-tools-and-bookmarks-on-home-page) | Hides the Network, Tools and Bookmarks sections from the home page section list. |  |
 | [Skip splash screen](#skip-splash-screen) | Moves the launcher intent filter to the main activity and calls the all-files-access permission request directly, instead of showing the splash activity and its full-screen 'grant storage access' dialog. |  |
-
-</details>
-
-<details>
-<summary>📦 Xender&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
-<br>
-
-**🎯 Supported versions:**
-
-| 18.8.0.prime |
-| :---: |
-
-| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
-|----------|----------------|-----------|
-| [Skip Xender splash and clean UI](#skip-xender-splash-and-clean-ui) | Enters Xender's main activity without displaying the splash flow, requests required storage access from the main screen, and hides or reorders selected UI elements. |  |
-| [Speed up splash screen](#speed-up-splash-screen) | Enters the main activity directly after the splash permission check instead of delaying for the additional external-storage check. |  |
 
 </details>
 
