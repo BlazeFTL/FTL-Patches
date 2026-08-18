@@ -25,7 +25,7 @@ private object SplashOnCreateFingerprint : Fingerprint(
  * MainActivity's own real (unobfuscated) private method — shared anchor with
  * CleanMainUiPatch's insertion at the same point.
  */
-private object MainActivityOnCreateFingerprint : Fingerprint(
+private object MainActivityStartupPermissionsFingerprint : Fingerprint(
     definingClass = "Lcn/xender/ui/activity/MainActivity;",
     name = "onCreate",
     returnType = "V",
@@ -72,7 +72,7 @@ val skipSplashScreenPatch = bytecodePatch(
         // intent: all real Android SDK/app calls, no obfuscated identifiers.
         // v0-v2 confirmed free at this point: the code right after initNavigation()
         // reuses p1 as scratch, not v0-v2.
-        MainActivityOnCreateFingerprint.let { fingerprint ->
+        MainActivityStartupPermissionsFingerprint.let { fingerprint ->
             val index = fingerprint.instructionMatches[0].index
             fingerprint.method.addInstructions(
                 index + 1,
