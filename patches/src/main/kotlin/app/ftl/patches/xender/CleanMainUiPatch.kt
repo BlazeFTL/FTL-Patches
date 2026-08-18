@@ -89,7 +89,7 @@ private fun addXenderUiHelpers(mainActivity: MutableClass) {
                 AccessFlags.PRIVATE.value,
                 3,
                 """
-                    invoke-virtual {p0, p1}, Landroid/app/Activity;->findViewById(I)Landroid/view/View
+                    invoke-virtual {p0, p1}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
                     move-result-object v0
                     if-eqz v0, :cond_0
                     const/16 p0, 0x8
@@ -110,7 +110,7 @@ private fun addXenderUiHelpers(mainActivity: MutableClass) {
                 AccessFlags.PRIVATE.value,
                 3,
                 """
-                    invoke-virtual {p0, p1}, Landroid/app/Activity;->findViewById(I)Landroid/view/View
+                    invoke-virtual {p0, p1}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
                     move-result-object v0
                     if-eqz v0, :cond_0
                     invoke-virtual {v0}, Landroid/view/View;->bringToFront()V
