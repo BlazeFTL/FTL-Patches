@@ -24,5 +24,4 @@ jobs:
                 gh api -X DELETE "repos/$REPO/actions/runs/$id" 2>/dev/null || true
               fi
             done
-          don
-          e
+          done
