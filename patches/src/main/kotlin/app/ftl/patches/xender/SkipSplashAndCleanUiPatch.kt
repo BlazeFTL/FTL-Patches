@@ -131,7 +131,7 @@ private object MainOnWindowFocusChangedFingerprint : Fingerprint(
 )
 
 internal fun MethodReference.toSmali(): String =
-    "${definingClass}->${name}(${parameterTypes.joinToString(\"\")})${returnType}"
+    "${definingClass}->${name}(${parameterTypes.joinToString("")})${returnType}"
 
 internal fun ReferenceInstruction.methodReference(): MethodReference = reference as MethodReference
 
@@ -249,7 +249,7 @@ val skipSplashAndCleanUiPatch = bytecodePatch(
 
     execute {
         val toMainMethod = SplashToMainFingerprint.method
-        val toMain = "${toMainMethod.definingClass}->${toMainMethod.name}(${toMainMethod.parameterTypes.joinToString(\"\")})${toMainMethod.returnType}"
+        val toMain = "${toMainMethod.definingClass}->${toMainMethod.name}(${toMainMethod.parameterTypes.joinToString("")})${toMainMethod.returnType}"
         val permissionHelper = SplashPermissionHelperFingerprint.instructionMatches.first()
             .getInstruction<ReferenceInstruction>().methodReference().toSmali()
         val androidRTargetCheck = AndroidRTargetCheckFingerprint.instructionMatches[1]
