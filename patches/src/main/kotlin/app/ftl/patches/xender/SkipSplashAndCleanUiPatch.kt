@@ -61,7 +61,7 @@ val skipSplashAndCleanUiPatch = bytecodePatch(
 ) {
     compatibleWith(COMPATIBILITY_XENDER)
 
-    extendWith("xender-clean-ui.mpe")
+    extendWith("extensions/xender.mpe")
 
     execute {
         SplashOnCreateFingerprint.let { fingerprint ->
@@ -151,10 +151,10 @@ val skipSplashAndCleanUiPatch = bytecodePatch(
             """.trimIndent(),
         )
 
-        HiddenViewFingerprint.method.let { method ->
-            val instructionCount = method.implementation!!.instructions.size
-            method.removeInstructions(0, instructionCount)
-            method.addInstructions(
+        HiddenViewFingerprint.method.let { fingerprint ->
+            val implementation = fingerprint.method.implementation!!
+            implementation.removeInstructions(0, implementation.instructions.size)
+            fingerprint.method.addInstructions(
                 0,
                 """
                     return-void
