@@ -1,3 +1,35 @@
+## [1.35.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.34.0...v1.35.0) (2026-08-18)
+
+### ✨ New Features
+
+* Add Xender ([9de7100](https://github.com/BlazeFTL/FTL-Patches/commit/9de710035bf2cd0a5c21005f358af5a3a0beaac5))
+* Add Xender Remove Splash And Clean Ui ([f75b8f6](https://github.com/BlazeFTL/FTL-Patches/commit/f75b8f60d7f5a27f91c031396f7ee92ea173486f))
+* add xender skip splash and clean ui Patch ([810e4d8](https://github.com/BlazeFTL/FTL-Patches/commit/810e4d81e618b5b7ecb8444ca02c1a80dedb7d04))
+* up ([a06c9c6](https://github.com/BlazeFTL/FTL-Patches/commit/a06c9c6f85fa251231c57a27d46a30845387ac5a))
+* up ([fadba56](https://github.com/BlazeFTL/FTL-Patches/commit/fadba5664e1e93c73c8d65388212290937345e08))
+* up ([38d542d](https://github.com/BlazeFTL/FTL-Patches/commit/38d542dc20010cec2045fcfa41a89d469d05e1ea))
+* up ([8d64546](https://github.com/BlazeFTL/FTL-Patches/commit/8d64546ef138cef7db630552755911d108667547))
+* up ([0291d4a](https://github.com/BlazeFTL/FTL-Patches/commit/0291d4a2c1b6c66de1c3e07b92884d1aa3b060c6))
+* up ([a6a3e7e](https://github.com/BlazeFTL/FTL-Patches/commit/a6a3e7ed5304c9c4258baa0fcc88e4e2270b4ea6))
+* up ([75fec32](https://github.com/BlazeFTL/FTL-Patches/commit/75fec32973e85c485a0ab751a5f1a501f89417f5))
+* up ([bed1522](https://github.com/BlazeFTL/FTL-Patches/commit/bed15223e60af39c591d80244285a572a995251a))
+* up ([5e8b356](https://github.com/BlazeFTL/FTL-Patches/commit/5e8b356819c620fb66f8c34ed30aa6c2ba267b7b))
+* up ([16eb495](https://github.com/BlazeFTL/FTL-Patches/commit/16eb4957efa8bc61df380b65edd2f337c1015d44))
+* up ([6c1ace7](https://github.com/BlazeFTL/FTL-Patches/commit/6c1ace717e826981563a43d38330fcd609dcbe12))
+* up ([4af1891](https://github.com/BlazeFTL/FTL-Patches/commit/4af189178b1afaa84d98d4d78e7437da20536118))
+* up ([ef6a464](https://github.com/BlazeFTL/FTL-Patches/commit/ef6a464a77aec9098a8553204ad97541d9d6f5fa))
+* up ([5ff8ae8](https://github.com/BlazeFTL/FTL-Patches/commit/5ff8ae8e716afd9e06abce0cd1b35ab754309c93))
+* up ([dba345f](https://github.com/BlazeFTL/FTL-Patches/commit/dba345fe35526e2ef79ceecfcb563dfc90bb4ca3))
+* up ([93ca4a4](https://github.com/BlazeFTL/FTL-Patches/commit/93ca4a470d2f92cac24e31347d55a49348f0b1fe))
+* up ([34336da](https://github.com/BlazeFTL/FTL-Patches/commit/34336dab4e2bf8eddfdcb6ea562f9d94a11c5cfa))
+* up analytics ([b752b9c](https://github.com/BlazeFTL/FTL-Patches/commit/b752b9c71f8f0f79b11947d3e8d020762c09a62f))
+* up analytics ([3ff0c3e](https://github.com/BlazeFTL/FTL-Patches/commit/3ff0c3e17a6eeb7b415c394cdb84de10591fbe6f))
+* update analytics ([3683525](https://github.com/BlazeFTL/FTL-Patches/commit/36835251d506a61ff4bb97b61ac5affead52cf26))
+* update analytics ([13c899f](https://github.com/BlazeFTL/FTL-Patches/commit/13c899f5ad882edca7c734db49d09eb2888a0e12))
+* update analytics ([4a052ac](https://github.com/BlazeFTL/FTL-Patches/commit/4a052ac04a95826823c1634f919508be44311628))
+* update apk junk clean ([6e4cf59](https://github.com/BlazeFTL/FTL-Patches/commit/6e4cf5957894650b4ae9891b9f1121e753e88bcd))
+* Xender ([4447b68](https://github.com/BlazeFTL/FTL-Patches/commit/4447b688ddaf4ea34ad1c0d9bd4bc62aa3de4071))
+
 ## [1.35.0-dev.20](https://github.com/BlazeFTL/FTL-Patches/compare/v1.35.0-dev.19...v1.35.0-dev.20) (2026-08-18)
 
 ### ✨ New Features
