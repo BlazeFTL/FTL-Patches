@@ -89,13 +89,13 @@ private fun addXenderUiHelpers(mainActivity: MutableClass) {
                 AccessFlags.PRIVATE.value,
                 3,
                 """
-                    invoke-virtual {p0, p1}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
-                    move-result-object v0;
-                    if-eqz v0, :cond_0;
-                    const/16 p0, 0x8;
-                    invoke-virtual {v0, p0}, Landroid/view/View;->setVisibility(I)V;
+                    invoke-virtual {p0, p1}, Landroid/app/Activity;->findViewById(I)Landroid/view/View
+                    move-result-object v0
+                    if-eqz v0, :cond_0
+                    const/16 p0, 0x8
+                    invoke-virtual {v0, p0}, Landroid/view/View;->setVisibility(I)V
                     :cond_0
-                    return-void;
+                    return-void
                 """,
             ),
         )
@@ -110,12 +110,12 @@ private fun addXenderUiHelpers(mainActivity: MutableClass) {
                 AccessFlags.PRIVATE.value,
                 3,
                 """
-                    invoke-virtual {p0, p1}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
-                    move-result-object v0;
-                    if-eqz v0, :cond_0;
-                    invoke-virtual {v0}, Landroid/view/View;->bringToFront()V;
+                    invoke-virtual {p0, p1}, Landroid/app/Activity;->findViewById(I)Landroid/view/View
+                    move-result-object v0
+                    if-eqz v0, :cond_0
+                    invoke-virtual {v0}, Landroid/view/View;->bringToFront()V
                     :cond_0
-                    return-void;
+                    return-void
                 """,
             ),
         )
@@ -130,23 +130,23 @@ private fun addXenderUiHelpers(mainActivity: MutableClass) {
                 AccessFlags.PUBLIC.value,
                 2,
                 """
-                    sget v0, Lcn/xender/R${'$'}id;->x_main_navigation_view:I;
-                    invoke-direct {p0, v0}, Lcn/xender/ui/activity/MainActivity;->hideUiElement(I)V;
-                    sget v0, Lcn/xender/R${'$'}id;->action_guide:I;
-                    invoke-direct {p0, v0}, Lcn/xender/ui/activity/MainActivity;->hideUiElement(I)V;
-                    sget v0, Lcn/xender/R${'$'}id;->x_drawer_rate_item:I;
-                    invoke-direct {p0, v0}, Lcn/xender/ui/activity/MainActivity;->hideUiElement(I)V;
-                    sget v0, Lcn/xender/R${'$'}id;->x_drawer_help_item:I;
-                    invoke-direct {p0, v0}, Lcn/xender/ui/activity/MainActivity;->hideUiElement(I)V;
-                    sget v0, Lcn/xender/R${'$'}id;->x_drawer_about_item:I;
-                    invoke-direct {p0, v0}, Lcn/xender/ui/activity/MainActivity;->hideUiElement(I)V;
-                    sget v0, Lcn/xender/R${'$'}id;->connect_button:I;
-                    invoke-direct {p0, v0}, Lcn/xender/ui/activity/MainActivity;->bringUiElementToFront(I)V;
-                    sget v0, Lcn/xender/R${'$'}id;->create_btn:I;
-                    invoke-direct {p0, v0}, Lcn/xender/ui/activity/MainActivity;->bringUiElementToFront(I)V;
-                    sget v0, Lcn/xender/R${'$'}id;->join_btn:I;
-                    invoke-direct {p0, v0}, Lcn/xender/ui/activity/MainActivity;->bringUiElementToFront(I)V;
-                    return-void;
+                    sget v0, Lcn/xender/R${'$'}id;->x_main_navigation_view:I
+                    invoke-direct {p0, v0}, Lcn/xender/ui/activity/MainActivity;->hideUiElement(I)V
+                    sget v0, Lcn/xender/R${'$'}id;->action_guide:I
+                    invoke-direct {p0, v0}, Lcn/xender/ui/activity/MainActivity;->hideUiElement(I)V
+                    sget v0, Lcn/xender/R${'$'}id;->x_drawer_rate_item:I
+                    invoke-direct {p0, v0}, Lcn/xender/ui/activity/MainActivity;->hideUiElement(I)V
+                    sget v0, Lcn/xender/R${'$'}id;->x_drawer_help_item:I
+                    invoke-direct {p0, v0}, Lcn/xender/ui/activity/MainActivity;->hideUiElement(I)V
+                    sget v0, Lcn/xender/R${'$'}id;->x_drawer_about_item:I
+                    invoke-direct {p0, v0}, Lcn/xender/ui/activity/MainActivity;->hideUiElement(I)V
+                    sget v0, Lcn/xender/R${'$'}id;->connect_button:I
+                    invoke-direct {p0, v0}, Lcn/xender/ui/activity/MainActivity;->bringUiElementToFront(I)V
+                    sget v0, Lcn/xender/R${'$'}id;->create_btn:I
+                    invoke-direct {p0, v0}, Lcn/xender/ui/activity/MainActivity;->bringUiElementToFront(I)V
+                    sget v0, Lcn/xender/R${'$'}id;->join_btn:I
+                    invoke-direct {p0, v0}, Lcn/xender/ui/activity/MainActivity;->bringUiElementToFront(I)V
+                    return-void
                 """,
             ),
         )

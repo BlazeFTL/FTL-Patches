@@ -74,7 +74,7 @@ private fun addStartupHelpers(mainActivity: MutableClass) {
         requestStartupPermissions.addInstructions(
             0,
             """
-                invoke-static {p0}, Lcn/xender/core/permission/b;->splashNeedGrantPermission(Landroid/app/Activity;)[Ljava/lang/String;
+                invoke-static {p0}, Lcn/xender/core/permission/b;->splashNeedGrantPermission(Landroid/app/Activity;)[Ljava/lang/String
                 move-result-object v0
                 array-length v1, v0
                 if-lez v1, :cond_0
@@ -88,20 +88,20 @@ private fun addStartupHelpers(mainActivity: MutableClass) {
                 invoke-static {}, Landroid/os/Environment;->isExternalStorageManager()Z
                 move-result v0
                 if-nez v0, :cond_1
-                new-instance v0, Landroid/content/Intent;
+                new-instance v0, Landroid/content/Intent
                 const-string v1, "android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION"
                 invoke-direct {v0, v1}, Landroid/content/Intent;-><init>(Ljava/lang/String;)V
-                new-instance v1, Ljava/lang/StringBuilder;
+                new-instance v1, Ljava/lang/StringBuilder
                 const-string v2, "package:"
                 invoke-direct {v1, v2}, Ljava/lang/StringBuilder;-><init>()V
-                invoke-virtual {p0}, Landroid/content/Context;->getPackageName()Ljava/lang/String;
+                invoke-virtual {p0}, Landroid/content/Context;->getPackageName()Ljava/lang/String
                 move-result-object v2
-                invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-                invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+                invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder
+                invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String
                 move-result-object v1
-                invoke-static {v1}, Landroid/net/Uri;->parse(Ljava/lang/String;)Landroid/net/Uri;
+                invoke-static {v1}, Landroid/net/Uri;->parse(Ljava/lang/String;)Landroid/net/Uri
                 move-result-object v1
-                invoke-virtual {v0, v1}, Landroid/content/Intent;->setData(Landroid/net/Uri;)Landroid/content/Intent;
+                invoke-virtual {v0, v1}, Landroid/content/Intent;->setData(Landroid/net/Uri;)Landroid/content/Intent
                 invoke-virtual {p0, v0}, Landroid/content/Context;->startActivity(Landroid/content/Intent;)V
 
                 :cond_1
