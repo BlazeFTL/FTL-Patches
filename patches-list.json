@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.35.0-dev.14",
+  "version": "1.35.0-dev.15",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -65,7 +65,7 @@
     },
     {
       "name": "Clean main UI",
-      "description": "Uses direct bytecode edits to hide the bottom navigation, guide, and selected drawer items, then brings the primary action buttons to the front after the relevant lifecycle events.",
+      "description": "Uses a register-isolated helper method to hide selected Xender UI items and bring the primary action buttons to the front after the relevant lifecycle events.",
       "default": false,
       "dependencies": [],
       "compatiblePackages": [
