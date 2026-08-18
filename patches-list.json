@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.36.0-dev.2",
+  "version": "1.0.0",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -449,32 +449,6 @@
                 "X86_64": 76450210,
                 "X86": 76450210
               },
-              "isExperimental": false,
-              "minSdk": null,
-              "description": null
-            }
-          ]
-        }
-      ],
-      "options": []
-    },
-    {
-      "name": "Skip splash and clean UI",
-      "description": "Skips Xender's splash flow and keeps selected connection controls visible while hiding unwanted UI elements.",
-      "default": false,
-      "dependencies": [],
-      "compatiblePackages": [
-        {
-          "packageName": "cn.xender",
-          "name": "Xender",
-          "description": null,
-          "apkFileType": null,
-          "appIconColor": null,
-          "signatures": null,
-          "targets": [
-            {
-              "version": "18.8.0.prime",
-              "versionCodes": null,
               "isExperimental": false,
               "minSdk": null,
               "description": null
