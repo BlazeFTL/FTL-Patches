@@ -4,9 +4,6 @@ import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.removeInstructions
-import com.android.tools.smali.dexlib2.Opcode
-import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
-import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import app.morphe.patcher.patch.bytecodePatch
 
 private val MainOnCreateFingerprint = Fingerprint(
@@ -60,8 +57,6 @@ val skipSplashAndCleanUiPatch = bytecodePatch(
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_XENDER)
-
-    extendWith("extensions/xender.mpe")
 
     execute {
         SplashOnCreateFingerprint.let { fingerprint ->
@@ -119,47 +114,85 @@ val skipSplashAndCleanUiPatch = bytecodePatch(
             )
         }
 
-        MainOnCreateFingerprint.let { fingerprint ->
-            val instructions = fingerprint.method.implementation!!.instructions
-            val bindingIndex = instructions.indexOfFirst { instruction ->
-                instruction.opcode == Opcode.IPUT_OBJECT &&
-                    (instruction as? ReferenceInstruction)?.reference.let { reference ->
-                        (reference as? FieldReference)?.definingClass == "Lcn/xender/ui/activity/MainActivity;" &&
-                            (reference as? FieldReference)?.name == "J0"
-                    }
-            }
+        val cleanUi = """
+            invoke-virtual {p0}, Landroid/app/Activity;->getWindow()Landroid/view/Window;
+            move-result-object v0
+            invoke-virtual {v0}, Landroid/view/Window;->getDecorView()Landroid/view/View;
+            move-result-object v0
+            sget v1, Lcn/xender/R$id;->x_main_navigation_view:I
+            invoke-virtual {v0, v1}, Landroid/view/View;->findViewById(I)Landroid/view/View;
+            move-result-object v1
+            if-eqz v1, :cond_ftl_nav
+            const/16 v2, 0x8
+            invoke-virtual {v1, v2}, Landroid/view/View;->setVisibility(I)V
+            :cond_ftl_nav
+            sget v1, Lcn/xender/R$id;->action_guide:I
+            invoke-virtual {v0, v1}, Landroid/view/View;->findViewById(I)Landroid/view/View;
+            move-result-object v1
+            if-eqz v1, :cond_ftl_guide
+            const/16 v2, 0x8
+            invoke-virtual {v1, v2}, Landroid/view/View;->setVisibility(I)V
+            :cond_ftl_guide
+            sget v1, Lcn/xender/R$id;->x_drawer_rate_item:I
+            invoke-virtual {v0, v1}, Landroid/view/View;->findViewById(I)Landroid/view/View;
+            move-result-object v1
+            if-eqz v1, :cond_ftl_rate
+            const/16 v2, 0x8
+            invoke-virtual {v1, v2}, Landroid/view/View;->setVisibility(I)V
+            :cond_ftl_rate
+            sget v1, Lcn/xender/R$id;->x_drawer_help_item:I
+            invoke-virtual {v0, v1}, Landroid/view/View;->findViewById(I)Landroid/view/View;
+            move-result-object v1
+            if-eqz v1, :cond_ftl_help
+            const/16 v2, 0x8
+            invoke-virtual {v1, v2}, Landroid/view/View;->setVisibility(I)V
+            :cond_ftl_help
+            sget v1, Lcn/xender/R$id;->x_drawer_about_item:I
+            invoke-virtual {v0, v1}, Landroid/view/View;->findViewById(I)Landroid/view/View;
+            move-result-object v1
+            if-eqz v1, :cond_ftl_about
+            const/16 v2, 0x8
+            invoke-virtual {v1, v2}, Landroid/view/View;->setVisibility(I)V
+            :cond_ftl_about
+            sget v1, Lcn/xender/R$id;->connect_button:I
+            invoke-virtual {v0, v1}, Landroid/view/View;->findViewById(I)Landroid/view/View;
+            move-result-object v1
+            if-eqz v1, :cond_ftl_connect
+            invoke-virtual {v1}, Landroid/view/View;->bringToFront()V
+            :cond_ftl_connect
+            sget v1, Lcn/xender/R$id;->create_btn:I
+            invoke-virtual {v0, v1}, Landroid/view/View;->findViewById(I)Landroid/view/View;
+            move-result-object v1
+            if-eqz v1, :cond_ftl_create
+            invoke-virtual {v1}, Landroid/view/View;->bringToFront()V
+            :cond_ftl_create
+            sget v1, Lcn/xender/R$id;->join_btn:I
+            invoke-virtual {v0, v1}, Landroid/view/View;->findViewById(I)Landroid/view/View;
+            move-result-object v1
+            if-eqz v1, :cond_ftl_join
+            invoke-virtual {v1}, Landroid/view/View;->bringToFront()V
+            :cond_ftl_join
+        """.trimIndent()
 
-            if (bindingIndex >= 0) {
-                fingerprint.method.addInstructions(
-                    bindingIndex + 1,
-                    "invoke-static {p0}, Lapp/ftl/extension/xender/XenderCleanUi;->schedule(Landroid/app/Activity;)V",
-                )
-            }
-        }
+        MainOnCreateFingerprint.method.addInstructions(
+            MainOnCreateFingerprint.method.implementation!!.instructions.size - 1,
+            cleanUi,
+        )
 
         MainOnResumeFingerprint.method.addInstructions(
             0,
-            """
-                invoke-static {p0}, Lapp/ftl/extension/xender/XenderCleanUi;->schedule(Landroid/app/Activity;)V
-            """.trimIndent(),
+            cleanUi,
         )
 
         DrawerEnterClickFingerprint.method.addInstructions(
             0,
-            """
-                invoke-static {p0}, Lapp/ftl/extension/xender/XenderCleanUi;->schedule(Landroid/app/Activity;)V
-            """.trimIndent(),
+            cleanUi,
         )
 
-        HiddenViewFingerprint.method.let { fingerprint ->
-            val implementation = fingerprint.method.implementation!!
-            implementation.removeInstructions(0, implementation.instructions.size)
-            fingerprint.method.addInstructions(
-                0,
-                """
-                    return-void
-                """.trimIndent(),
-            )
+        HiddenViewFingerprint.method.let { method ->
+            val instructionCount = method.implementation!!.instructions.size
+            method.removeInstructions(0, instructionCount)
+            method.addInstructions(0, "return-void")
         }
     }
 }
