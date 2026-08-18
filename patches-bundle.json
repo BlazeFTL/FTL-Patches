@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-08-18T04:26:45",
-  "description": "## [1.35.0-dev.6](https://github.com/BlazeFTL/FTL-Patches/compare/v1.35.0-dev.5...v1.35.0-dev.6) (2026-08-18)\n\n### ✨ New Features\n\n* update analytics ([3683525](https://github.com/BlazeFTL/FTL-Patches/commit/36835251d506a61ff4bb97b61ac5affead52cf26))",
-  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.35.0-dev.6/patches-1.35.0-dev.6.mpp",
+  "created_at": "2026-08-18T05:06:15",
+  "description": "## [1.35.0-dev.7](https://github.com/BlazeFTL/FTL-Patches/compare/v1.35.0-dev.6...v1.35.0-dev.7) (2026-08-18)\n\n### ✨ New Features\n\n* up ([dba345f](https://github.com/BlazeFTL/FTL-Patches/commit/dba345fe35526e2ef79ceecfcb563dfc90bb4ca3))\n* up ([93ca4a4](https://github.com/BlazeFTL/FTL-Patches/commit/93ca4a470d2f92cac24e31347d55a49348f0b1fe))\n* up ([34336da](https://github.com/BlazeFTL/FTL-Patches/commit/34336dab4e2bf8eddfdcb6ea562f9d94a11c5cfa))",
+  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.35.0-dev.7/patches-1.35.0-dev.7.mpp",
   "signature_download_url": "",
-  "version": "1.35.0-dev.6"
+  "version": "1.35.0-dev.7"
 }
