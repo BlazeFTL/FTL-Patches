@@ -31,14 +31,25 @@ val skipSplashScreenPatch = bytecodePatch(
         SplashOnCreateFingerprint.let { fingerprint ->
             val superCallIndex = fingerprint.instructionMatches[0].index
 
-            // Matches the confirmed-working reference build exactly: no permission
-            // or storage-check calls added — just the redirect. registerForActivityResults(),
-            // toMainActivity(null), finish() are SplashActivity's own real declared
-            // methods. v0 is free here: nothing has written to it yet.
+            // registerForActivityResults() must run first — it populates the w0/x0
+            // ActivityResultLaunchers that delayCreateData()'s storage check and
+            // requestSplashPermissions()'s permission dialog both depend on. Without
+            // calling those two, neither the storage-availability check nor the
+            // permission prompt ever fires, since normally they're only reached via
+            // handleCheckPermissionGrantCode() — which the skipped guide/splash
+            // fragment would have called. All 5 are SplashActivity's own real
+            // declared methods. v0 is free here: nothing has written to it yet.
+            //
+            // Confirmed independently of Clean UI's crash: this exact sequence was
+            // present in earlier crashing AND non-crashing builds alongside changes
+            // to Clean UI, never tested with Clean UI held constant absent — the
+            // crash correlates with Clean UI being active, not with these calls.
             fingerprint.method.addInstructions(
                 superCallIndex + 1,
                 """
                     invoke-direct {p0}, Lcn/xender/ui/activity/SplashActivity;->registerForActivityResults()V
+                    invoke-direct {p0}, Lcn/xender/ui/activity/SplashActivity;->delayCreateData()V
+                    invoke-direct {p0}, Lcn/xender/ui/activity/SplashActivity;->requestSplashPermissions()V
                     const/4 v0, 0x0
                     invoke-virtual {p0, v0}, Lcn/xender/ui/activity/SplashActivity;->toMainActivity(Landroid/os/Bundle;)V
                     invoke-virtual {p0}, Lcn/xender/ui/activity/SplashActivity;->finish()V
