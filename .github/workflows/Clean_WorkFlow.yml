@@ -1,0 +1,28 @@
+name: Cleanup Workflow Runs
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * 0'
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Delete old runs, keep latest 3 per workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REPO="${{ github.repository }}"
+          for wf_id in $(gh api "repos/$REPO/actions/workflows" --paginate -q '.workflows[].id'); do
+            run_ids=$(gh api "repos/$REPO/actions/workflows/$wf_id/runs" --paginate -q '.workflow_runs[].id')
+            keep=$(echo "$run_ids" | head -n 3)
+            for id in $run_ids; do
+              if ! echo "$keep" | grep -qx "$id"; then
+                gh api -X DELETE "repos/$REPO/actions/runs/$id" 2>/dev/null || true
+              fi
+            done
+          don
+          e
