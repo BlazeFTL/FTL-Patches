@@ -8,7 +8,7 @@ import app.morphe.patcher.patch.bytecodePatch
  * MainActivity startup work is restored first, then SplashActivity is reduced
  * to registering its result launchers and opening MainActivity.
  */
-private object MainActivityOnCreateFingerprint : Fingerprint(
+private object MainActivityStartupFingerprint : Fingerprint(
     definingClass = "Lcn/xender/ui/activity/MainActivity;",
     name = "onCreate",
     returnType = "V",
@@ -36,7 +36,7 @@ val skipSplashScreenPatch = bytecodePatch(
     compatibleWith(COMPATIBILITY_XENDER)
 
     execute {
-        MainActivityOnCreateFingerprint.let { fingerprint ->
+        MainActivityStartupFingerprint.let { fingerprint ->
             val superCallIndex = fingerprint.instructionMatches[0].index
             fingerprint.method.addInstructions(
                 superCallIndex + 1,
