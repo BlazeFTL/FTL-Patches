@@ -104,7 +104,7 @@ internal val ANALYTICS_STRING_BLACKLIST = listOf(
 // Bare terms like "admob"/"branch"/"azure"/"adsdk"/"analytics"/"measurement"
 // also collide with internal SDK config keys, adapter class names, and plain
 // English words (e.g. "appenda" ⊂ "appendable") when matched outside that
-// URL context — see isBlockedAdSdkLiteral below, which enforces it.
+// URL context — see isBlockedAnalyticsLiteral below, which enforces it.
 internal val AD_SDK_STRING_BLACKLIST = listOf(
     "61.145.124.238",
     "ad.api.kaffnet",
@@ -253,24 +253,6 @@ private const val RANDOM_STRING_LENGTH = 7
 private fun randomAnalyticsReplacement(): String =
     (1..RANDOM_STRING_LENGTH).map { RANDOM_STRING_CHARSET[Random.nextInt(RANDOM_STRING_CHARSET.length)] }.joinToString("")
 
-// SDK's own bytecode: entry points already stubbed via fingerprints above.
-// Poisoning strings inside the SDK's own internals can break its init-time
-// validation and crash the app before any tracking call is even made.
-private val ANALYTICS_SDK_PACKAGE_PREFIXES = listOf(
-    "Lcom/google/firebase/",
-    "Lcom/google/android/gms/analytics/",
-    "Lcom/google/android/gms/measurement/",
-    "Lcom/google/android/gms/internal/measurement/",
-    "Lcom/google/android/gms/ads/",
-    "Lcom/google/android/gms/internal/ads/",
-    "Lcom/flurry/android/",
-    "Lcom/yandex/metrica/",
-    "Lcom/appsflyer/",
-    "Lcom/adjust/sdk/",
-    "Lcom/bytedance/sdk/openadsdk/",
-    "Lcom/bykv/vk/openvk/",
-)
-
 private fun isConstString(opcode: Opcode) =
     opcode == Opcode.CONST_STRING || opcode == Opcode.CONST_STRING_JUMBO
 
@@ -288,7 +270,7 @@ private fun isSignatureVerifyCall(reference: MethodReference) =
 // pulls it in via dependsOn), so it doesn't show as its own toggle in the UI.
 val stripFirebaseManifestComponentsPatch = resourcePatch(
     name = null,
-    description = "Removes Firebase Analytics/Crashlytics receiver and service declarations from AndroidManifest.xml.",
+    description = "Removes Firebase Analytics/Crashlytics provider, receiver, and service declarations from AndroidManifest.xml.",
 ) {
     execute {
         document("AndroidManifest.xml").use { document ->
@@ -299,6 +281,14 @@ val stripFirebaseManifestComponentsPatch = resourcePatch(
             for (i in 0 until children.length) {
                 val node = children.item(i) as? Element ?: continue
                 when (node.tagName) {
+                    // FirebaseInitProvider runs before Application.onCreate() and
+                    // kicks off all Firebase auto-init/auto-collection on its own —
+                    // stubbing logEvent() etc. does nothing to stop this.
+                    "provider" -> {
+                        if (node.getAttribute("android:name").startsWith("com.google.firebase")) {
+                            toRemove += node
+                        }
+                    }
                     "receiver" -> {
                         if (node.getAttribute("android:name").startsWith("com.google.firebase")) {
                             toRemove += node
@@ -339,9 +329,7 @@ val removeAnalyticsPatch = bytecodePatch(
         AdjustTrackEventFingerprint.methodOrNull?.addInstructions(0, "return-void")
 
         classDefForEach { classDef ->
-            val isSdkInternal = ANALYTICS_SDK_PACKAGE_PREFIXES.any { classDef.type.startsWith(it) }
-
-            val hasStringMatch = !isSdkInternal && classDef.methods.any { method ->
+            val hasStringMatch = classDef.methods.any { method ->
                 (method.instructionsOrNull ?: emptyList()).any { instruction ->
                     isConstString(instruction.opcode) &&
                         ((instruction as ReferenceInstruction).reference as StringReference)
@@ -363,7 +351,7 @@ val removeAnalyticsPatch = bytecodePatch(
             if (!hasStringMatch && !hasSignatureVerifyCall) return@classDefForEach
 
             mutableClassDefBy(classDef).methods.forEach { method ->
-                if (!isSdkInternal) {
+                if (hasStringMatch) {
                     (method.instructionsOrNull ?: emptyList()).forEachIndexed { index, instruction ->
                         if (!isConstString(instruction.opcode)) return@forEachIndexed
                         val value = ((instruction as ReferenceInstruction).reference as StringReference).string
