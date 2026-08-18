@@ -1,3 +1,5 @@
+package app.ftl.patches.xender
+
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions

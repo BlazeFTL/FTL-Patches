@@ -1,3 +1,5 @@
+package app.ftl.patches.xender
+
 import app.ftl.util.getFreeRegisterProvider
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.methodCall
