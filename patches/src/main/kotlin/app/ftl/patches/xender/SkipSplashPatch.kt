@@ -80,7 +80,7 @@ private object IsAndroidRAndTargetRFingerprint : Fingerprint(
 )
 
 /** Builds `DefiningClass;->name(paramTypes)returnType` from a matched fingerprint. */
-context(BytecodePatchContext)
+context(_: BytecodePatchContext)
 private fun Fingerprint.staticCallSmali(): String {
     val resolved = originalMethod
     val params = resolved.parameterTypes.joinToString("") { it.toString() }
