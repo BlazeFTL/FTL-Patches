@@ -12,6 +12,7 @@ import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.iface.reference.StringReference
+import kotlin.random.Random
 import org.w3c.dom.Element
 
 internal object FirebaseAnalyticsLogEventFingerprint : Fingerprint(
@@ -97,7 +98,152 @@ internal val ANALYTICS_STRING_BLACKLIST = listOf(
     "YandexMetricaNativeModule",
 )
 
-private const val ANALYTICS_STRING_REPLACEMENT = ""
+// Ad-SDK keyword list, ported verbatim from Mpatch's AntiAnalytics blocklist.
+// Several terms are broad by design (e.g. "analytics", "measurement", "branch")
+// and will match unrelated strings/class names too — that's Mpatch's own
+// tradeoff, kept here on request rather than narrowed.
+internal val AD_SDK_STRING_BLACKLIST = listOf(
+    "61.145.124.238",
+    "ad.api.kaffnet",
+    "ad.mail.ru",
+    "ad.myinstashot.com",
+    "adc3-launch",
+    "adbuddiz",
+    "adcolony",
+    "addapptr",
+    "adincube",
+    "adjust",
+    "adkmob",
+    "adknowledge",
+    "admarvel",
+    "admob",
+    "admost",
+    "adnw_logging",
+    "adsafeprotected",
+    "adsdk",
+    "adsert",
+    "adserver",
+    "adservice",
+    "advertising",
+    "adview",
+    "adz.wattpad",
+    "aerserv",
+    "airpush",
+    "altamob",
+    "alta.eqmob",
+    "amazon-adsystem",
+    "amazonaws",
+    "analytics",
+    "appAdForce",
+    "appboy",
+    "appbrain",
+    "appenda",
+    "appia",
+    "applifier.com",
+    "applovin",
+    "applvn",
+    "appnext",
+    "appnexus",
+    "appodeal",
+    "apprupt",
+    "apsalar",
+    "appsdt",
+    "appsflyer",
+    "avocarrot",
+    "azure",
+    "boxdigital/sdk/ad",
+    "branch",
+    "ca-app-pub",
+    "certificate.mobile.yandex.net",
+    "chartboost",
+    "cloudfront",
+    "code.google.com/p/android/issues/detail",
+    "crashlytics",
+    "csi.gstatic.com",
+    "doubleclick.net",
+    "dsp.batmobil",
+    "duapps",
+    "firebaseapp",
+    "flurry",
+    "fyber",
+    "g.doubleclick",
+    "google/android/gms/internal",
+    "google.com/safebrowsing/clientreport",
+    "googleapis.com/auth/games",
+    "googleads",
+    "googlesyndication",
+    "graph.facebook",
+    "greystripe",
+    "heyzap",
+    "hockeyapp",
+    "hyprmx",
+    "InlineAd",
+    "inmobi",
+    "inneractive",
+    "instreamatic",
+    "integralads",
+    "ironsource",
+    "jirbo",
+    "jumptap",
+    "kochava",
+    "Leadbolt",
+    "localytics",
+    "loopme",
+    "madnet.ru",
+    "mdotm",
+    "measurement",
+    "mediabrix",
+    "metrica",
+    "millennialmedia",
+    "mngads",
+    "moat",
+    "mobclix",
+    "mobfox",
+    "mobvista",
+    "montexi",
+    "moolah",
+    "mopub",
+    "mp.mydas.mobi",
+    "my/target",
+    "NativeInterstitial",
+    "net.rayjump",
+    "network_ads_common",
+    "nexage",
+    "onelouder/adlib",
+    "openx",
+    "pagead/ads",
+    "plus1.wapstart.ru",
+    "pubmatic",
+    "pubnative",
+    "r.my.com/mobile",
+    "revmob",
+    "sb.scorecardresearch",
+    "smaato/SOMA",
+    "startapp",
+    "startup.mobile.yandex.net",
+    "supersonicads",
+    "tagmanager",
+    "tapas",
+    "tapjoy",
+    "udm.scorecardresearch",
+    "unity3d/ads",
+    "unityads",
+    "vdopia",
+    "vungle",
+    "www.dummy",
+    "wzrkt",
+    "xtify",
+    "yandexadexchange",
+    "zestadz",
+)
+
+private val ALL_BLOCKED_STRINGS = ANALYTICS_STRING_BLACKLIST + AD_SDK_STRING_BLACKLIST
+
+private const val RANDOM_STRING_CHARSET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+private const val RANDOM_STRING_LENGTH = 7
+
+private fun randomAnalyticsReplacement(): String =
+    (1..RANDOM_STRING_LENGTH).map { RANDOM_STRING_CHARSET[Random.nextInt(RANDOM_STRING_CHARSET.length)] }.joinToString("")
 
 // SDK's own bytecode: entry points already stubbed via fingerprints above.
 // Poisoning strings inside the SDK's own internals can break its init-time
@@ -186,7 +332,7 @@ val removeAnalyticsPatch = bytecodePatch(
             val hasStringMatch = !isSdkInternal && classDef.methods.any { method ->
                 (method.instructionsOrNull ?: emptyList()).any { instruction ->
                     isConstString(instruction.opcode) &&
-                        ANALYTICS_STRING_BLACKLIST.any { term ->
+                        ALL_BLOCKED_STRINGS.any { term ->
                             ((instruction as ReferenceInstruction).reference as StringReference)
                                 .string.contains(term, ignoreCase = true)
                         }
@@ -211,9 +357,9 @@ val removeAnalyticsPatch = bytecodePatch(
                     (method.instructionsOrNull ?: emptyList()).forEachIndexed { index, instruction ->
                         if (!isConstString(instruction.opcode)) return@forEachIndexed
                         val value = ((instruction as ReferenceInstruction).reference as StringReference).string
-                        if (ANALYTICS_STRING_BLACKLIST.none { value.contains(it, ignoreCase = true) }) return@forEachIndexed
+                        if (ALL_BLOCKED_STRINGS.none { value.contains(it, ignoreCase = true) }) return@forEachIndexed
                         val register = (instruction as OneRegisterInstruction).registerA
-                        method.replaceInstruction(index, "const-string v$register, \"$ANALYTICS_STRING_REPLACEMENT\"")
+                        method.replaceInstruction(index, "const-string v$register, \"${randomAnalyticsReplacement()}\"")
                     }
                 }
 
