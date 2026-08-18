@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.35.0-dev.15](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.35.0-dev.15)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;25 patches total
+> **[v1.35.0-dev.16](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.35.0-dev.16)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;25 patches total
 <details>
 <summary>📦 Xender&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
 <br>
@@ -21,8 +21,8 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
-| [Clean main UI](#clean-main-ui) | Uses a register-isolated helper method to hide selected Xender UI items and bring the primary action buttons to the front after the relevant lifecycle events. |  |
-| [Skip splash screen](#skip-splash-screen) | Jumps directly from SplashActivity.onCreate() to MainActivity without executing the splash UI or its permission/data flow. |  |
+| [Clean main UI](#clean-main-ui) | Adds the wanted register-isolated MainActivity UI helpers and reapplies them at safe lifecycle points. |  |
+| [Skip splash screen](#skip-splash-screen) | Restores MainActivity local-data and startup-permission helpers, then reduces SplashActivity to the wanted direct MainActivity launch flow. |  |
 | [Speed up splash screen](#speed-up-splash-screen) | Enters the main activity directly after the splash permission check instead of delaying for the additional external-storage check. |  |
 
 </details>
