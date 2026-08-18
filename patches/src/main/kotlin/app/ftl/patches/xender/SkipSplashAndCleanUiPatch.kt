@@ -137,54 +137,54 @@ internal fun ReferenceInstruction.methodReference(): MethodReference = reference
 
 private fun cleanUiInstructions(): String =
     """
-        sget v0, Lcn/xender/R\$id;->x_main_navigation_view:I
+        sget v0, Lcn/xender/R${'$'}id;->x_main_navigation_view:I
         invoke-virtual {p0, v0}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
         move-result-object v0
         if-eqz v0, :xender_clean_0
         const/16 v1, 0x8
         invoke-virtual {v0, v1}, Landroid/view/View;->setVisibility(I)V
         :xender_clean_0
-        sget v0, Lcn/xender/R\$id;->action_guide:I
+        sget v0, Lcn/xender/R${'$'}id;->action_guide:I
         invoke-virtual {p0, v0}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
         move-result-object v0
         if-eqz v0, :xender_clean_1
         const/16 v1, 0x8
         invoke-virtual {v0, v1}, Landroid/view/View;->setVisibility(I)V
         :xender_clean_1
-        sget v0, Lcn/xender/R\$id;->x_drawer_rate_item:I
+        sget v0, Lcn/xender/R${'$'}id;->x_drawer_rate_item:I
         invoke-virtual {p0, v0}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
         move-result-object v0
         if-eqz v0, :xender_clean_2
         const/16 v1, 0x8
         invoke-virtual {v0, v1}, Landroid/view/View;->setVisibility(I)V
         :xender_clean_2
-        sget v0, Lcn/xender/R\$id;->x_drawer_help_item:I
+        sget v0, Lcn/xender/R${'$'}id;->x_drawer_help_item:I
         invoke-virtual {p0, v0}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
         move-result-object v0
         if-eqz v0, :xender_clean_3
         const/16 v1, 0x8
         invoke-virtual {v0, v1}, Landroid/view/View;->setVisibility(I)V
         :xender_clean_3
-        sget v0, Lcn/xender/R\$id;->x_drawer_about_item:I
+        sget v0, Lcn/xender/R${'$'}id;->x_drawer_about_item:I
         invoke-virtual {p0, v0}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
         move-result-object v0
         if-eqz v0, :xender_clean_4
         const/16 v1, 0x8
         invoke-virtual {v0, v1}, Landroid/view/View;->setVisibility(I)V
         :xender_clean_4
-        sget v0, Lcn/xender/R\$id;->connect_button:I
+        sget v0, Lcn/xender/R${'$'}id;->connect_button:I
         invoke-virtual {p0, v0}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
         move-result-object v0
         if-eqz v0, :xender_clean_5
         invoke-virtual {v0}, Landroid/view/View;->bringToFront()V
         :xender_clean_5
-        sget v0, Lcn/xender/R\$id;->create_btn:I
+        sget v0, Lcn/xender/R${'$'}id;->create_btn:I
         invoke-virtual {p0, v0}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
         move-result-object v0
         if-eqz v0, :xender_clean_6
         invoke-virtual {v0}, Landroid/view/View;->bringToFront()V
         :xender_clean_6
-        sget v0, Lcn/xender/R\$id;->join_btn:I
+        sget v0, Lcn/xender/R${'$'}id;->join_btn:I
         invoke-virtual {p0, v0}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
         move-result-object v0
         if-eqz v0, :xender_clean_7
