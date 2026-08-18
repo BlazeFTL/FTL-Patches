@@ -31,16 +31,20 @@ val skipSplashScreenPatch = bytecodePatch(
         SplashOnCreateFingerprint.let { fingerprint ->
             val superCallIndex = fingerprint.instructionMatches[0].index
 
-            // registerForActivityResults(), toMainActivity(null), finish(), return-void —
-            // all real declared methods on SplashActivity itself (registerForActivityResults
-            // and toMainActivity are already relied on by the existing splash patch;
-            // finish() is SplashActivity's own override). v0 is free here: nothing has
-            // written to it yet in the method, and the inserted return-void means nothing
-            // downstream reads it either.
+            // registerForActivityResults() must run first — it populates the w0/x0
+            // ActivityResultLaunchers that delayCreateData()'s storage check and
+            // requestSplashPermissions()'s permission dialog both depend on. Without
+            // calling those two, neither the storage-availability check nor the
+            // permission prompt ever fires, since normally they're only reached via
+            // handleCheckPermissionGrantCode() — which the skipped guide/splash
+            // fragment would have called. All 5 are SplashActivity's own real
+            // declared methods. v0 is free here: nothing has written to it yet.
             fingerprint.method.addInstructions(
                 superCallIndex + 1,
                 """
                     invoke-direct {p0}, Lcn/xender/ui/activity/SplashActivity;->registerForActivityResults()V
+                    invoke-direct {p0}, Lcn/xender/ui/activity/SplashActivity;->delayCreateData()V
+                    invoke-direct {p0}, Lcn/xender/ui/activity/SplashActivity;->requestSplashPermissions()V
                     const/4 v0, 0x0
                     invoke-virtual {p0, v0}, Lcn/xender/ui/activity/SplashActivity;->toMainActivity(Landroid/os/Bundle;)V
                     invoke-virtual {p0}, Lcn/xender/ui/activity/SplashActivity;->finish()V
