@@ -151,10 +151,10 @@ val skipSplashAndCleanUiPatch = bytecodePatch(
             """.trimIndent(),
         )
 
-        HiddenViewFingerprint.method.let { fingerprint ->
-            val implementation = fingerprint.method.implementation!!
-            implementation.removeInstructions(0, implementation.instructions.size)
-            fingerprint.method.addInstructions(
+        HiddenViewFingerprint.method.let { method ->
+            val instructionCount = method.implementation!!.instructions.size
+            method.removeInstructions(0, instructionCount)
+            method.addInstructions(
                 0,
                 """
                     return-void
