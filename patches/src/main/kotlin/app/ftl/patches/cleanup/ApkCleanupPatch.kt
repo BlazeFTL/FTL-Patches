@@ -1,6 +1,6 @@
 package app.ftl.patches.cleanup
 
-import app.morphe.patcher.patch.resourcePatch
+import app.morphe.patcher.patch.rawResourcePatch
 import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.stringOption
 import java.io.File
@@ -25,12 +25,16 @@ private val JUNK_PATTERNS = listOf(
     Regex(""".*hsdp\.properties$"""),
     Regex(""".*core-common\.properties$"""),
     Regex(""".*user-messaging-platform\.properties$"""),
+    Regex(""".*feature-delivery.*\.properties$"""),
+    Regex(""".*ads-mobile-sdk\.properties$"""),
     Regex(""".*\.proto$"""),
     Regex(""".*DebugProbesKt\.bin$"""),
     Regex(""".*\.version$"""),
+    Regex(""".*_VERSION$"""),
     Regex(""".*androidsupportmultidexversion\.txt$"""),
     Regex(""".*stamp-cert-sha256$"""),
     Regex(""".*version-control-info\.textproto$"""),
+    Regex(""".*kotlin-tooling-metadata\.json$"""),
     Regex(""".*META-INF/CHANGES$"""),
     Regex(""".*META-INF/README\.md$"""),
     Regex(""".*META-INF/NOTICE.*"""),
@@ -39,7 +43,7 @@ private val JUNK_PATTERNS = listOf(
 
 private val EXCLUDED_PREFIXES = listOf("assets/", "res/")
 
-val apkCleanupPatch = resourcePatch(
+val apkCleanupPatch = rawResourcePatch(
     name = "APK Junk Cleanup",
     description = "Removes build artifacts and metadata that bloat the APK: Play Services / Firebase version files, protobuf descriptors, debug probes, kotlin builtins, META-INF subfolder clutter, and misc junk. Safe — only removes files with no runtime purpose.",
     default = false,
