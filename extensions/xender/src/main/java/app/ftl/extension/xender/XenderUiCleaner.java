@@ -32,26 +32,46 @@ public final class XenderUiCleaner {
     private static final int MAX_RETRIES = 12;
     private static final long RETRY_DELAY_MS = 150L;
 
+    // Resolved once via getIdentifier() (slow, does a resource-table lookup) and
+    // reused on every retry, instead of re-resolving all 8 names up to 13x per
+    // trigger. Left null until first successful resolution.
+    private static volatile int[] hiddenIds;
+    private static volatile int[] frontIds;
+
     private XenderUiCleaner() {
     }
 
-    public static void applyUiCustomizations(Activity activity) {
-        applyUiCustomizations(activity, 0);
+    // Never runs on the caller's stack: onCreate/onResume/drawerEnterClick only
+    // ever post a message and return immediately, so this can't add to whatever
+    // else those methods do synchronously (including the app's own ad-preload
+    // work, which is what the ad-source crash traces through).
+    public static void applyUiCustomizations(final Activity activity) {
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                applyUiCustomizationsInternal(activity, 0);
+            }
+        });
     }
 
-    private static void applyUiCustomizations(final Activity activity, final int attempt) {
+    private static void applyUiCustomizationsInternal(final Activity activity, final int attempt) {
         if (activity == null || activity.isFinishing()) return;
 
         try {
             Resources res = activity.getResources();
             String pkg = activity.getPackageName();
 
-            for (String name : HIDDEN_VIEW_NAMES) {
-                View v = findViewByName(activity, res, pkg, name);
+            if (hiddenIds == null) hiddenIds = resolveIds(res, pkg, HIDDEN_VIEW_NAMES);
+            if (frontIds == null) frontIds = resolveIds(res, pkg, FRONT_VIEW_NAMES);
+
+            for (int id : hiddenIds) {
+                if (id == 0) continue;
+                View v = activity.findViewById(id);
                 if (v != null) v.setVisibility(View.GONE);
             }
-            for (String name : FRONT_VIEW_NAMES) {
-                View v = findViewByName(activity, res, pkg, name);
+            for (int id : frontIds) {
+                if (id == 0) continue;
+                View v = activity.findViewById(id);
                 if (v != null) v.bringToFront();
             }
         } catch (Throwable t) {
@@ -64,15 +84,17 @@ public final class XenderUiCleaner {
             new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    applyUiCustomizations(activity, attempt + 1);
+                    applyUiCustomizationsInternal(activity, attempt + 1);
                 }
             }, RETRY_DELAY_MS);
         }
     }
 
-    private static View findViewByName(Activity activity, Resources res, String pkg, String name) {
-        int id = res.getIdentifier(name, "id", pkg);
-        if (id == 0) return null;
-        return activity.findViewById(id);
+    private static int[] resolveIds(Resources res, String pkg, String[] names) {
+        int[] ids = new int[names.length];
+        for (int i = 0; i < names.length; i++) {
+            ids[i] = res.getIdentifier(names[i], "id", pkg);
+        }
+        return ids;
     }
 }
