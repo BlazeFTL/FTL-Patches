@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-08-18T20:54:46",
-  "description": "## [1.36.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/compare/v1.36.0-dev.1...v1.36.0-dev.2) (2026-08-18)\n\n### ✨ New Features\n\n* up ([a1fe180](https://github.com/BlazeFTL/FTL-Patches/commit/a1fe180ced954df730852655761589bc77fae75d))\n* up ([d3375e0](https://github.com/BlazeFTL/FTL-Patches/commit/d3375e0e18a3d14c314ff1a62b1966651bd3e3d1))\n* up ([2ede705](https://github.com/BlazeFTL/FTL-Patches/commit/2ede705235c5775d4942484ab8be7ca8fc9e29bd))",
-  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.36.0-dev.2/patches-1.36.0-dev.2.mpp",
+  "created_at": "2026-08-18T21:10:37",
+  "description": "## [1.36.0-dev.3](https://github.com/BlazeFTL/FTL-Patches/compare/v1.36.0-dev.2...v1.36.0-dev.3) (2026-08-18)\n\n### ✨ New Features\n\n* up ([8ee9baa](https://github.com/BlazeFTL/FTL-Patches/commit/8ee9baa18c6c57af74f816b79761e14798e28b5d))",
+  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.36.0-dev.3/patches-1.36.0-dev.3.mpp",
   "signature_download_url": "",
-  "version": "1.36.0-dev.2"
+  "version": "1.36.0-dev.3"
 }
