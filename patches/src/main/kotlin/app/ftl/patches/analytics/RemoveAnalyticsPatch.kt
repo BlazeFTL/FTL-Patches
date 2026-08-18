@@ -99,9 +99,12 @@ internal val ANALYTICS_STRING_BLACKLIST = listOf(
 )
 
 // Ad-SDK keyword list, ported verbatim from Mpatch's AntiAnalytics blocklist.
-// Several terms are broad by design (e.g. "analytics", "measurement", "branch")
-// and will match unrelated strings/class names too — that's Mpatch's own
-// tradeoff, kept here on request rather than narrowed.
+// In the original tool this list is only ever checked against strings that
+// start with "http://"/"https://" (its source regex is `https?://.*(term).*`).
+// Bare terms like "admob"/"branch"/"azure"/"adsdk"/"analytics"/"measurement"
+// also collide with internal SDK config keys, adapter class names, and plain
+// English words (e.g. "appenda" ⊂ "appendable") when matched outside that
+// URL context — see isBlockedAdSdkLiteral below, which enforces it.
 internal val AD_SDK_STRING_BLACKLIST = listOf(
     "61.145.124.238",
     "ad.api.kaffnet",
@@ -237,7 +240,12 @@ internal val AD_SDK_STRING_BLACKLIST = listOf(
     "zestadz",
 )
 
-private val ALL_BLOCKED_STRINGS = ANALYTICS_STRING_BLACKLIST + AD_SDK_STRING_BLACKLIST
+private val URL_SCHEME_PREFIXES = listOf("http://", "https://")
+
+private fun String.isBlockedAnalyticsLiteral(): Boolean =
+    ANALYTICS_STRING_BLACKLIST.any { contains(it, ignoreCase = true) } ||
+        (URL_SCHEME_PREFIXES.any { startsWith(it, ignoreCase = true) } &&
+            AD_SDK_STRING_BLACKLIST.any { contains(it, ignoreCase = true) })
 
 private const val RANDOM_STRING_CHARSET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 private const val RANDOM_STRING_LENGTH = 7
@@ -253,10 +261,14 @@ private val ANALYTICS_SDK_PACKAGE_PREFIXES = listOf(
     "Lcom/google/android/gms/analytics/",
     "Lcom/google/android/gms/measurement/",
     "Lcom/google/android/gms/internal/measurement/",
+    "Lcom/google/android/gms/ads/",
+    "Lcom/google/android/gms/internal/ads/",
     "Lcom/flurry/android/",
     "Lcom/yandex/metrica/",
     "Lcom/appsflyer/",
     "Lcom/adjust/sdk/",
+    "Lcom/bytedance/sdk/openadsdk/",
+    "Lcom/bykv/vk/openvk/",
 )
 
 private fun isConstString(opcode: Opcode) =
@@ -332,10 +344,8 @@ val removeAnalyticsPatch = bytecodePatch(
             val hasStringMatch = !isSdkInternal && classDef.methods.any { method ->
                 (method.instructionsOrNull ?: emptyList()).any { instruction ->
                     isConstString(instruction.opcode) &&
-                        ALL_BLOCKED_STRINGS.any { term ->
-                            ((instruction as ReferenceInstruction).reference as StringReference)
-                                .string.contains(term, ignoreCase = true)
-                        }
+                        ((instruction as ReferenceInstruction).reference as StringReference)
+                            .string.isBlockedAnalyticsLiteral()
                 }
             }
 
@@ -357,7 +367,7 @@ val removeAnalyticsPatch = bytecodePatch(
                     (method.instructionsOrNull ?: emptyList()).forEachIndexed { index, instruction ->
                         if (!isConstString(instruction.opcode)) return@forEachIndexed
                         val value = ((instruction as ReferenceInstruction).reference as StringReference).string
-                        if (ALL_BLOCKED_STRINGS.none { value.contains(it, ignoreCase = true) }) return@forEachIndexed
+                        if (!value.isBlockedAnalyticsLiteral()) return@forEachIndexed
                         val register = (instruction as OneRegisterInstruction).registerA
                         method.replaceInstruction(index, "const-string v$register, \"${randomAnalyticsReplacement()}\"")
                     }
