@@ -1,3 +1,9 @@
+## [1.35.0-dev.10](https://github.com/BlazeFTL/FTL-Patches/compare/v1.35.0-dev.9...v1.35.0-dev.10) (2026-08-18)
+
+### ✨ New Features
+
+* Xender ([4447b68](https://github.com/BlazeFTL/FTL-Patches/commit/4447b688ddaf4ea34ad1c0d9bd4bc62aa3de4071))
+
 ## [1.35.0-dev.9](https://github.com/BlazeFTL/FTL-Patches/compare/v1.35.0-dev.8...v1.35.0-dev.9) (2026-08-18)
 
 ### ✨ New Features
