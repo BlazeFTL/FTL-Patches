@@ -1,15 +1,22 @@
 package app.ftl.patches.xender
 
-import app.ftl.util.getFreeRegisterProvider
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.util.proxy.mutableTypes.MutableClass
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
+import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
 import com.android.tools.smali.dexlib2.AccessFlags
+import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
+import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
+import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
+
+private const val MAIN_ACTIVITY_CLASS = "Lcn/xender/ui/activity/MainActivity;"
+private const val CLEAN_UI_HELPER_NAME = "ftlApplyCleanUi"
 
 private object MainActivityOnCreateFingerprint : Fingerprint(
-    definingClass = "Lcn/xender/ui/activity/MainActivity;",
+    definingClass = MAIN_ACTIVITY_CLASS,
     name = "onCreate",
     returnType = "V",
     parameters = listOf("Landroid/os/Bundle;"),
@@ -19,7 +26,7 @@ private object MainActivityOnCreateFingerprint : Fingerprint(
 )
 
 private object MainActivityOnResumeFingerprint : Fingerprint(
-    definingClass = "Lcn/xender/ui/activity/MainActivity;",
+    definingClass = MAIN_ACTIVITY_CLASS,
     name = "onResume",
     returnType = "V",
     parameters = emptyList(),
@@ -29,7 +36,7 @@ private object MainActivityOnResumeFingerprint : Fingerprint(
 )
 
 private object MainActivityOpenDrawerFingerprint : Fingerprint(
-    definingClass = "Lcn/xender/ui/activity/MainActivity;",
+    definingClass = MAIN_ACTIVITY_CLASS,
     name = "drawerEnterClick",
     returnType = "V",
     parameters = emptyList(),
@@ -39,7 +46,7 @@ private object MainActivityOpenDrawerFingerprint : Fingerprint(
 )
 
 private object MainActivityWindowFocusChangedFingerprint : Fingerprint(
-    definingClass = "Lcn/xender/ui/activity/MainActivity;",
+    definingClass = MAIN_ACTIVITY_CLASS,
     name = "onWindowFocusChanged",
     returnType = "V",
     parameters = listOf("Z"),
@@ -49,112 +56,130 @@ private object MainActivityWindowFocusChangedFingerprint : Fingerprint(
 )
 
 /**
- * Inserts the same small bytecode-only UI routine that the working comparison
- * applies. Resource IDs are read from Xender's own R$id class, and every view
- * lookup is null-safe because some drawer views are inflated lazily.
+ * Adds a private static helper with its own three-register budget. The lifecycle methods only
+ * call this helper with p0, so they do not need a free scratch register at the insertion point.
  */
-private fun MutableMethod.addXenderUiCustomizations(index: Int) {
-    val registerCount = implementation!!.registerCount
-    val parameterWidth = parameterTypes.sumOf { type -> if (type == "J" || type == "D") 2 else 1 }
-    val parameterStart = registerCount - parameterWidth - if (AccessFlags.STATIC.isSet(accessFlags)) 0 else 1
-    val parameterRegisters = parameterStart until registerCount
-    val registers = getFreeRegisterProvider(index, 2, *parameterRegisters.toList().toIntArray())
-    val idRegister = registers.getFreeRegister()
-    val viewRegister = registers.getFreeRegister()
+private fun addXenderUiHelper(mainActivity: MutableClass) {
+    if (mainActivity.methods.any { it.name == CLEAN_UI_HELPER_NAME }) return
 
+    val helper = ImmutableMethod(
+        MAIN_ACTIVITY_CLASS,
+        CLEAN_UI_HELPER_NAME,
+        listOf(ImmutableMethodParameter(MAIN_ACTIVITY_CLASS, null, "activity")),
+        "V",
+        AccessFlags.PRIVATE.value or AccessFlags.STATIC.value,
+        null,
+        null,
+        MutableMethodImplementation(3),
+    ).toMutable()
+
+    helper.addInstructions(
+        0,
+        """
+            sget v0, Lcn/xender/R${'$'}id;->x_main_navigation_view:I
+            invoke-virtual {p0, v0}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
+            move-result-object v1
+            if-eqz v1, :hide_navigation_done
+            const/16 v0, 0x8
+            invoke-virtual {v1, v0}, Landroid/view/View;->setVisibility(I)V
+            :hide_navigation_done
+
+            sget v0, Lcn/xender/R${'$'}id;->action_guide:I
+            invoke-virtual {p0, v0}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
+            move-result-object v1
+            if-eqz v1, :hide_guide_done
+            const/16 v0, 0x8
+            invoke-virtual {v1, v0}, Landroid/view/View;->setVisibility(I)V
+            :hide_guide_done
+
+            sget v0, Lcn/xender/R${'$'}id;->x_drawer_rate_item:I
+            invoke-virtual {p0, v0}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
+            move-result-object v1
+            if-eqz v1, :hide_rate_done
+            const/16 v0, 0x8
+            invoke-virtual {v1, v0}, Landroid/view/View;->setVisibility(I)V
+            :hide_rate_done
+
+            sget v0, Lcn/xender/R${'$'}id;->x_drawer_help_item:I
+            invoke-virtual {p0, v0}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
+            move-result-object v1
+            if-eqz v1, :hide_help_done
+            const/16 v0, 0x8
+            invoke-virtual {v1, v0}, Landroid/view/View;->setVisibility(I)V
+            :hide_help_done
+
+            sget v0, Lcn/xender/R${'$'}id;->x_drawer_about_item:I
+            invoke-virtual {p0, v0}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
+            move-result-object v1
+            if-eqz v1, :hide_about_done
+            const/16 v0, 0x8
+            invoke-virtual {v1, v0}, Landroid/view/View;->setVisibility(I)V
+            :hide_about_done
+
+            sget v0, Lcn/xender/R${'$'}id;->connect_button:I
+            invoke-virtual {p0, v0}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
+            move-result-object v1
+            if-eqz v1, :front_connect_done
+            invoke-virtual {v1}, Landroid/view/View;->bringToFront()V
+            :front_connect_done
+
+            sget v0, Lcn/xender/R${'$'}id;->create_btn:I
+            invoke-virtual {p0, v0}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
+            move-result-object v1
+            if-eqz v1, :front_create_done
+            invoke-virtual {v1}, Landroid/view/View;->bringToFront()V
+            :front_create_done
+
+            sget v0, Lcn/xender/R${'$'}id;->join_btn:I
+            invoke-virtual {p0, v0}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
+            move-result-object v1
+            if-eqz v1, :front_join_done
+            invoke-virtual {v1}, Landroid/view/View;->bringToFront()V
+            :front_join_done
+            return-void
+        """.trimIndent(),
+    )
+
+    mainActivity.methods.add(helper)
+}
+
+private fun MutableMethod.addXenderUiHelperCall(index: Int) {
     addInstructions(
         index,
         """
-            sget v$idRegister, Lcn/xender/R${'$'}id;->x_main_navigation_view:I
-            invoke-virtual {p0, v$idRegister}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
-            move-result-object v$viewRegister
-            if-eqz v$viewRegister, :hide_navigation_done
-            const/16 v$idRegister, 0x8
-            invoke-virtual {v$viewRegister, v$idRegister}, Landroid/view/View;->setVisibility(I)V
-            :hide_navigation_done
-
-            sget v$idRegister, Lcn/xender/R${'$'}id;->action_guide:I
-            invoke-virtual {p0, v$idRegister}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
-            move-result-object v$viewRegister
-            if-eqz v$viewRegister, :hide_guide_done
-            const/16 v$idRegister, 0x8
-            invoke-virtual {v$viewRegister, v$idRegister}, Landroid/view/View;->setVisibility(I)V
-            :hide_guide_done
-
-            sget v$idRegister, Lcn/xender/R${'$'}id;->x_drawer_rate_item:I
-            invoke-virtual {p0, v$idRegister}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
-            move-result-object v$viewRegister
-            if-eqz v$viewRegister, :hide_rate_done
-            const/16 v$idRegister, 0x8
-            invoke-virtual {v$viewRegister, v$idRegister}, Landroid/view/View;->setVisibility(I)V
-            :hide_rate_done
-
-            sget v$idRegister, Lcn/xender/R${'$'}id;->x_drawer_help_item:I
-            invoke-virtual {p0, v$idRegister}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
-            move-result-object v$viewRegister
-            if-eqz v$viewRegister, :hide_help_done
-            const/16 v$idRegister, 0x8
-            invoke-virtual {v$viewRegister, v$idRegister}, Landroid/view/View;->setVisibility(I)V
-            :hide_help_done
-
-            sget v$idRegister, Lcn/xender/R${'$'}id;->x_drawer_about_item:I
-            invoke-virtual {p0, v$idRegister}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
-            move-result-object v$viewRegister
-            if-eqz v$viewRegister, :hide_about_done
-            const/16 v$idRegister, 0x8
-            invoke-virtual {v$viewRegister, v$idRegister}, Landroid/view/View;->setVisibility(I)V
-            :hide_about_done
-
-            sget v$idRegister, Lcn/xender/R${'$'}id;->connect_button:I
-            invoke-virtual {p0, v$idRegister}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
-            move-result-object v$viewRegister
-            if-eqz v$viewRegister, :front_connect_done
-            invoke-virtual {v$viewRegister}, Landroid/view/View;->bringToFront()V
-            :front_connect_done
-
-            sget v$idRegister, Lcn/xender/R${'$'}id;->create_btn:I
-            invoke-virtual {p0, v$idRegister}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
-            move-result-object v$viewRegister
-            if-eqz v$viewRegister, :front_create_done
-            invoke-virtual {v$viewRegister}, Landroid/view/View;->bringToFront()V
-            :front_create_done
-
-            sget v$idRegister, Lcn/xender/R${'$'}id;->join_btn:I
-            invoke-virtual {p0, v$idRegister}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
-            move-result-object v$viewRegister
-            if-eqz v$viewRegister, :front_join_done
-            invoke-virtual {v$viewRegister}, Landroid/view/View;->bringToFront()V
-            :front_join_done
+            invoke-static {p0}, Lcn/xender/ui/activity/MainActivity;->ftlApplyCleanUi(Lcn/xender/ui/activity/MainActivity;)V
         """.trimIndent(),
     )
 }
 
 val cleanMainUiPatch = bytecodePatch(
     name = "Clean main UI",
-    description = "Uses direct bytecode edits to hide the bottom navigation, guide, and selected drawer items, then brings the primary action buttons to the front after the relevant lifecycle events.",
+    description = "Uses a register-isolated helper method to hide selected Xender UI items and bring the primary action buttons to the front after the relevant lifecycle events.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_XENDER)
 
     execute {
+        addXenderUiHelper(mutableClassDefBy(MAIN_ACTIVITY_CLASS))
+
         MainActivityOnCreateFingerprint.let { fingerprint ->
             val index = fingerprint.instructionMatches[0].index
-            fingerprint.method.addXenderUiCustomizations(index + 1)
+            fingerprint.method.addXenderUiHelperCall(index + 1)
         }
 
         MainActivityOnResumeFingerprint.let { fingerprint ->
             val index = fingerprint.instructionMatches[0].index
-            fingerprint.method.addXenderUiCustomizations(index + 1)
+            fingerprint.method.addXenderUiHelperCall(index + 1)
         }
 
         MainActivityOpenDrawerFingerprint.let { fingerprint ->
             val index = fingerprint.instructionMatches[0].index
-            fingerprint.method.addXenderUiCustomizations(index + 1)
+            fingerprint.method.addXenderUiHelperCall(index + 1)
         }
 
         MainActivityWindowFocusChangedFingerprint.let { fingerprint ->
             val index = fingerprint.instructionMatches[0].index
-            fingerprint.method.addXenderUiCustomizations(index + 1)
+            fingerprint.method.addXenderUiHelperCall(index + 1)
         }
     }
 }
