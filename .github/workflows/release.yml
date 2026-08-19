@@ -6,11 +6,12 @@ on:
 
 jobs:
   release:
+    name: Release
     if: |
       github.event_name == 'workflow_dispatch' ||
       startsWith(github.event.head_commit.message, 'fix:') ||
       startsWith(github.event.head_commit.message, 'feat:')
-    name: Release    permissions:
+    permissions:
       contents: write
       packages: write
       id-token: write
