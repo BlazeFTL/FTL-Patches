@@ -1,13 +1,8 @@
-package app.ftl.extension.xender;
+package app.ftl.extension.xender
 
-import android.app.Activity;
-import android.util.Log;
-import android.view.View;
-import android.view.ViewTreeObserver;
-import androidx.coordinatorlayout.widget.CoordinatorLayout;
-
-import java.util.LinkedHashSet;
-import java.util.Set;
+import android.app.Activity
+import android.util.Log
+import android.view.View
 
 /**
  * Ids are registered from the patch side via sget on the app's own R$id fields (compile-time
@@ -22,84 +17,47 @@ import java.util.Set;
  * the activity is what actually keeps the hide/front state correct, no matter what triggered the
  * change or when.
  */
-public final class CleanUiPatch {
+object CleanUiPatch {
+    private const val TAG = "MorpheXenderCleanUi"
 
-    private static final String TAG = "MorpheXenderCleanUi";
+    private val hideIds = LinkedHashSet<Int>()
+    private val frontIds = LinkedHashSet<Int>()
 
-    private static final Set<Integer> hideIds = new LinkedHashSet<>();
-    private static final Set<Integer> frontIds = new LinkedHashSet<>();
-
-    private CleanUiPatch() {
+    @JvmStatic
+    fun registerHideId(id: Int) {
+        hideIds.add(id)
     }
 
-    public static void registerHideId(int id) {
-        hideIds.add(id);
+    @JvmStatic
+    fun registerFrontId(id: Int) {
+        frontIds.add(id)
     }
 
-    public static void registerFrontId(int id) {
-        frontIds.add(id);
-    }
-
-    // Strips any CoordinatorLayout scroll-hide Behavior (e.g. a hide-on-scroll
-    // bottom-bar behavior) from a view, so nothing can re-hide it once we've made
-    // it visible/brought it to front. No-op if the view isn't hosted in a
-    // CoordinatorLayout or has no Behavior attached.
-    private static void disableScrollBehavior(View view) {
-        ViewGroupLayoutParamsHolder holder = new ViewGroupLayoutParamsHolder(view.getLayoutParams());
-        if (holder.params instanceof CoordinatorLayout.LayoutParams) {
-            CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) holder.params;
-            if (params.getBehavior() != null) {
-                params.setBehavior(null);
-                view.setLayoutParams(params);
-            }
-        }
-    }
-
-    // Tiny holder just to keep the instanceof/cast readable above.
-    private static final class ViewGroupLayoutParamsHolder {
-        final android.view.ViewGroup.LayoutParams params;
-        ViewGroupLayoutParamsHolder(android.view.ViewGroup.LayoutParams params) {
-            this.params = params;
-        }
-    }
-
-    public static void applyOnce(Activity activity) {
+    @JvmStatic
+    fun applyOnce(activity: Activity) {
         try {
-            for (int id : hideIds) {
-                View v = activity.findViewById(id);
-                if (v != null) {
-                    v.setVisibility(View.GONE);
-                    disableScrollBehavior(v);
-                }
+            for (id in hideIds) {
+                activity.findViewById<View>(id)?.visibility = View.GONE
             }
-            for (int id : frontIds) {
-                View v = activity.findViewById(id);
-                if (v != null) {
-                    v.bringToFront();
-                    disableScrollBehavior(v);
-                }
+            for (id in frontIds) {
+                activity.findViewById<View>(id)?.bringToFront()
             }
-        } catch (Throwable t) {
-            Log.e(TAG, "applyOnce failed", t);
+        } catch (t: Throwable) {
+            Log.e(TAG, "applyOnce failed", t)
         }
     }
 
-    public static void scheduleReapply(final Activity activity) {
-        applyOnce(activity);
+    @JvmStatic
+    fun scheduleReapply(activity: Activity) {
+        applyOnce(activity)
         try {
-            if (activity.getWindow() == null) return;
-            View decorView = activity.getWindow().getDecorView();
-            final ViewTreeObserver vto = decorView.getViewTreeObserver();
-            if (vto != null && vto.isAlive()) {
-                vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-                    @Override
-                    public void onGlobalLayout() {
-                        applyOnce(activity);
-                    }
-                });
+            val decorView = activity.window?.decorView ?: return
+            val vto = decorView.viewTreeObserver
+            if (vto != null && vto.isAlive) {
+                vto.addOnGlobalLayoutListener { applyOnce(activity) }
             }
-        } catch (Throwable t) {
-            Log.e(TAG, "scheduleReapply failed", t);
+        } catch (t: Throwable) {
+            Log.e(TAG, "scheduleReapply failed", t)
         }
     }
 }
