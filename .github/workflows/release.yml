@@ -7,10 +7,6 @@ on:
 jobs:
   release:
     name: Release
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      startsWith(github.event.head_commit.message, 'fix:') ||
-      startsWith(github.event.head_commit.message, 'feat:')
     permissions:
       contents: write
       packages: write
@@ -41,6 +37,12 @@ jobs:
       # Semantic release runs its own Gradle build command.
       # Only dev and main branch will generate a release as specified by .releaserc
       - name: Release
+        if: |
+          github.event_name == 'workflow_dispatch' ||
+          startsWith(github.event.head_commit.message, 'fix:') ||
+          startsWith(github.event.head_commit.message, 'feat:') ||
+          startsWith(github.event.head_commit.message, 'Merge pull request') ||
+          startsWith(github.event.head_commit.message, 'Merge branch')
         uses: cycjimmy/semantic-release-action@v6
         id: release
         env:
