@@ -1,3 +1,9 @@
+## [1.39.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.38.0...v1.39.0-dev.1) (2026-08-19)
+
+### ✨ New Features
+
+* update apk junk ([abb9ae0](https://github.com/BlazeFTL/FTL-Patches/commit/abb9ae031fe91bd2f21a96c721117f236221a601))
+
 ## [1.38.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.37.0...v1.38.0) (2026-08-19)
 
 ### ✨ New Features
