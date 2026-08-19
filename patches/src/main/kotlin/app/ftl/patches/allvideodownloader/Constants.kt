@@ -16,6 +16,10 @@ internal const val MAIN_ACTIVITY_CLASS =
 internal const val LANGUAGE_ACTIVITY_CLASS =
     "Lvideoplayer/videodownloader/downloader/activity/LanguageActivity;"
 
+// Manifest android:name form (dotted, no L/; ) - used for XML matching, not bytecode.
+internal const val WEB_DOWNLOAD_ACTIVITY =
+    "videoplayer.videodownloader.downloader.old.activity.WebDownloadActivity"
+
 internal val COMPATIBILITY_ALL_VIDEO_DOWNLOADER = Compatibility(
     packageName = "videoplayer.videodownloader.downloader",
     name = "All Video Downloader & Ace Player",
