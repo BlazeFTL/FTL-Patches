@@ -22,6 +22,8 @@ private val JUNK_PATTERNS = listOf(
     Regex(""".*firebase-.*\.properties$"""),
     Regex(""".*app-update\.properties$"""),
     Regex(""".*billing\.properties$"""),
+    Regex(""".*billing-ktx\.properties$"""),
+    Regex(""".*review\.properties$"""),
     Regex(""".*hsdp\.properties$"""),
     Regex(""".*core-common\.properties$"""),
     Regex(""".*user-messaging-platform\.properties$"""),
