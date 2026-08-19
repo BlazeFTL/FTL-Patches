@@ -1,3 +1,9 @@
+## [1.38.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/compare/v1.38.0-dev.1...v1.38.0-dev.2) (2026-08-19)
+
+### ✨ New Features
+
+* Add All Video Downloader Remove DownloadMenu ([432f4d1](https://github.com/BlazeFTL/FTL-Patches/commit/432f4d1d52867d1f3cf96f3ab758adec3a6357ea))
+
 ## [1.38.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.37.0...v1.38.0-dev.1) (2026-08-19)
 
 ### ✨ New Features
