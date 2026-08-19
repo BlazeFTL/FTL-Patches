@@ -1,4 +1,4 @@
-name: Cleanup Workflow Runs
+name: Cleanup
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
     - cron: '0 3 * * 0'
 
 jobs:
-  cleanup:
+  cleanup-runs:
     runs-on: ubuntu-latest
     permissions:
       actions: write
@@ -24,4 +24,23 @@ jobs:
                 gh api -X DELETE "repos/$REPO/actions/runs/$id" 2>/dev/null || true
               fi
             done
+          done
+
+  cleanup-tags:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Delete tags whose release was deleted
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REPO="${{ github.repository }}"
+          all_tags=$(gh api "repos/$REPO/tags" --paginate -q '.[].name')
+          release_tags=$(gh release list -R "$REPO" -L 1000 --json tagName -q '.[].tagName')
+
+          for tag in $all_tags; do
+            if ! echo "$release_tags" | grep -qx "$tag"; then
+              gh api -X DELETE "repos/$REPO/git/refs/tags/$tag" 2>/dev/null || true
+            fi
           done

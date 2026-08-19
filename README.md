@@ -9,7 +9,24 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.36.0](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.36.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;23 patches total
+> **[v1.37.0-dev.8](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.37.0-dev.8)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;25 patches total
+<details>
+<summary>📦 Xender&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
+<br>
+
+**🎯 Supported versions:**
+
+| 18.8.0.prime |
+| :---: |
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Clean main UI](#clean-main-ui) | Hides the bottom navigation bar, the top-right guide icon, and the Rate/Help/About drawer items, keeps the connect/create/join buttons on top, and stops them from being auto-hidden. Reapplied on create, resume, and drawer open (and retried for ~1.8s after each) since some of these views are inflated lazily. |  |
+| [Skip splash screen](#skip-splash-screen) | Jumps straight to the main activity from the splash screen, skipping the splash animation entirely. Also restores the storage-permission request and local media scan that the splash screen normally performs, so the Apps/Photo/Video tabs still load. |  |
+| [Speed up splash screen](#speed-up-splash-screen) | Enters the main activity directly after the splash permission check instead of delaying for the additional external-storage check. |  |
+
+</details>
+
 <details>
 <summary>📦 SnapTube&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
 <br>
@@ -85,21 +102,6 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Hide more actions](#hide-more-actions) | Hides Hide, Add to desktop, Encrypt, Decrypt, Add bookmark, Web Search, Copy to, Move to, Transfer, and Playing from the "More actions" menu. |  |
 | [Hide network, tools and bookmarks on home page](#hide-network-tools-and-bookmarks-on-home-page) | Hides the Network, Tools and Bookmarks sections from the home page section list. |  |
 | [Skip splash screen](#skip-splash-screen) | Moves the launcher intent filter to the main activity and calls the all-files-access permission request directly, instead of showing the splash activity and its full-screen 'grant storage access' dialog. |  |
-
-</details>
-
-<details>
-<summary>📦 Xender&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
-<br>
-
-**🎯 Supported versions:**
-
-| 18.8.0.prime |
-| :---: |
-
-| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
-|----------|----------------|-----------|
-| [Speed up splash screen](#speed-up-splash-screen) | Enters the main activity directly after the splash permission check instead of delaying for the additional external-storage check. |  |
 
 </details>
 
