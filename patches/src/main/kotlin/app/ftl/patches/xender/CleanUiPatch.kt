@@ -43,17 +43,15 @@ private object MainOnCreateContentViewFingerprint : Fingerprint(
  * call to FragmentActivity.onResume() - a real AndroidX class kept by the library's own
  * consumer proguard rules, and the method's first instruction.
  */
-private object MainOnResumeFingerprint : Fingerprint(
+private object MainOnCreateContentViewFingerprint : Fingerprint(
     definingClass = MAIN_ACTIVITY_CLASS,
-    name = "onResume",
+    name = "onCreate",
     returnType = "V",
-    parameters = emptyList(),
+    parameters = listOf("Landroid/os/Bundle;"),
     filters = listOf(
-        methodCall(
-            smali = "Landroidx/fragment/app/FragmentActivity;->onResume()V",
-            location = MatchFirst(),
-        ),
+        methodCall(smali = "$MAIN_ACTIVITY_CLASS->initNavigation()V"),
     ),
+)
 )
 
 /**
