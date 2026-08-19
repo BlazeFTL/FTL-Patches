@@ -6,39 +6,38 @@ import android.os.Looper
 import android.util.Log
 import android.view.View
 
+/**
+ * Ids are registered from the patch side via sget on the app's own R$id fields (compile-time
+ * stable, real resource field names) - never via Resources.getIdentifier(name, ...), which can
+ * return 0 if the resource name string gets stripped by resource shrinking even though the
+ * numeric id itself still works fine via direct field access.
+ */
 object CleanUiPatch {
     private const val TAG = "MorpheXenderCleanUi"
     private const val MAX_RETRIES = 12
     private const val RETRY_DELAY_MS = 150L
 
-    private val HIDE_IDS = arrayOf(
-        "x_main_navigation_view",
-        "action_guide",
-        "x_drawer_rate_item",
-        "x_drawer_help_item",
-        "x_drawer_about_item",
-    )
+    private val hideIds = LinkedHashSet<Int>()
+    private val frontIds = LinkedHashSet<Int>()
 
-    private val FRONT_IDS = arrayOf(
-        "connect_button",
-        "create_btn",
-        "join_btn",
-    )
+    @JvmStatic
+    fun registerHideId(id: Int) {
+        hideIds.add(id)
+    }
+
+    @JvmStatic
+    fun registerFrontId(id: Int) {
+        frontIds.add(id)
+    }
 
     @JvmStatic
     fun applyOnce(activity: Activity) {
         try {
-            val res = activity.resources
-            val pkg = activity.packageName
-
-            for (name in HIDE_IDS) {
-                val id = res.getIdentifier(name, "id", pkg)
-                if (id != 0) activity.findViewById<View>(id)?.visibility = View.GONE
+            for (id in hideIds) {
+                activity.findViewById<View>(id)?.visibility = View.GONE
             }
-
-            for (name in FRONT_IDS) {
-                val id = res.getIdentifier(name, "id", pkg)
-                if (id != 0) activity.findViewById<View>(id)?.bringToFront()
+            for (id in frontIds) {
+                activity.findViewById<View>(id)?.bringToFront()
             }
         } catch (t: Throwable) {
             Log.e(TAG, "applyOnce failed", t)

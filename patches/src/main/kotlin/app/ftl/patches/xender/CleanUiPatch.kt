@@ -1,25 +1,64 @@
 package app.ftl.patches.xender
 
 import app.morphe.patcher.Fingerprint
+import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.InstructionLocation.MatchFirst
+import app.morphe.patcher.fieldAccess
 import app.morphe.patcher.methodCall
+import app.morphe.patcher.opcode
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
+import com.android.tools.smali.dexlib2.Opcode
 
 private const val MAIN_ACTIVITY_CLASS = "Lcn/xender/ui/activity/MainActivity;"
 
+private const val EXTENSION_REGISTER_HIDE_ID =
+    "Lapp/ftl/extension/xender/CleanUiPatch;->registerHideId(I)V"
+private const val EXTENSION_REGISTER_FRONT_ID =
+    "Lapp/ftl/extension/xender/CleanUiPatch;->registerFrontId(I)V"
 private const val EXTENSION_SCHEDULE_REAPPLY =
     "Lapp/ftl/extension/xender/CleanUiPatch;->scheduleReapply(Landroid/app/Activity;)V"
 private const val EXTENSION_APPLY_ONCE =
     "Lapp/ftl/extension/xender/CleanUiPatch;->applyOnce(Landroid/app/Activity;)V"
 
+private val HIDE_ID_FIELDS = listOf(
+    "Lcn/xender/R\$id;->x_main_navigation_view:I",
+    "Lcn/xender/R\$id;->action_guide:I",
+    "Lcn/xender/R\$id;->x_drawer_rate_item:I",
+    "Lcn/xender/R\$id;->x_drawer_help_item:I",
+    "Lcn/xender/R\$id;->x_drawer_about_item:I",
+)
+
+private val FRONT_ID_FIELDS = listOf(
+    "Lcn/xender/R\$id;->connect_button:I",
+    "Lcn/xender/R\$id;->create_btn:I",
+    "Lcn/xender/R\$id;->join_btn:I",
+)
+
 /**
- * Matches MainActivity.onCreate(Bundle). Anchored on the call to initNavigation(),
- * MainActivity's own real (unobfuscated) private method - runs after the nav bar
- * and its buttons are actually built, so a later bringToFront() call here can't
- * get undone by nav setup that hasn't happened yet (the original content-view-inflation
- * anchor fired too early, before initNavigation() built the bar connect_button sits
- * on/in, which is why it wasn't staying visible).
+ * Registers every hide/front id with the extension, one sget + one single-arg invoke-static
+ * per id. This only ever needs ONE scratch register (v0) at a time, no matter how many ids
+ * there are, so it's safe to insert anywhere - unlike building an int[] via new-array/aput,
+ * which needs 3 live registers (array, index, value) simultaneously and doesn't fit at every
+ * call site (drawerEnterClick and onWindowFocusChanged only have 2 free registers here).
+ */
+private fun buildRegisterIdsSmali(): String = buildString {
+    HIDE_ID_FIELDS.forEach { field ->
+        appendLine("sget v0, $field")
+        appendLine("invoke-static {v0}, $EXTENSION_REGISTER_HIDE_ID")
+    }
+    FRONT_ID_FIELDS.forEach { field ->
+        appendLine("sget v0, $field")
+        appendLine("invoke-static {v0}, $EXTENSION_REGISTER_FRONT_ID")
+    }
+}
+
+/**
+ * Matches MainActivity.onCreate(Bundle) right after its content view is inflated.
+ * Anchored on the real, un-renamed activity_main layout resource id read that always
+ * precedes the setContentView call, followed structurally by INVOKE_STATIC and its
+ * MOVE_RESULT_OBJECT. The databinding cast that immediately follows uses an obfuscated
+ * class name that reshuffles every build, so this stops one instruction short of it.
  */
 private object MainOnCreateContentViewFingerprint : Fingerprint(
     definingClass = MAIN_ACTIVITY_CLASS,
@@ -27,7 +66,11 @@ private object MainOnCreateContentViewFingerprint : Fingerprint(
     returnType = "V",
     parameters = listOf("Landroid/os/Bundle;"),
     filters = listOf(
-        methodCall(smali = "$MAIN_ACTIVITY_CLASS->initNavigation()V"),
+        fieldAccess(
+            smali = "Lcn/xender/R\$layout;->activity_main:I",
+        ),
+        opcode(Opcode.INVOKE_STATIC, MatchAfterImmediately()),
+        opcode(Opcode.MOVE_RESULT_OBJECT, MatchAfterImmediately()),
     ),
 )
 
@@ -79,11 +122,11 @@ private object DrawerEnterClickFingerprint : Fingerprint(
 )
 
 /**
- * Hides the nav drawer's promo/rate/help/about items and the bottom navigation view,
- * and keeps the Connect/Create/Join buttons on top. All the actual view-id lookups and
- * the re-apply retry loop live in the extension (extensions/xender/CleanUiPatch.kt),
- * resolved at runtime via resources.getIdentifier() - so nothing here needs to touch
- * a resource id integer, which changes every build even though the names don't.
+ * Hides the nav drawer's promo/rate/help/about items and the bottom navigation view, and
+ * keeps the Connect/Create/Join buttons on top. Ids are registered once (onCreate, right
+ * after the content view is set), then reused everywhere else, since onCreate always runs
+ * before onResume/drawerEnterClick/onWindowFocusChanged can possibly fire. The re-apply
+ * retry loop (12x @150ms) lives entirely in the extension.
  */
 val cleanUiPatch = bytecodePatch(
     name = "Clean up main UI",
@@ -99,7 +142,7 @@ val cleanUiPatch = bytecodePatch(
             val insertIndex = fingerprint.instructionMatches.last().index + 1
             fingerprint.method.addInstructions(
                 insertIndex,
-                "invoke-static {p0}, $EXTENSION_SCHEDULE_REAPPLY",
+                buildRegisterIdsSmali() + "invoke-static {p0}, $EXTENSION_SCHEDULE_REAPPLY",
             )
         }
 
