@@ -31,16 +31,40 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Delete tags whose release was deleted
+      - name: Delete dev tags with no downloads (keep all stable)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REPO="${{ github.repository }}"
+          release_tags=$(gh release list -R "$REPO" -L 1000 --json tagName -q '.[].tagName')
+
+          for tag in $(gh api "repos/$REPO/tags" --paginate -q '.[].name'); do
+            case "$tag" in
+              *-dev*) ;;
+              *) continue ;;
+            esac
+
+            if echo "$release_tags" | grep -qx "$tag"; then
+              assets=$(gh release view "$tag" -R "$REPO" --json assets -q '.assets | length')
+            else
+              assets=0
+            fi
+
+            if [ "$assets" -eq 0 ]; then
+              gh release delete "$tag" -R "$REPO" -y --cleanup-tag 2>/dev/null || true
+              gh api -X DELETE "repos/$REPO/git/refs/tags/$tag" 2>/dev/null || true
+            fi
+          done
+
+      - name: Delete releases whose tag no longer exists
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           REPO="${{ github.repository }}"
           all_tags=$(gh api "repos/$REPO/tags" --paginate -q '.[].name')
-          release_tags=$(gh release list -R "$REPO" -L 1000 --json tagName -q '.[].tagName')
 
-          for tag in $all_tags; do
-            if ! echo "$release_tags" | grep -qx "$tag"; then
-              gh api -X DELETE "repos/$REPO/git/refs/tags/$tag" 2>/dev/null || true
+          for tag in $(gh release list -R "$REPO" -L 1000 --json tagName -q '.[].tagName'); do
+            if ! echo "$all_tags" | grep -qx "$tag"; then
+              gh release delete "$tag" -R "$REPO" -y 2>/dev/null || true
             fi
           done

@@ -7,6 +7,10 @@ on:
 jobs:
   release:
     name: Release
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      startsWith(github.event.head_commit.message, 'fix:') ||
+      startsWith(github.event.head_commit.message, 'feat:')
     permissions:
       contents: write
       packages: write

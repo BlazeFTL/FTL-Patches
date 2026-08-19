@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.37.0](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.37.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;25 patches total
+> **[v1.38.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.38.0-dev.2)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;27 patches total
 <details>
 <summary>📦 Xender&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
 <br>
@@ -45,7 +45,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 </details>
 
 <details>
-<summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
+<summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -56,7 +56,26 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
 | [Disable ad dialog when reopening app](#disable-ad-dialog-when-reopening-app) | Prevents the full-screen "loading ad" dialog from appearing when the app is reopened after being minimized. |  |
+| [Disable downloader from download menu](#disable-downloader-from-download-menu) | Strips WebDownloadActivity's scheme/mimeType/host/pathPattern intent-filter data (action and category tags kept) so it no longer offers itself as a handler in the system download/"complete action using" chooser. |  |
 | [Skip splash and language screens](#skip-splash-and-language-screens) | Jumps straight to the main activity from the splash screen, skipping the splash animation, the language-selection screen, and any ad/app-open dialog normally shown first. |  |
+
+</details>
+
+<details>
+<summary>📦 RS File Manager&nbsp;&nbsp;•&nbsp;&nbsp;4 patches</summary>
+<br>
+
+**🎯 Supported versions:**
+
+| 2.3.0.4 |
+| :---: |
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Disable downloader from download menu](#disable-downloader-from-download-menu) | Strips RsDownloadActivity's file-extension and scheme/mimeType intent filters so it no longer offers itself as a handler in the system download/"complete action using" chooser. |  |
+| [Hide more actions](#hide-more-actions) | Hides Hide, Add to desktop, Encrypt, Decrypt, Add bookmark, Web Search, Copy to, Move to, Transfer, and Playing from the "More actions" menu. |  |
+| [Hide network, tools and bookmarks on home page](#hide-network-tools-and-bookmarks-on-home-page) | Hides the Network, Tools and Bookmarks sections from the home page section list. |  |
+| [Skip splash screen](#skip-splash-screen) | Moves the launcher intent filter to the main activity and calls the all-files-access permission request directly, instead of showing the splash activity and its full-screen 'grant storage access' dialog. |  |
 
 </details>
 
@@ -85,23 +104,6 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Hide Me tab promo items](#hide-me-tab-promo-items) | Collapses the WhatsApp, Legal, and Help entries on the Me tab. |  |
 | [Hide local tiles banner](#hide-local-tiles-banner) | Collapses the local device tiles banner. |  |
 | [Skip welcome screen](#skip-welcome-screen) | Moves the launcher intent filters and app shortcuts from the welcome/splash activity to the main activity, so the app boots straight past the splash and update screen. |  |
-
-</details>
-
-<details>
-<summary>📦 RS File Manager&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
-<br>
-
-**🎯 Supported versions:**
-
-| 2.3.0.4 |
-| :---: |
-
-| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
-|----------|----------------|-----------|
-| [Hide more actions](#hide-more-actions) | Hides Hide, Add to desktop, Encrypt, Decrypt, Add bookmark, Web Search, Copy to, Move to, Transfer, and Playing from the "More actions" menu. |  |
-| [Hide network, tools and bookmarks on home page](#hide-network-tools-and-bookmarks-on-home-page) | Hides the Network, Tools and Bookmarks sections from the home page section list. |  |
-| [Skip splash screen](#skip-splash-screen) | Moves the launcher intent filter to the main activity and calls the all-files-access permission request directly, instead of showing the splash activity and its full-screen 'grant storage access' dialog. |  |
 
 </details>
 
