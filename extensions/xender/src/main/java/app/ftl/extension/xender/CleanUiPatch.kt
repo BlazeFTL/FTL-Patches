@@ -3,6 +3,7 @@ package app.ftl.extension.xender
 import android.app.Activity
 import android.util.Log
 import android.view.View
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 
 /**
  * Ids are registered from the patch side via sget on the app's own R$id fields (compile-time
@@ -33,14 +34,32 @@ object CleanUiPatch {
         frontIds.add(id)
     }
 
+    // Strips any CoordinatorLayout scroll-hide Behavior (e.g. a hide-on-scroll
+    // bottom-bar behavior) from a view, so nothing can re-hide it once we've made
+    // it visible/brought it to front. No-op if the view isn't hosted in a
+    // CoordinatorLayout or has no Behavior attached.
+    private fun disableScrollBehavior(view: View) {
+        val params = view.layoutParams
+        if (params is CoordinatorLayout.LayoutParams && params.behavior != null) {
+            params.behavior = null
+            view.layoutParams = params
+        }
+    }
+
     @JvmStatic
     fun applyOnce(activity: Activity) {
         try {
             for (id in hideIds) {
-                activity.findViewById<View>(id)?.visibility = View.GONE
+                activity.findViewById<View>(id)?.let {
+                    it.visibility = View.GONE
+                    disableScrollBehavior(it)
+                }
             }
             for (id in frontIds) {
-                activity.findViewById<View>(id)?.bringToFront()
+                activity.findViewById<View>(id)?.let {
+                    it.bringToFront()
+                    disableScrollBehavior(it)
+                }
             }
         } catch (t: Throwable) {
             Log.e(TAG, "applyOnce failed", t)
