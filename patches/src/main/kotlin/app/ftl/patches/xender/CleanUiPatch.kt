@@ -1,14 +1,10 @@
 package app.ftl.patches.xender
 
 import app.morphe.patcher.Fingerprint
-import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.InstructionLocation.MatchFirst
-import app.morphe.patcher.fieldAccess
 import app.morphe.patcher.methodCall
-import app.morphe.patcher.opcode
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
-import com.android.tools.smali.dexlib2.Opcode
 
 private const val MAIN_ACTIVITY_CLASS = "Lcn/xender/ui/activity/MainActivity;"
 
@@ -18,30 +14,12 @@ private const val EXTENSION_APPLY_ONCE =
     "Lapp/ftl/extension/xender/CleanUiPatch;->applyOnce(Landroid/app/Activity;)V"
 
 /**
- * Matches MainActivity.onCreate(Bundle) right after its content view is inflated.
- * Anchored on the real, un-renamed activity_main layout resource id read that always
- * precedes the setContentView call, followed structurally by INVOKE_STATIC and its
- * MOVE_RESULT_OBJECT. The databinding cast that immediately follows uses an obfuscated
- * class name that reshuffles every build, so this stops one instruction short of it.
- */
-private object MainOnCreateContentViewFingerprint : Fingerprint(
-    definingClass = MAIN_ACTIVITY_CLASS,
-    name = "onCreate",
-    returnType = "V",
-    parameters = listOf("Landroid/os/Bundle;"),
-    filters = listOf(
-        fieldAccess(
-            smali = "Lcn/xender/R\$layout;->activity_main:I",
-        ),
-        opcode(Opcode.INVOKE_STATIC, MatchAfterImmediately()),
-        opcode(Opcode.MOVE_RESULT_OBJECT, MatchAfterImmediately()),
-    ),
-)
-
-/**
- * Matches MainActivity.onResume() by its real signature, anchored on the invoke-super
- * call to FragmentActivity.onResume() - a real AndroidX class kept by the library's own
- * consumer proguard rules, and the method's first instruction.
+ * Matches MainActivity.onCreate(Bundle). Anchored on the call to initNavigation(),
+ * MainActivity's own real (unobfuscated) private method - runs after the nav bar
+ * and its buttons are actually built, so a later bringToFront() call here can't
+ * get undone by nav setup that hasn't happened yet (the original content-view-inflation
+ * anchor fired too early, before initNavigation() built the bar connect_button sits
+ * on/in, which is why it wasn't staying visible).
  */
 private object MainOnCreateContentViewFingerprint : Fingerprint(
     definingClass = MAIN_ACTIVITY_CLASS,
@@ -52,6 +30,23 @@ private object MainOnCreateContentViewFingerprint : Fingerprint(
         methodCall(smali = "$MAIN_ACTIVITY_CLASS->initNavigation()V"),
     ),
 )
+
+/**
+ * Matches MainActivity.onResume() by its real signature, anchored on the invoke-super
+ * call to FragmentActivity.onResume() - a real AndroidX class kept by the library's own
+ * consumer proguard rules, and the method's first instruction.
+ */
+private object MainOnResumeFingerprint : Fingerprint(
+    definingClass = MAIN_ACTIVITY_CLASS,
+    name = "onResume",
+    returnType = "V",
+    parameters = emptyList(),
+    filters = listOf(
+        methodCall(
+            smali = "Landroidx/fragment/app/FragmentActivity;->onResume()V",
+            location = MatchFirst(),
+        ),
+    ),
 )
 
 /**
