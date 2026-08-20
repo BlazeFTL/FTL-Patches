@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.39.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.39.0-dev.2)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;27 patches total
+> **[v1.39.0-dev.3](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.39.0-dev.3)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;27 patches total
 <details>
 <summary>📦 Xender&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
 <br>
@@ -117,7 +117,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Add Toast](#add-toast) | Shows a custom toast message when the app starts. Works on any app. | • Toast message<br>• Show once |
 | [Custom DPI (Universal)](#custom-dpi-universal) | Change this app's display size without touching your phone's system settings. Make it bigger if things look too small, or smaller to fit more on screen. Works on any app. | • Display scale |
 | [Png Optimizer](#png-optimizer) | Compresses PNG images without losing quality and strips hidden metadata (DPI, timestamps, text) to make the app smaller. Only rewrites files when the result is actually smaller. |  |
-| [Remove Ads](#remove-ads) | Stubs known ad SDK entry points and poisons ad-network URL strings across the whole app. |  |
+| [Remove Ads](#remove-ads) | Stubs known ad SDK entry points and poisons ad-network URL strings across the whole app. Async load calls are redirected into the callback's own failure method instead of being deleted, so completion-gated app logic doesn't hang waiting on an orphaned listener. |  |
 | [Remove Analytics](#remove-analytics) | Disables tracking and crash-reporting tools, corrupts analytics web links inside the code, and removes background tracking services. |  |
 | [Remove Debug Info](#remove-debug-info) | Removes debug information (line numbers, variable names, source file references) from every class in the .dex files to reduce overall APK size. |  |
 | [Remove Duplicate Graphics](#remove-duplicate-graphics) | Keeps images for only one screen density (like xhdpi) and removes copies for all other densities. Android will automatically scale the kept images, making the app significantly smaller. | • Target density |
