@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.39.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.39.0-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;27 patches total
+> **[v1.39.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.39.0-dev.2)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;27 patches total
 <details>
 <summary>📦 Xender&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
 <br>
