@@ -3,10 +3,7 @@ package app.ftl.patches.ads
 import app.morphe.patcher.patch.resourcePatch
 
 private val TAG_SPAN = Regex("<[^>]+>")
-private val AD_ID_ATTR = Regex(
-    "android:id=\"@\\+?id/(ads?|banner)[a-z_]*\"|android:id=\"@\\+?id/nativead[a-z_]*\"",
-    RegexOption.IGNORE_CASE,
-)
+private val ID_ATTR = Regex("android:id=\"@\\+?id/([A-Za-z0-9_]+)\"")
 private val ADVIEW_TAG = Regex("^<com\\.google\\.android\\.gms\\.ads\\.AdView\\b")
 private val WIDTH_ATTR = Regex("android:layout_width=\"[^\"]*\"")
 private val HEIGHT_ATTR = Regex("android:layout_height=\"[^\"]*\"")
@@ -15,7 +12,9 @@ private val VISIBILITY_ATTR = Regex("android:visibility=\"[^\"]*\"")
 private fun hideAdElements(xml: String): String =
     TAG_SPAN.replace(xml) { match ->
         val tag = match.value
-        val isAdTag = AD_ID_ATTR.containsMatchIn(tag) || ADVIEW_TAG.containsMatchIn(tag)
+        val idMatch = ID_ATTR.find(tag)
+        val isAdTag = (idMatch != null && idLooksAdRelated(idMatch.groupValues[1])) ||
+            ADVIEW_TAG.containsMatchIn(tag)
         if (!isAdTag || !WIDTH_ATTR.containsMatchIn(tag) || !HEIGHT_ATTR.containsMatchIn(tag)) {
             return@replace tag
         }
@@ -44,3 +43,4 @@ val hideAdLayoutsPatch = resourcePatch(
             .forEach { file -> file.writeText(hideAdElements(file.readText())) }
     }
 }
+

@@ -1,12 +1,19 @@
 package app.ftl.patches.ads
 
+import app.morphe.patcher.extensions.InstructionExtensions.addInstruction
 import app.morphe.patcher.extensions.InstructionExtensions.instructionsOrNull
 import app.morphe.patcher.extensions.InstructionExtensions.removeInstruction
 import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.patch.bytecodePatch
+import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.iface.ClassDef
+import com.android.tools.smali.dexlib2.iface.Method
+import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.iface.reference.StringReference
 import kotlin.random.Random
@@ -37,16 +44,22 @@ internal val AD_SDK_PACKAGE_PREFIXES = listOf(
     "Lcom/yandex/mobile/ads/",
 )
 
-private val AD_METHOD_NAMES = setOf(
+private val ASYNC_LOAD_METHOD_NAMES = setOf(
     "load", "loadAd", "loadAds", "loadBanner", "loadBannerAd",
     "loadInterstitial", "loadInterstitialAd", "loadRewardedVideo",
     "loadRewardedAd", "loadNativeAd", "loadNativeAds",
     "requestAd", "requestBannerAd", "requestInterstitial", "requestInterstitialAd",
-    "fetchAd", "preloadAd", "showAd", "showAds", "showInterstitial",
-    "showInterstitialAd", "showBanner", "showBannerAd", "showRewardedVideo",
-    "showRewardedAd", "showFullscreen", "initializeAds", "initializeAdSDK",
+    "fetchAd", "preloadAd", "initializeAds", "initializeAdSDK",
     "beginFetchAds", "refreshAds", "pushAdsToPool",
 )
+
+private val SHOW_METHOD_NAMES = setOf(
+    "showAd", "showAds", "showInterstitial", "showInterstitialAd",
+    "showBanner", "showBannerAd", "showRewardedVideo", "showRewardedAd",
+    "showFullscreen",
+)
+
+private val AD_METHOD_NAMES = ASYNC_LOAD_METHOD_NAMES + SHOW_METHOD_NAMES
 
 private val AD_URL_BLACKLIST = listOf(
     "ca-app-pub-",
@@ -76,11 +89,51 @@ private fun isAdOwner(owner: String) = AD_SDK_PACKAGE_PREFIXES.any { owner.start
 private fun randomAdString() =
     (1..7).map { ('a'..'z').random(Random) }.joinToString("")
 
+private fun findFailureMethod(classDef: ClassDef): Method? {
+    val candidates = classDef.methods.filter { m ->
+        !AccessFlags.BRIDGE.isSet(m.accessFlags) &&
+        !AccessFlags.SYNTHETIC.isSet(m.accessFlags) &&
+        !AccessFlags.STATIC.isSet(m.accessFlags) &&
+        m.name != "<init>" && m.name != "<clinit>"
+    }
+    if (candidates.size < 2) return null
+
+    return candidates.firstOrNull { m ->
+        Regex("fail|error", RegexOption.IGNORE_CASE).containsMatchIn(m.name) &&
+        m.parameterTypes.size <= 2 &&
+        m.returnType == "V"
+    }
+}
+
+private fun Instruction.argRegisters(): List<Int>? = when (this) {
+    is FiveRegisterInstruction -> when (registerCount) {
+        0 -> emptyList()
+        1 -> listOf(registerC)
+        2 -> listOf(registerC, registerD)
+        3 -> listOf(registerC, registerD, registerE)
+        4 -> listOf(registerC, registerD, registerE, registerF)
+        5 -> listOf(registerC, registerD, registerE, registerF, registerG)
+        else -> null
+    }
+    is RegisterRangeInstruction -> (startRegister until startRegister + registerCount).toList()
+    else -> null
+}
+
+private data class StripTarget(
+    val index: Int,
+    val returnsBoolean: Boolean,
+    val callbackType: String?,
+)
+
 val universalRemoveAdsPatch = bytecodePatch(
     name = "Remove Ads",
-    description = "Stubs known ad SDK entry points and poisons ad-network URL strings across the whole app.",
+    description = "Stubs known ad SDK entry points and poisons ad-network URL strings across the whole app. " +
+        "Async load calls are redirected into the callback's own failure method instead of being deleted, " +
+        "so completion-gated app logic doesn't hang waiting on an orphaned listener.",
     default = false,
 ) {
+    dependsOn(hideAdLayoutsPatch, forceHideAdViewsPatch)
+
     execute {
         classDefForEach { classDef ->
             val isAdSdkClass = AD_SDK_PACKAGE_PREFIXES.any { classDef.type.startsWith(it) }
@@ -122,7 +175,7 @@ val universalRemoveAdsPatch = bytecodePatch(
                     val instructions = method.instructionsOrNull?.toList() ?: return@forEach
                     if (instructions.isEmpty()) return@forEach
 
-                    val stripTargets = mutableListOf<Pair<Int, Boolean>>()
+                    val stripTargets = mutableListOf<StripTarget>()
                     instructions.forEachIndexed { index, instruction ->
                         if (instruction !is ReferenceInstruction) return@forEachIndexed
                         val ref = instruction.reference as? MethodReference ?: return@forEachIndexed
@@ -135,18 +188,53 @@ val universalRemoveAdsPatch = bytecodePatch(
                         val returnsVoid = ref.returnType == "V"
                         if (!returnsBoolean && !returnsVoid) return@forEachIndexed
 
-                        stripTargets.add(index to returnsBoolean)
+                        val callbackType = if (ref.name in ASYNC_LOAD_METHOD_NAMES) {
+                            ref.parameterTypes.lastOrNull()?.toString()
+                        } else {
+                            null
+                        }
+
+                        stripTargets.add(StripTarget(index, returnsBoolean, callbackType))
                     }
 
-                    stripTargets.asReversed().forEach { (index, returnsBoolean) ->
-                        if (returnsBoolean) {
-                            val moveResult = instructions.getOrNull(index + 1)
+                    stripTargets.asReversed().forEach { target ->
+                        if (target.returnsBoolean) {
+                            val moveResult = instructions.getOrNull(target.index + 1)
                             if (moveResult?.opcode == Opcode.MOVE_RESULT) {
                                 val register = (moveResult as OneRegisterInstruction).registerA
-                                method.replaceInstruction(index + 1, "const/4 v$register, 0x0")
+                                method.replaceInstruction(target.index + 1, "const/4 v$register, 0x0")
                             }
                         }
-                        method.removeInstruction(index)
+
+                        val redirected = target.callbackType?.let { type ->
+                            val argRegs0 = instructions[target.index].argRegisters()
+                            if (argRegs0.isNullOrEmpty()) return@let false
+                            val calleeReg = argRegs0.last()
+                            val scratchPool = argRegs0.dropLast(1)
+
+                            val calleeClassDef = classDefByOrNull(type) ?: return@let false
+                            val failMethod = findFailureMethod(calleeClassDef) ?: return@let false
+                            val params = failMethod.parameterTypes
+                            if (params.any { it == "J" || it == "D" }) return@let false
+                            if (params.size > scratchPool.size) return@let false
+
+                            val scratchRegs = scratchPool.takeLast(params.size)
+                            val nullMoves = scratchRegs.joinToString("\n") { r -> "const/4 v$r, 0x0" }
+                            val argRegsStr = (listOf(calleeReg) + scratchRegs).joinToString(", ") { "v$it" }
+                            val paramDescriptor = params.joinToString("") { it.toString() }
+
+                            method.removeInstruction(target.index)
+                            method.addInstruction(
+                                target.index,
+                                (if (nullMoves.isNotEmpty()) "$nullMoves\n" else "") +
+                                    "invoke-virtual {$argRegsStr}, ${calleeClassDef.type}->${failMethod.name}($paramDescriptor)V",
+                            )
+                            true
+                        } ?: false
+
+                        if (!redirected) {
+                            method.removeInstruction(target.index)
+                        }
                     }
                 }
             }
