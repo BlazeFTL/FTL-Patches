@@ -15,18 +15,21 @@ private val AD_ACTIVITY_ON_CREATE_FINGERPRINTS = listOf(
 
 // Injects finish() immediately after super.onCreate() in each known ad
 // activity, so nothing below it (layout inflate, ad render, impression
-// tracking) ever runs. p0 is used for "this" - the inline smali compiler
-// resolves it to the real register regardless of the method's register
-// count, so this is safe even on Vungle/InMobi's high-register methods.
+// tracking) ever runs. Uses invoke-virtual/range for the finish() call even
+// though it only takes one register: p0 can resolve to a register number
+// above v15 on methods with a large register count (e.g. InMobiAdActivity,
+// .registers 33 -> p0 = v31), which the non-range invoke-virtual encoding
+// can't address (35c format, 4-bit register operands, v0-v15 only). /range
+// has no such limit and costs nothing on the low-register methods either.
 // Complements HideAdLayoutsPatch (zeroes the containers these SDKs inflate
 // into) and is independent of RemoveAdsLite (SDK entry-point stubbing) -
 // this catches ad activities that still launch even when load/show itself
 // was already stubbed elsewhere.
 val callFinishOnAdActivitiesPatch = bytecodePatch(
-    name = "Remove Ads Ultra Lite",
-    description = "Call finish on ad activities, Forces known ad SDK activities (AdMob, AppLovin MAX, BIGO, InMobi, " +
+    name = "Call finish on ad activities",
+    description = "Forces known ad SDK activities (AdMob, AppLovin MAX, BIGO, InMobi, " +
         "Liftoff/Vungle) to finish() immediately after super.onCreate(), before they " +
-        "inflate or render anything. Its Even Weaker Than Remove Ads Lite But Wont Make The App Crash Or Stuck(More Safer)",
+        "inflate or render anything.",
     default = false,
 ) {
     dependsOn(hideAdLayoutsPatch)
@@ -41,7 +44,7 @@ val callFinishOnAdActivitiesPatch = bytecodePatch(
                 fingerprint.method.addInstructions(
                     superCallIndex + 1,
                     """
-                        invoke-virtual {p0}, Landroid/app/Activity;->finish()V
+                        invoke-virtual/range {p0 .. p0}, Landroid/app/Activity;->finish()V
                         return-void
                     """.trimIndent(),
                 )
