@@ -266,6 +266,15 @@ private fun isSignatureVerifyCall(reference: MethodReference) =
         reference.parameterTypes.singleOrNull() == "[B" &&
         reference.returnType == "Z"
 
+// Provider entries that must survive the strip below even though their name
+// starts with "com.google.firebase" — removing FirebaseInitProvider prevents
+// FirebaseApp.initializeApp() from ever running, which crashes any code path
+// that calls FirebaseApp.getInstance() / FirebaseKt.getApp(), regardless of
+// whether logEvent()/recordException() are stubbed out.
+private val FIREBASE_MANIFEST_KEEP = setOf(
+    "com.google.firebase.provider.FirebaseInitProvider",
+)
+
 // name = null keeps this out of PatchLoader's top-level list (removeAnalyticsPatch
 // pulls it in via dependsOn), so it doesn't show as its own toggle in the UI.
 val stripFirebaseManifestComponentsPatch = resourcePatch(
@@ -281,11 +290,9 @@ val stripFirebaseManifestComponentsPatch = resourcePatch(
             for (i in 0 until children.length) {
                 val node = children.item(i) as? Element ?: continue
                 when (node.tagName) {
-                    // FirebaseInitProvider runs before Application.onCreate() and
-                    // kicks off all Firebase auto-init/auto-collection on its own —
-                    // stubbing logEvent() etc. does nothing to stop this.
                     "provider" -> {
-                        if (node.getAttribute("android:name").startsWith("com.google.firebase")) {
+                        val name = node.getAttribute("android:name")
+                        if (name.startsWith("com.google.firebase") && name !in FIREBASE_MANIFEST_KEEP) {
                             toRemove += node
                         }
                     }

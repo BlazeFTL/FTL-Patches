@@ -7,6 +7,11 @@ on:
 jobs:
   release:
     name: Release
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      startsWith(github.event.head_commit.message, 'Feat:') ||
+      startsWith(github.event.head_commit.message, 'Fix:') ||
+      startsWith(github.event.head_commit.message, 'Merge pull')
     permissions:
       contents: write
       packages: write
@@ -34,8 +39,6 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # Semantic release runs its own Gradle build command.
-      # Only dev and main branch will generate a release as specified by .releaserc
       - name: Release
         if: |
           github.event_name == 'workflow_dispatch' ||
@@ -55,8 +58,6 @@ jobs:
           subject-name: 'Morphe Patches ${{ steps.release.outputs.new_release_git_tag }}'
           subject-path: patches/build/libs/patches-*.mpp
 
-      # Always verify compilation when semantic-release did not publish a release.
-      # This covers non-main/dev branches, chore commits, docs commits, etc.
       - name: Verify project compiles
         if: steps.release.outputs.new_release_published != 'true'
         env:

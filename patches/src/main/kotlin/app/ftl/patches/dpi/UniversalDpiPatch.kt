@@ -23,10 +23,10 @@ private fun String.toClassType() = "L${replace('.', '/')};"
 // per PatchBuilder.resolveDefaultValue(), since a universal patch cannot default to enabled.
 @Suppress("unused")
 val universalDpiPatch = bytecodePatch(
-    "Custom DPI (Universal)",
-    "Change this app's display size without touching your phone's system settings. " +
+    "Custom DPI",
+    "Change any app's display size without touching your phone's system settings. " +
         "Make it bigger if things look too small, or smaller to fit more on screen. " +
-        "Works on any app.",
+        "You Need To Configure 100(No Change), 90(10% Smaller App Ui), 110(10% Bigger App Ui).",
     false,
 ) {
     dependsOn(findAppEntryPointPatch)

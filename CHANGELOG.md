@@ -1,3 +1,39 @@
+## [1.39.0-dev.6](https://github.com/BlazeFTL/FTL-Patches/compare/v1.39.0-dev.5...v1.39.0-dev.6) (2026-08-22)
+
+### ✨ New Features
+
+* up ([a4b4939](https://github.com/BlazeFTL/FTL-Patches/commit/a4b49398a41ab5899227ac4e062797f1eb72f010))
+
+## [1.39.0-dev.5](https://github.com/BlazeFTL/FTL-Patches/compare/v1.39.0-dev.4...v1.39.0-dev.5) (2026-08-22)
+
+### ✨ New Features
+
+* Ads 2 ([267c6ef](https://github.com/BlazeFTL/FTL-Patches/commit/267c6ef31f1cdba1468e2562e761fe43e5403314))
+
+## [1.39.0-dev.4](https://github.com/BlazeFTL/FTL-Patches/compare/v1.39.0-dev.3...v1.39.0-dev.4) (2026-08-22)
+
+### ✨ New Features
+
+* add removeadslite ([0dbfc3d](https://github.com/BlazeFTL/FTL-Patches/commit/0dbfc3d44bce74a7522ed64c58315e6eef776df8))
+
+## [1.39.0-dev.3](https://github.com/BlazeFTL/FTL-Patches/compare/v1.39.0-dev.2...v1.39.0-dev.3) (2026-08-20)
+
+### ✨ New Features
+
+* ads up ([ff00438](https://github.com/BlazeFTL/FTL-Patches/commit/ff004387950c6cad0624b89e0e48ea7bda1cedfa))
+
+## [1.39.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/compare/v1.39.0-dev.1...v1.39.0-dev.2) (2026-08-20)
+
+### ✨ New Features
+
+* up analytics ([9d40b74](https://github.com/BlazeFTL/FTL-Patches/commit/9d40b741c6405c222019f734817e1bd44ecc9cb4))
+
+## [1.39.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.38.0...v1.39.0-dev.1) (2026-08-19)
+
+### ✨ New Features
+
+* update apk junk ([abb9ae0](https://github.com/BlazeFTL/FTL-Patches/commit/abb9ae031fe91bd2f21a96c721117f236221a601))
+
 ## [1.38.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.37.0...v1.38.0) (2026-08-19)
 
 ### ✨ New Features
