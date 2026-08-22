@@ -28,8 +28,8 @@ import java.util.logging.Logger
 val removeAdsLitePatch = bytecodePatch(
     name = "Remove Ads Lite(Adobo)",
     description = "Based On (Adobo's Block Ads+Mobile Ads) Disables known ad SDK entry points and neutralizes ad/tracker/analytics " +
-        "Safer than Remove Ads for apps where you will be stuck in SplashActivity" +
-        "It Is Weaker But Effective, Merged Adobo's Both Patches And Removed The Need Of Selecting A Host File Or Configuring Anything" +
+        "Safer than Remove Ads for apps where you will be stuck in SplashActivity " +
+        "It Is Weaker But Effective, Merged Adobo's Both Patches And Removed The Need Of Selecting A Host File Or Configuring Anything " +
         "In Future It May Replace Remove Ads Patch If I Find No Problem.",
     default = false,
 ) {
