@@ -28,7 +28,7 @@ import java.util.logging.Logger
 // RemoveAdsPatch can cause.
 val removeAdsLitePatch = bytecodePatch(
     name = "Remove Ads Lite(Adobo)",
-    description = "Based On (Adobo's Block Ads+Mobile Ads) It Should Work Where Remove Ads Patch Failed " +
+    description = "Based On (Adobo's Block Ads+Mobile Ads) It Should Work Where Remove Ads Patch Caused Problem " +
         "Safer than Remove Ads for apps where you will be stuck in SplashActivity " +
         "It Is Weaker But Effective, Merged Adobo's Both Patches And Removed The Need Of Selecting A Host File Or Configuring Anything " +
         "In Future It May Replace Remove Ads Patch If I Find No Problem.",
