@@ -28,7 +28,7 @@ private val AD_ACTIVITY_ON_CREATE_FINGERPRINTS = listOf(
 val callFinishOnAdActivitiesPatch = bytecodePatch(
     name = "Remove Ads Ultra Lite",
     description = "Call finish on ad activities (AdMob, AppLovin MAX, BIGO, InMobi, " +
-        "Liftoff/Vungle) Its In Very Early Stage So Test " +
+        "Liftoff/Vungle). Use Where Remove Ads Lite (Adobo) Failed. Its In Very Early Stage So Test " +
         "And Provide FeedBack If You Still See Ads In Some App.",
     default = false,
 ) {
