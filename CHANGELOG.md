@@ -1,3 +1,9 @@
+## [1.39.0-dev.4](https://github.com/BlazeFTL/FTL-Patches/compare/v1.39.0-dev.3...v1.39.0-dev.4) (2026-08-22)
+
+### ✨ New Features
+
+* add removeadslite ([0dbfc3d](https://github.com/BlazeFTL/FTL-Patches/commit/0dbfc3d44bce74a7522ed64c58315e6eef776df8))
+
 ## [1.39.0-dev.3](https://github.com/BlazeFTL/FTL-Patches/compare/v1.39.0-dev.2...v1.39.0-dev.3) (2026-08-20)
 
 ### ✨ New Features
