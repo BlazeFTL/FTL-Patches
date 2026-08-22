@@ -1,3 +1,9 @@
+## [1.39.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.39.0...v1.39.1) (2026-08-22)
+
+### 🐛 Bug Fixes
+
+* Add more domains for adobo ([5c6351b](https://github.com/BlazeFTL/FTL-Patches/commit/5c6351b4819c7afe0d1964b7990ea1f6df7505d3))
+
 ## [1.39.1-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.39.0...v1.39.1-dev.1) (2026-08-22)
 
 ### 🐛 Bug Fixes
