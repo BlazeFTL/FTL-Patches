@@ -15,6 +15,7 @@ import app.ftl.patches.removeadslite.ads.vungle.applyVunglePatch
 import app.ftl.patches.removeadslite.ads.yandex.applyYandexPatch
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.stringOption
+import java.io.File
 import java.util.logging.Logger
 
 // Per-SDK entry-point stubbing (adobo's "Disable mobile ads") + hardcoded
@@ -47,7 +48,26 @@ val removeAdsLitePatch = bytecodePatch(
         !ipAddress.isNullOrEmpty() && ipAddress.matches(ipAddressPattern)
     }
 
-    dependsOn(hostBlockPatch { redirectionIpOption!! }, hideAdLayoutsPatch, forceHideAdViewsPatch)
+    val customHostsFileOption by stringOption(
+        key = "customHostsFile",
+        default = null,
+        title = "Additional hosts file (optional)",
+        description = "Optionally add your own hosts file to block extra domains on top of " +
+            "the bundled list. Select a file or paste the full file path. Leave empty to use " +
+            "only the bundled list.",
+        required = false,
+    ) { filePath ->
+        filePath.isNullOrEmpty() || File(filePath.trim()).isFile
+    }
+
+    dependsOn(
+        hostBlockPatch(
+            redirectIpProvider = { redirectionIpOption!! },
+            customHostsFileProvider = { customHostsFileOption },
+        ),
+        hideAdLayoutsPatch,
+        forceHideAdViewsPatch,
+    )
 
     val logger = Logger.getLogger(this::class.java.name)
 
