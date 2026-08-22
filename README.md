@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.39.1](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.39.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;29 patches total
+> **[v1.40.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.40.0-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;29 patches total
 <details>
 <summary>📦 Xender&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
 <br>
@@ -118,7 +118,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Custom DPI](#custom-dpi) | Change any app's display size without touching your phone's system settings. Make it bigger if things look too small, or smaller to fit more on screen. You Need To Configure 100(No Change), 90(10% Smaller App Ui), 110(10% Bigger App Ui). | • Display scale |
 | [Png Optimizer](#png-optimizer) | Compresses PNG images without losing quality and strips hidden metadata (DPI, timestamps, text) to make the app smaller. Only rewrites files when the result is actually smaller. |  |
 | [Remove Ads](#remove-ads) | Stubs known ad SDK entry points and poisons ad-network URL strings across the whole app. Async load calls are redirected into the callback's own failure method instead of being deleted, Currently In Some Apps Makes Them Stuck In SplashActivity Due To Their Custom Check Of Ads Load But It Is Superior. |  |
-| [Remove Ads Lite(Adobo)](#remove-ads-lite-adobo) | Based On (Adobo's Block Ads+Mobile Ads) Disables known ad SDK entry points and neutralizes ad/tracker/analytics Safer than Remove Ads for apps where you will be stuck in SplashActivity It Is Weaker But Effective, Merged Adobo's Both Patches And Removed The Need Of Selecting A Host File Or Configuring Anything In Future It May Replace Remove Ads Patch If I Find No Problem. | • Redirection IP |
+| [Remove Ads Lite(Adobo)](#remove-ads-lite-adobo) | Based On (Adobo's Block Ads+Mobile Ads) Disables known ad SDK entry points and neutralizes ad/tracker/analytics Safer than Remove Ads for apps where you will be stuck in SplashActivity It Is Weaker But Effective, Merged Adobo's Both Patches And Removed The Need Of Selecting A Host File Or Configuring Anything In Future It May Replace Remove Ads Patch If I Find No Problem. | • Redirection IP<br>• Additional hosts file (optional) |
 | [Remove Ads Ultra Lite](#remove-ads-ultra-lite) | Call finish on ad activities (AdMob, AppLovin MAX, BIGO, InMobi, Liftoff/Vungle) Its In Very Early Stage So Test And Provide FeedBack If You Still See Ads In Some App. |  |
 | [Remove Analytics](#remove-analytics) | Disables tracking and crash-reporting tools, corrupts analytics web links inside the code, and removes background tracking services. |  |
 | [Remove Debug Info](#remove-debug-info) | Removes debug information (line numbers, variable names, source file references) from every class in the .dex files to reduce overall APK size. |  |
