@@ -26,10 +26,10 @@ private val AD_ACTIVITY_ON_CREATE_FINGERPRINTS = listOf(
 // this catches ad activities that still launch even when load/show itself
 // was already stubbed elsewhere.
 val callFinishOnAdActivitiesPatch = bytecodePatch(
-    name = "Call finish on ad activities",
-    description = "Forces known ad SDK activities (AdMob, AppLovin MAX, BIGO, InMobi, " +
-        "Liftoff/Vungle) to finish() immediately after super.onCreate(), before they " +
-        "inflate or render anything.",
+    name = "Remove Ads Ultra Lite",
+    description = "Call finish on ad activities (AdMob, AppLovin MAX, BIGO, InMobi, " +
+        "Liftoff/Vungle) Its In Very Early Stage So Test " +
+        "And Provide FeedBack If You Still See Ads In Some App.",
     default = false,
 ) {
     dependsOn(hideAdLayoutsPatch)
