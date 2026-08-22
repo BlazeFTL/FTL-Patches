@@ -129,7 +129,7 @@ val universalRemoveAdsPatch = bytecodePatch(
     name = "Remove Ads",
     description = "Stubs known ad SDK entry points and poisons ad-network URL strings across the whole app. " +
         "Async load calls are redirected into the callback's own failure method instead of being deleted, " +
-        "so completion-gated app logic doesn't hang waiting on an orphaned listener.",
+        "Currently In Some Apps Makes Them Stuck In SplashActivity Due To Their Custom Check Of Ads Load But It Is Superior.",
     default = false,
 ) {
     dependsOn(hideAdLayoutsPatch, forceHideAdViewsPatch)
