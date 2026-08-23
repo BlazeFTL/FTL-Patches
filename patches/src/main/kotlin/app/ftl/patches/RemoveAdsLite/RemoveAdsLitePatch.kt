@@ -1,7 +1,7 @@
 package app.ftl.patches.removeadslite
 
-import app.ftl.patches.ads.forceHideAdViewsPatch
-import app.ftl.patches.ads.hideAdLayoutsPatch
+import app.ftl.patches.removeads.forceHideAdViewsPatch
+import app.ftl.patches.removeads.hideAdLayoutsPatch
 import app.ftl.patches.removeadslite.ads.admob.applyGoogleAdMobPatch
 import app.ftl.patches.removeadslite.ads.applovin.applyAppLovinMaxPatch
 import app.ftl.patches.removeadslite.ads.bigo.applyBigoPatch

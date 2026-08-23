@@ -1,4 +1,4 @@
-package app.ftl.patches.ads
+package app.ftl.patches.removeads
 
 private val CAMEL_BOUNDARY = Regex("(?<=[a-z0-9])(?=[A-Z])")
 private val AD_WORDS = setOf("ad", "ads", "banner", "nativead")

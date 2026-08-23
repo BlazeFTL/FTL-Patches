@@ -1,4 +1,4 @@
-package app.ftl.patches.ads
+package app.ftl.patches.removeads
 
 import app.morphe.patcher.extensions.InstructionExtensions.addInstruction
 import app.morphe.patcher.extensions.InstructionExtensions.instructionsOrNull

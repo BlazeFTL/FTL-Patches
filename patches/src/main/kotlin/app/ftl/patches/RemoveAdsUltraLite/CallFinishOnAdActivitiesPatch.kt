@@ -1,6 +1,6 @@
-package app.ftl.patches.adactivities
+package app.ftl.patches.removeadsultralite
 
-import app.ftl.patches.ads.hideAdLayoutsPatch
+import app.ftl.patches.removeads.hideAdLayoutsPatch
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import java.util.logging.Logger

@@ -1,4 +1,4 @@
-package app.ftl.patches.resources
+package app.ftl.patches.apkcleanup
 
 import app.morphe.patcher.patch.rawResourcePatch
 import app.morphe.patcher.patch.stringOption

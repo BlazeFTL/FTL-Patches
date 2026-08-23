@@ -1,4 +1,4 @@
-package app.ftl.patches.DexDebugInfo
+package app.ftl.patches.apkcleanup
 
 import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.bytecodePatch

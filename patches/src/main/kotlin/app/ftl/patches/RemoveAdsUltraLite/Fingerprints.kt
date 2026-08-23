@@ -1,4 +1,4 @@
-package app.ftl.patches.adactivities
+package app.ftl.patches.removeadsultralite
 
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.methodCall
