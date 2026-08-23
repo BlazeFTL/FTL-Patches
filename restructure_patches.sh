@@ -3,36 +3,25 @@ set -euo pipefail
 
 cd patches/src/main/kotlin/app/ftl/patches
 
-git mv removeadslite RemoveAdsLite
+# display-only renames, package untouched
+git mv mxplayer MxPlayer
+git mv esfileexplorer EsFileExplorer
 
-git mv ads RemoveAds
-find RemoveAds -name '*.kt' -exec sed -i \
-  's/^package app\.ftl\.patches\.ads$/package app.ftl.patches.removeads/' {} +
-sed -i 's/app\.ftl\.patches\.ads\.hideAdLayoutsPatch/app.ftl.patches.removeads.hideAdLayoutsPatch/' \
-  RemoveAdsLite/RemoveAdsLitePatch.kt
-sed -i 's/app\.ftl\.patches\.ads\.forceHideAdViewsPatch/app.ftl.patches.removeads.forceHideAdViewsPatch/' \
-  RemoveAdsLite/RemoveAdsLitePatch.kt
+# analytics -> RemoveAnalytics (folder + package)
+git mv analytics RemoveAnalytics
+find RemoveAnalytics -name '*.kt' -exec sed -i \
+  's/^package app\.ftl\.patches\.analytics$/package app.ftl.patches.removeanalytics/' {} +
 
-git mv adactivities RemoveAdsUltraLite
-find RemoveAdsUltraLite -name '*.kt' -exec sed -i \
-  's/^package app\.ftl\.patches\.adactivities$/package app.ftl.patches.removeadsultralite/' {} +
-sed -i 's/app\.ftl\.patches\.ads\.hideAdLayoutsPatch/app.ftl.patches.removeads.hideAdLayoutsPatch/' \
-  RemoveAdsUltraLite/CallFinishOnAdActivitiesPatch.kt
+# dpi -> CustomDPI (folder + package)
+git mv dpi CustomDPI
+find CustomDPI -name '*.kt' -exec sed -i \
+  's/^package app\.ftl\.patches\.dpi$/package app.ftl.patches.customdpi/' {} +
+sed -i \
+  -e 's/app\.ftl\.patches\.dpi\.AppEntryPoint\b/app.ftl.patches.customdpi.AppEntryPoint/' \
+  -e 's/app\.ftl\.patches\.dpi\.findAppEntryPointPatch/app.ftl.patches.customdpi.findAppEntryPointPatch/' \
+  toast/AddToastPatch.kt
 
-mkdir ApkCleanup
-git mv cleanup/ApkCleanupPatch.kt ApkCleanup/
-git mv DexDebugInfo/RemoveDebugInfoPatch.kt ApkCleanup/
-git mv resources/DrawableCleanPatch.kt ApkCleanup/
-git mv resources/LangCleanPatch.kt ApkCleanup/
-git mv resources/PngOptimizerPatch.kt ApkCleanup/
-rmdir cleanup DexDebugInfo resources
-find ApkCleanup -name '*.kt' -exec sed -i -E \
-  's/^package app\.ftl\.patches\.(cleanup|DexDebugInfo|resources)$/package app.ftl.patches.apkcleanup/' {} +
-
-echo "=== leftover old refs (should be empty) ==="
-grep -rn \
-  'app\.ftl\.patches\.ads\b\|app\.ftl\.patches\.adactivities\b\|app\.ftl\.patches\.cleanup\b\|app\.ftl\.patches\.DexDebugInfo\b\|app\.ftl\.patches\.resources\b' \
-  . || echo "clean"
+echo "=== leftover old refs (mxplayer/esfileexplorer lines below are expected, package unchanged) ==="
+grep -rn 'app\.ftl\.patches\.mxplayer\b\|app\.ftl\.patches\.esfileexplorer\b\|app\.ftl\.patches\.analytics\b\|app\.ftl\.patches\.dpi\b' . || echo clean
 
 git status
-EOF
