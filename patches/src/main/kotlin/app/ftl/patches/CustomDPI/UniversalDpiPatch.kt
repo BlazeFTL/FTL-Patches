@@ -1,4 +1,4 @@
-package app.ftl.patches.dpi
+package app.ftl.patches.customdpi
 
 import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
