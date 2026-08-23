@@ -45,7 +45,7 @@ internal object DefaultNotificationChannelFingerprint : Fingerprint(
 
 @Suppress("unused")
 val disableSnaptubeNotificationDefaultsPatch = bytecodePatch(
-    name = "Disable Notification Defaults",
+    name = "Disable Annoying Snaptube Notifications",
     description = "Turns off the Toolbar, Recommended contents, and Tool notifications channels by default.",
     default = false,
 ) {
