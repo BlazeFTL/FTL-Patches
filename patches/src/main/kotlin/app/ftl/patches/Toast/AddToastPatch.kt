@@ -6,8 +6,8 @@ import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.stringOption
 import app.morphe.patcher.util.proxy.mutableTypes.MutableClass
-import app.ftl.patches.dpi.AppEntryPoint
-import app.ftl.patches.dpi.findAppEntryPointPatch
+import app.ftl.patches.customdpi.AppEntryPoint
+import app.ftl.patches.customdpi.findAppEntryPointPatch
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.ftl.util.getFreeRegisterProvider
 import app.ftl.util.registersUsed

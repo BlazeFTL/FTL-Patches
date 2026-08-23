@@ -1,4 +1,4 @@
-package app.ftl.patches.dpi
+package app.ftl.patches.customdpi
 
 import app.morphe.patcher.patch.resourcePatch
 import org.w3c.dom.Document

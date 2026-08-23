@@ -1,3 +1,15 @@
+## [1.40.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/compare/v1.40.0-dev.1...v1.40.0-dev.2) (2026-08-23)
+
+### ✨ New Features
+
+* Ads Finish ([bcbbf84](https://github.com/BlazeFTL/FTL-Patches/commit/bcbbf8482dd660eeddf8e14d65dbccd5f03d24bb))
+
+## [1.40.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.39.1...v1.40.0-dev.1) (2026-08-22)
+
+### ✨ New Features
+
+* Allow Adding Host File To Adobo ([7346fd7](https://github.com/BlazeFTL/FTL-Patches/commit/7346fd7c8d99044a8a1c38a10f90ab978c55ba2e))
+
 ## [1.39.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.39.0...v1.39.1) (2026-08-22)
 
 ### 🐛 Bug Fixes

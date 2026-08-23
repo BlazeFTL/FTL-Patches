@@ -1,4 +1,4 @@
-package app.ftl.patches.analytics
+package app.ftl.patches.removeanalytics
 
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstruction

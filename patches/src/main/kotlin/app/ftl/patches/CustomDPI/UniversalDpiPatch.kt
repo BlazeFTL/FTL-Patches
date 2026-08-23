@@ -1,4 +1,4 @@
-package app.ftl.patches.dpi
+package app.ftl.patches.customdpi
 
 import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
@@ -23,7 +23,7 @@ private fun String.toClassType() = "L${replace('.', '/')};"
 // per PatchBuilder.resolveDefaultValue(), since a universal patch cannot default to enabled.
 @Suppress("unused")
 val universalDpiPatch = bytecodePatch(
-    "Custom DPI",
+    "Change Display Size",
     "Change any app's display size without touching your phone's system settings. " +
         "Make it bigger if things look too small, or smaller to fit more on screen. " +
         "You Need To Configure 100(No Change), 90(10% Smaller App Ui), 110(10% Bigger App Ui).",

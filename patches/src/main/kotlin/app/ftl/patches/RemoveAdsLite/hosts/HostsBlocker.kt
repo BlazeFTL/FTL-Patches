@@ -1,5 +1,6 @@
 package app.ftl.patches.removeadslite.hosts
 
+import java.io.File
 import java.net.IDN
 import java.net.URI
 
@@ -98,6 +99,23 @@ class HostsBlocker private constructor(
             val blocklist = mutableMapOf<String, String?>()
             parseLines(input.lineSequence(), blocklist)
             return HostsBlocker(blocklist)
+        }
+
+        /**
+         * Creates a [HostsBlocker] instance by parsing a blocklist from the given [file]
+         * (standard hosts-file format).
+         */
+        fun fromFile(file: File): HostsBlocker = fromString(file.readText())
+
+        /**
+         * Merges multiple [HostsBlocker] instances into one. Later entries override earlier
+         * ones on host collision (e.g. a user-supplied file can widen/override a path-scoped
+         * bundled entry with a bare host).
+         */
+        fun merge(vararg blockers: HostsBlocker): HostsBlocker {
+            val merged = mutableMapOf<String, String?>()
+            blockers.forEach { merged.putAll(it.blocklist) }
+            return HostsBlocker(merged)
         }
 
         /**
