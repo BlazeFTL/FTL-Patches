@@ -11,6 +11,16 @@ private val AD_ACTIVITY_ON_CREATE_FINGERPRINTS = listOf(
     "Google AdMob" to GoogleAdActivityOnCreateFingerprint,
     "InMobi" to InMobiAdActivityOnCreateFingerprint,
     "Liftoff Monetize (Vungle)" to VungleAdActivityOnCreateFingerprint,
+    "Meta Audience Network" to MetaAudienceNetworkActivityOnCreateFingerprint,
+    "Unity Ads" to UnityAdUnitActivityOnCreateFingerprint,
+    "Mintegral (Reward Video)" to MintegralRewardVideoActivityOnCreateFingerprint,
+    "Mintegral (Interstitial)" to MintegralInterstitialActivityOnCreateFingerprint,
+    "Pangle (Full Screen Video)" to PangleFullScreenVideoActivityOnCreateFingerprint,
+    "Pangle (Full Screen Express Video)" to PangleFullScreenExpressVideoActivityOnCreateFingerprint,
+    "Pangle (Reward Video)" to PangleRewardVideoActivityOnCreateFingerprint,
+    "Pangle (Reward Express Video)" to PangleRewardExpressVideoActivityOnCreateFingerprint,
+    "Pangle (Interstitial)" to PangleInterstitialActivityOnCreateFingerprint,
+    "Pangle (Interstitial Express)" to PangleInterstitialExpressActivityOnCreateFingerprint,
 )
 
 // Injects finish() immediately after super.onCreate() in each known ad
@@ -28,7 +38,7 @@ private val AD_ACTIVITY_ON_CREATE_FINGERPRINTS = listOf(
 val callFinishOnAdActivitiesPatch = bytecodePatch(
     name = "Remove Ads Ultra Lite",
     description = "Call finish on ad activities (AdMob, AppLovin MAX, BIGO, InMobi, " +
-        "Liftoff/Vungle). Use Where Remove Ads Lite (Adobo) Caused Problem. Its In Very Early Stage So Test " +
+        "Liftoff/Vungle, Meta Audience Network, Unity Ads, Mintegral, Pangle). Use Where Remove Ads Lite (Adobo) Caused Problem. Its In Very Early Stage So Test " +
         "And Provide FeedBack If You Still See Ads In Some App.",
     default = false,
 ) {
