@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.41.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.41.0-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;30 patches total
+> **[v1.41.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.41.0-dev.2)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;31 patches total
 <details>
 <summary>📦 SnapTube&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
 <br>
@@ -105,6 +105,21 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Hide Me tab promo items](#hide-me-tab-promo-items) | Collapses the WhatsApp, Legal, and Help entries on the Me tab. |  |
 | [Hide local tiles banner](#hide-local-tiles-banner) | Collapses the local device tiles banner. |  |
 | [Skip welcome screen](#skip-welcome-screen) | Moves the launcher intent filters and app shortcuts from the welcome/splash activity to the main activity, so the app boots straight past the splash and update screen. |  |
+
+</details>
+
+<details>
+<summary>📦 Calendar&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<br>
+
+**🎯 Supported versions:**
+
+| 1.0.34 |
+| :---: |
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Unlock premium](#unlock-premium) | Unlocks premium features and removes ads. |  |
 
 </details>
 

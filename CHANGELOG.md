@@ -1,3 +1,9 @@
+## [1.41.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/compare/v1.41.0-dev.1...v1.41.0-dev.2) (2026-08-24)
+
+### ✨ New Features
+
+* Add Calendar Premium Patch ([15847c5](https://github.com/BlazeFTL/FTL-Patches/commit/15847c56989751be7ae8e87e18e40f1e2c39a01d))
+
 ## [1.41.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.40.1-dev.1...v1.41.0-dev.1) (2026-08-23)
 
 ### ✨ New Features
