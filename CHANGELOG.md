@@ -1,3 +1,9 @@
+## [1.41.0-dev.3](https://github.com/BlazeFTL/FTL-Patches/compare/v1.41.0-dev.2...v1.41.0-dev.3) (2026-08-25)
+
+### ✨ New Features
+
+* up drawable clean ([866b2c5](https://github.com/BlazeFTL/FTL-Patches/commit/866b2c57a7c5b67395700a35258c0416f0a7d41d))
+
 ## [1.41.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/compare/v1.41.0-dev.1...v1.41.0-dev.2) (2026-08-24)
 
 ### ✨ New Features
