@@ -49,8 +49,8 @@ internal object SettingsOnViewCreatedFingerprint : Fingerprint(
 
 @Suppress("unused")
 val hideSnaptubeSettingsPatch = bytecodePatch(
-    name = "Hide Settings Items",
-    description = "Hides the Download tools and Phone clean categories, and their sub-items, from Settings.",
+    name = "Clean SnapTube Settings Page",
+    description = "Removes the Download tools and Phone clean categories, and their sub-items, from Settings.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_SNAPTUBE)

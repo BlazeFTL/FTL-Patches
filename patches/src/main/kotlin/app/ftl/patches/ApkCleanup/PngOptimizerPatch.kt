@@ -1,6 +1,6 @@
 package app.ftl.patches.apkcleanup
 
-import app.morphe.patcher.patch.rawResourcePatch
+import app.morphe.patcher.patch.resourcePatch
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
@@ -168,7 +168,8 @@ private fun optimizePng(original: ByteArray): OptimizeResult {
     }
 }
 
-val pngOptimizerPatch = rawResourcePatch(
+// PngOptimizerPatch.kt
+val pngOptimizerPatch = resourcePatch(
     name = "Png Optimizer",
     description = "Compresses PNG images without losing quality and strips hidden metadata (DPI, timestamps, text) to make the app smaller. Only rewrites files when the result is actually smaller.",
     default = false,

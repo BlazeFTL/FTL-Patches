@@ -47,7 +47,7 @@ private val EXCLUDED_PREFIXES = listOf("assets/", "res/")
 
 val apkCleanupPatch = rawResourcePatch(
     name = "APK Junk Cleanup",
-    description = "Removes build artifacts and metadata that bloat the APK: Play Services / Firebase version files, protobuf descriptors, debug probes, kotlin builtins, META-INF subfolder clutter, and misc junk. Safe — only removes files with no runtime purpose.",
+    description = "Removes junk and useless files with no runtime purpose inside apk.",
     default = false,
 ) {
     val splitByArch by booleanOption(

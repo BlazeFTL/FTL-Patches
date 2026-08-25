@@ -27,11 +27,11 @@ import java.util.logging.Logger
 // result the way it was built to. That's what avoids the splash-screen hangs
 // RemoveAdsPatch can cause.
 val removeAdsLitePatch = bytecodePatch(
-    name = "Remove Ads Lite(Adobo)",
-    description = "Based On (Adobo's Block Ads+Mobile Ads) It Should Work Where Remove Ads Patch Caused Problem " +
-        "Safer than Remove Ads for apps where you will be stuck in SplashActivity " +
-        "It Is Weaker But Effective, Merged Adobo's Both Patches And Removed The Need Of Selecting A Host File Or Configuring Anything " +
-        "In Future It May Replace Remove Ads Patch If I Find No Problem.",
+    name = "Remove Ads Lite (Adobo)",
+    description = "Based On (Adobo's Block Ads+Mobile Ads) Use When Remove Ads Patch Caused Problem. " +
+        "Safer than Remove Ads for apps where you will be stuck in SplashActivity. " +
+        "It Is Weaker But Effective, No Need To Select A Host File Or Configure Anything. " +
+        "In Future It May Replace Remove Ads Patch If I Find No Problems.",
     default = false,
 ) {
     val redirectionIpOption by stringOption(
