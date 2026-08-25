@@ -1,3 +1,17 @@
+## [1.41.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.40.0...v1.41.0) (2026-08-25)
+
+### 🐛 Bug Fixes
+
+* descriptions ([3c2f706](https://github.com/BlazeFTL/FTL-Patches/commit/3c2f706469195a7d3b490bed821f980746bf4b2c))
+
+### ✨ New Features
+
+* Add Calendar Premium Patch ([15847c5](https://github.com/BlazeFTL/FTL-Patches/commit/15847c56989751be7ae8e87e18e40f1e2c39a01d))
+* Add Rs File Disable Rate Dialog Patch ([d183190](https://github.com/BlazeFTL/FTL-Patches/commit/d1831909be29bd155f94c28e1411d9cd1fb16ae6))
+* up ([0b94fb9](https://github.com/BlazeFTL/FTL-Patches/commit/0b94fb9d99717db6e1d5e9c3ff34e72ede7add29))
+* up ([4a439a1](https://github.com/BlazeFTL/FTL-Patches/commit/4a439a11123a0898581491daeac3fadb82cb9edc))
+* up drawable clean ([866b2c5](https://github.com/BlazeFTL/FTL-Patches/commit/866b2c57a7c5b67395700a35258c0416f0a7d41d))
+
 ## [1.41.0-dev.4](https://github.com/BlazeFTL/FTL-Patches/compare/v1.41.0-dev.3...v1.41.0-dev.4) (2026-08-25)
 
 ### ✨ New Features
