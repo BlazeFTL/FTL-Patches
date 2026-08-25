@@ -1,6 +1,6 @@
 package app.ftl.patches.apkcleanup
 
-import app.morphe.patcher.patch.rawResourcePatch
+import app.morphe.patcher.patch.resourcePatch
 import app.morphe.patcher.patch.stringOption
 import java.io.File
 
