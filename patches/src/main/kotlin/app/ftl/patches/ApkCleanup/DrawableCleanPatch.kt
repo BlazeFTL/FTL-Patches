@@ -38,7 +38,8 @@ private fun dedupeByBaselineDensity(resDir: File, prefix: String, baseline: Stri
     }
 }
 
-val drawableCleanPatch = rawResourcePatch(
+// DrawableCleanPatch.kt
+val drawableCleanPatch = resourcePatch(
     name = "Remove Duplicate Graphics",
     description = "Keeps images for only one screen density (like xhdpi) and removes copies for all other densities. Android will automatically scale the kept images, making the app significantly smaller.",
     default = false,
