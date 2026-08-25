@@ -8,18 +8,29 @@ private val DENSITIES = listOf("ldpi", "mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhd
 private val DRAWABLE_EXTENSIONS = setOf("png", "webp", "jpg", "jpeg", "gif")
 private val MIPMAP_EXTENSIONS = setOf("png", "xml")
 
-private fun densityDirs(resDir: File, prefix: String, density: String): List<File> =
-    resDir.listFiles { f -> f.isDirectory && f.name.startsWith("$prefix-$density") }?.toList() ?: emptyList()
+private fun groupedDensityDirs(resDir: File, prefix: String): Map<String, MutableMap<String, File>> {
+    val groups = mutableMapOf<String, MutableMap<String, File>>()
+    resDir.listFiles { f -> f.isDirectory && f.name.split("-").first() == prefix }?.forEach { dir ->
+        val tokens = dir.name.split("-")
+        val density = tokens.last()
+        if (density !in DENSITIES) return@forEach
+        val groupKey = tokens.dropLast(1).joinToString("-")
+        groups.getOrPut(groupKey) { mutableMapOf() }[density] = dir
+    }
+    return groups
+}
 
 private fun dedupeByBaselineDensity(resDir: File, prefix: String, baseline: String, extensions: Set<String>) {
-    val baselineNames = densityDirs(resDir, prefix, baseline)
-        .flatMap { dir -> dir.walkTopDown().filter { it.isFile && it.extension.lowercase() in extensions } }
-        .map { it.name }
-        .toSet()
-    if (baselineNames.isEmpty()) return
+    groupedDensityDirs(resDir, prefix).values.forEach { densityMap ->
+        val baselineDir = densityMap[baseline] ?: return@forEach
+        val baselineNames = baselineDir.walkTopDown()
+            .filter { it.isFile && it.extension.lowercase() in extensions }
+            .map { it.name }
+            .toSet()
+        if (baselineNames.isEmpty()) return@forEach
 
-    DENSITIES.filter { it != baseline }.forEach { density ->
-        densityDirs(resDir, prefix, density).forEach { dir ->
+        densityMap.forEach { (density, dir) ->
+            if (density == baseline) return@forEach
             dir.walkTopDown()
                 .filter { it.isFile && it.extension.lowercase() in extensions && it.name in baselineNames }
                 .forEach { it.delete() }
