@@ -1,4 +1,4 @@
-name: sync-morphe-version
+name: Sync Morphe Version
 
 on:
   schedule:
