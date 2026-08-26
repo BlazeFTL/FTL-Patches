@@ -127,9 +127,8 @@ private data class StripTarget(
 
 val universalRemoveAdsPatch = bytecodePatch(
     name = "Remove Ads",
-    description = "Removes Ads And Hides Ads From Apps Layout. " +
-        "Cleans Apps Code From Ads Junk " +
-        "Currently In Some Apps It Makes Them Stuck In SplashActivity Due To Their Custom Check Of Ads Load But It Is Superior.",
+    description = "Cleans Apps Code From Ads Junk. Works In Most Apps Where There Isn't Any Check For Ads Loaded Or Not. " +
+        "If There Is A Check You Will Be Stuck In SplashActivity Due To Custom Ads Load Checks But It Is Superior.",
     default = false,
 ) {
     dependsOn(hideAdLayoutsPatch, forceHideAdViewsPatch)
