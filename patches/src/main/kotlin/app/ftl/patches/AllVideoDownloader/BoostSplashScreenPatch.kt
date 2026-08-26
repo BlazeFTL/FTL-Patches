@@ -121,11 +121,10 @@ private object SplashCountdownTimerOnTickFingerprint : Fingerprint(
 )
 
 val boostSplashScreenPatch = bytecodePatch(
-    name = "Boost splash screen",
-    description = "Shortens the splash screen to a brief, configurable flash instead of skipping it " +
-        "outright - the normal countdown always runs now, even when the app's own ad/skip check would " +
-        "otherwise bypass it straight to the main screen. Also stops the splash from hiding the " +
-        "on-screen navigation buttons.",
+    name = "Boost Splash Screen",
+    description = "Fixes Remove Ads And Remove Ads Lite Gettings Stuck In Splash Screen " +
+        "Useless if you also select skip splash and language activity patch" +
+        "Also stops the splash from hiding the on-screen navigation buttons.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_ALL_VIDEO_DOWNLOADER)
