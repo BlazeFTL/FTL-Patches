@@ -123,7 +123,7 @@ private object SplashCountdownTimerOnTickFingerprint : Fingerprint(
 val boostSplashScreenPatch = bytecodePatch(
     name = "Boost Splash Screen",
     description = "Fixes Remove Ads And Remove Ads Lite Gettings Stuck In Splash Screen " +
-        "Useless if you also select skip splash and language activity patch" +
+        "Useless if you also select skip splash and language activity patch. " +
         "Also stops the splash from hiding the on-screen navigation buttons.",
     default = false,
 ) {
