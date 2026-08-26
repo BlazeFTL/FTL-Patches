@@ -15,8 +15,8 @@ val skipBoostSplashPatch = bytecodePatch(
     name = "Skip/Boost splash screen",
     description = "By default, skips the splash screen entirely on launch. Turn on \"Boost splash\" " +
         "to instead keep it briefly on screen (configurable delay) rather than skipping it outright. " +
-        "Either way, the app's own navigation-bar-hiding code never runs, since it sits further down " +
-        "the same onCreate() path this patch short-circuits.",
+        "Useless To Boost Splash Screen If You Select Unlock Premium Patch Too " +
+        "Use If You Want To Skip Splash Screen Entirely",
     default = true,
 ) {
     compatibleWith(COMPATIBILITY_CALENDAR_PLANNER)
