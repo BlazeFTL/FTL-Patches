@@ -23,8 +23,8 @@ private val TARGET_ACTIVITIES = setOf(
 )
 
 val disableDownloadChooserPatch = resourcePatch(
-    name = "Disable download chooser duplicates",
-    description = "Removes only the http/https <data> entries from MiXplorer's Explore/Download/Copy to/Extract to shell activities' VIEW intent filters, so the app stops showing up multiple times in Firefox's (and other browsers') pre-download link chooser. Every other scheme (file/content/smb/ftp/sftp), Share-to (SEND/SEND_MULTIPLE), and mimeType/pathPattern matching stay intact.",
+    name = "Disable From Download Menu Of Browsers",
+    description = "Removes only the http/https <data> entries from MiXplorer's Explore/Download/Copy to/Extract to shell activities' VIEW intent filters, so the app stops showing up multiple times in browsers download link chooser.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_MIXPLORER)
