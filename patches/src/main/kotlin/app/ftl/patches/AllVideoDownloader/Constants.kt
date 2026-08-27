@@ -30,6 +30,6 @@ internal val COMPATIBILITY_ALL_VIDEO_DOWNLOADER = Compatibility(
         // versionCode taken from the supplied MT2 diff (info.json), not the shorter
         // "97" shown in-app - apps often show a truncated build label separate from
         // the real manifest versionCode.
-        AppTarget(version = "1.9.7", versionCode = 24011893),
+        AppTarget(version = "1.9.7", versionCode = 97),
     ),
 )
