@@ -152,7 +152,7 @@ val universalSkipSplashScreenPatch = resourcePatch(
     description = "EXPERT USERS ONLY. Renames the app's launcher activity in AndroidManifest.xml so the " +
         "OS launches the real main screen directly, skipping the splash/intro. " +
         "Manually Configure It To Point At Real Splash And Main Activity As Many Apps Use Other Names " +
-        "check the log, since the launcher activity may own other intent-filters (share, ",
+        "check the log, since the launcher activity may own other intent-filters.",
     default = false,
 ) {
     val sourceSuffixOption by stringOption(
