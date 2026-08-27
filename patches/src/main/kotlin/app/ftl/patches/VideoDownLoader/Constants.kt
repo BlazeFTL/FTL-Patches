@@ -13,5 +13,5 @@ internal const val BROWSER_DOWNLOADER_ACTIVITY =
 internal val COMPATIBILITY_VIDEO_DOWNLOADER = Compatibility(
     packageName = "video.downloader.videodownloader",
     name = "Video Downloader",
-    targets = listOf(AppTarget(version = null),
+    targets = listOf(AppTarget(version = null))
 )
