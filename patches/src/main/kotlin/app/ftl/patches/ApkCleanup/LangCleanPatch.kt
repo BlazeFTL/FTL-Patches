@@ -12,44 +12,59 @@ private val KNOWN_NON_LANGUAGE_SEGMENTS = setOf(
     "any",      // part of anydpi
 )
 
+private data class LangQualifier(val lang: String, val region: String?)
+
 /**
- * Extracts language codes from an Android resource directory name.
+ * Extracts (language, region) pairs from an Android resource directory name.
  *
  * Android resource dirs can have language qualifiers on ANY type:
  *   values-en, drawable-ru-hdpi, mipmap-fr, raw-es, xml-de, layout-ja,
  *   values-zh-rCN, values-b+sr+Latn, etc.
  *
  * Language codes are ISO 639-1 (2-letter) or ISO 639-2 (3-letter).
- * Region suffixes (-rXX) are ignored. BCP 47 tags (b+<lang>+<script>) are parsed.
+ * A region suffix (-rXX) directly after a language is captured with it.
+ * BCP 47 tags (b+<lang>+<script>+<region>) are parsed.
  */
-private fun extractLanguageCodes(dirName: String): List<String> {
+private fun extractLanguageQualifiers(dirName: String): List<LangQualifier> {
     val segments = dirName.split("-")
     if (segments.size < 2) return emptyList()
 
-    val languages = mutableListOf<String>()
+    val rest = segments.drop(1)
+    val result = mutableListOf<LangQualifier>()
+    var i = 0
 
-    for (seg in segments.drop(1)) {
-        // BCP 47 tag: values-b+sr+Latn → segment is "b+sr+Latn"
+    while (i < rest.size) {
+        val seg = rest[i]
+
+        // BCP 47 tag: values-b+sr+Latn or values-b+en+US → segment is "b+sr+Latn"
         if (seg.startsWith("b+")) {
             val parts = seg.split("+")
             if (parts.size >= 2) {
-                languages.add(parts[1].lowercase())
+                val lang = parts[1].lowercase()
+                val region = parts.getOrNull(2)
+                    ?.takeIf { it.length == 2 && it.all { c -> c.isUpperCase() } }
+                    ?.lowercase()
+                result.add(LangQualifier(lang, region))
             }
-            continue
-        }
-
-        // Region code: -rCN, -rUS — skip, not a language
-        if (seg.startsWith("r") && seg.length == 3 && seg.drop(1).all { it.isUpperCase() }) {
+            i++
             continue
         }
 
         // Language code: 2-3 lowercase letters, not a known non-language qualifier
         if (seg.length in 2..3 && seg.all { it.isLowerCase() } && seg !in KNOWN_NON_LANGUAGE_SEGMENTS) {
-            languages.add(seg)
+            val next = rest.getOrNull(i + 1)
+            val isRegion = next != null && next.startsWith("r") && next.length == 3 &&
+                next.drop(1).all { it.isUpperCase() }
+            val region = if (isRegion) next!!.drop(1).lowercase() else null
+            result.add(LangQualifier(seg, region))
+            i += if (isRegion) 2 else 1
+            continue
         }
+
+        i++
     }
 
-    return languages
+    return result
 }
 
 val langCleanPatch = resourcePatch(
@@ -59,9 +74,12 @@ val langCleanPatch = resourcePatch(
 ) {
     val keepLanguages by stringsOption(
         key = "keepLanguages",
-        default = listOf("en", "ru"),
+        default = listOf("en", "en-rIN", "ru"),
         title = "Languages to keep",
-        description = "Language codes (e.g. en, ru, es) to preserve. All other language variants are deleted.",
+        description = "Language codes to preserve (e.g. en, ru, es). A bare code with no region entries " +
+            "for that language keeps every region variant. Once you add ANY region-qualified entry " +
+            "(e.g. en-rIN) for a language, that language narrows to only what's explicitly listed — " +
+            "add the bare code too (e.g. en) if you also want the unqualified variant (values-en) kept.",
     )
 
     execute {
@@ -72,21 +90,41 @@ val langCleanPatch = resourcePatch(
             return@execute
         }
 
-        val keep = (keepLanguages ?: emptyList()).map { it.lowercase() }.toSet()
+        val keepEntries = (keepLanguages ?: emptyList()).map { raw ->
+            val parts = raw.split("-")
+            val lang = parts[0].lowercase()
+            val region = parts.getOrNull(1)
+                ?.takeIf { it.length == 3 && it.startsWith("r", ignoreCase = true) }
+                ?.drop(1)?.lowercase()
+            lang to region
+        }
+        val byLang: Map<String, List<String?>> = keepEntries.groupBy({ it.first }, { it.second })
+
         var removedDirs = 0
         var keptDirs = 0
 
         resDir.listFiles { file -> file.isDirectory }?.forEach { dir ->
-            val langs = extractLanguageCodes(dir.name)
+            val qualifiers = extractLanguageQualifiers(dir.name)
 
             // No language qualifier → base resource, always keep
-            if (langs.isEmpty()) {
+            if (qualifiers.isEmpty()) {
                 keptDirs++
                 return@forEach
             }
 
-            // Keep if ANY language in this dir is in the keep list
-            val shouldKeep = langs.any { it in keep }
+            val shouldKeep = qualifiers.any { q ->
+                val entries = byLang[q.lang] ?: return@any false
+                val regions = entries.filterNotNull().toSet()
+                val hasBare = entries.contains(null)
+                if (regions.isEmpty()) {
+                    // No region-specific entries for this language → bare entry keeps every region
+                    hasBare
+                } else {
+                    // Region-specific entries exist → only the unqualified dir (if listed) or a
+                    // matching region qualifies; other regions of this language are removed.
+                    (q.region == null && hasBare) || (q.region != null && q.region in regions)
+                }
+            }
 
             if (shouldKeep) {
                 keptDirs++
@@ -94,7 +132,10 @@ val langCleanPatch = resourcePatch(
                 val size = dir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
                 dir.deleteRecursively()
                 removedDirs++
-                logger.fine("Removed ${dir.name} (${size / 1024}KB) — languages: ${langs.joinToString()}")
+                val label = qualifiers.joinToString { q ->
+                    if (q.region != null) "${q.lang}-r${q.region.uppercase()}" else q.lang
+                }
+                logger.fine("Removed ${dir.name} (${size / 1024}KB) — languages: $label")
             }
         }
 
