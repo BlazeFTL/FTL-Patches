@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-08-27T20:41:44",
-  "description": "## [1.42.0-dev.9](https://github.com/BlazeFTL/FTL-Patches/compare/v1.42.0-dev.8...v1.42.0-dev.9) (2026-08-27)\n\n### ✨ New Features\n\n* up ([4ca0619](https://github.com/BlazeFTL/FTL-Patches/commit/4ca06190c2de83b9ff8ba5fbe0010fe1c2b3510f))\n* Upd MixPlorer ([35a46ab](https://github.com/BlazeFTL/FTL-Patches/commit/35a46ab3af226d5f28e49f5239d2f99167e016fd))",
-  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.42.0-dev.9/patches-1.42.0-dev.9.mpp",
+  "created_at": "2026-08-27T20:55:05",
+  "description": "## [1.42.0-dev.10](https://github.com/BlazeFTL/FTL-Patches/compare/v1.42.0-dev.9...v1.42.0-dev.10) (2026-08-27)\n\n### ✨ New Features\n\n* up ([38464ed](https://github.com/BlazeFTL/FTL-Patches/commit/38464ed04503691c59e188bd01831509323dac6d))\n* up ([5d0c787](https://github.com/BlazeFTL/FTL-Patches/commit/5d0c787a8eb530f304a3ce0c3e98d53caf6869d2))",
+  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.42.0-dev.10/patches-1.42.0-dev.10.mpp",
   "signature_download_url": "",
-  "version": "1.42.0-dev.9"
+  "version": "1.42.0-dev.10"
 }

@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.42.0-dev.9](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.42.0-dev.9)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;38 patches total
+> **[v1.42.0-dev.10](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.42.0-dev.10)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;40 patches total
 <details>
 <summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;5 patches</summary>
 <br>
@@ -70,7 +70,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
-| [Disable download chooser duplicates](#disable-download-chooser-duplicates) | Removes only the http/https <data> entries from MiXplorer's Explore/Download/Copy to/Extract to shell activities' VIEW intent filters, so the app stops showing up multiple times in Firefox's (and other browsers') pre-download link chooser. Every other scheme (file/content/smb/ftp/sftp), Share-to (SEND/SEND_MULTIPLE), and mimeType/pathPattern matching stay intact. |  |
+| [Disable From Download Menu Of Browsers](#disable-from-download-menu-of-browsers) | Removes only the http/https <data> entries from MiXplorer's Explore/Download/Copy to/Extract to shell activities' VIEW intent filters, so the app stops showing up multiple times in browsers download link chooser. |  |
 
 </details>
 
@@ -90,6 +90,17 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Hide more actions](#hide-more-actions) | Hides Hide, Add to desktop, Encrypt, Decrypt, Add bookmark, Web Search, Copy to, Move to, Transfer, and Playing from the "More actions" menu. |  |
 | [Hide network, tools and bookmarks on home page](#hide-network-tools-and-bookmarks-on-home-page) | Hides the Network, Tools and Bookmarks sections from the home page section list. |  |
 | [Skip splash screen](#skip-splash-screen) | Moves the launcher intent filter to the main activity and calls the all-files-access permission request directly, instead of showing the splash activity and its full-screen 'grant storage access' dialog. |  |
+
+</details>
+
+<details>
+<summary>📦 Video Downloader&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
+<br>
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Disable downloader from download menu](#disable-downloader-from-download-menu) | Removes the unscoped http/https <data> entries from BrowserDownloaderActivity's mimeType-scoped intent-filter (identified by having mimeType children but no pathPattern children, not by position) so the app stops offering itself in the system "Download file with" chooser for ordinary web downloads. The ftp/sftp schemes and mimeType entries on the same filter, and the separate extension-pathPattern filter used for direct file-link downloads, are left in place. |  |
+| [Remove from default browser list](#remove-from-default-browser-list) | Removes the unscoped http/https <data> entries from MainTabsActivity's mimeType-free intent-filter (identified by having no mimeType on any of its <data> children, not by position) so the app stops appearing as a candidate in the system's default browser / "open with" chooser. The about/javascript schemes on the same filter, and the other mimeType-scoped filters used for the app's internal WebView, are left in place. |  |
 
 </details>
 
