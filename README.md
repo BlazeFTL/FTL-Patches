@@ -9,9 +9,9 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.42.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.42.0-dev.2)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;35 patches total
+> **[v1.42.0-dev.3](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.42.0-dev.3)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;38 patches total
 <details>
-<summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;4 patches</summary>
+<summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;5 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -24,12 +24,13 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Boost Splash Screen](#boost-splash-screen) | Fixes Remove Ads And Remove Ads Lite Gettings Stuck In Splash Screen Useless if you also select skip splash and language activity patch. Also stops the splash from hiding the on-screen navigation buttons. | • Splash duration (ms) |
 | [Disable ad dialog when reopening app](#disable-ad-dialog-when-reopening-app) | Prevents the full-screen "loading ad" dialog from appearing when the app is reopened after being minimized. |  |
 | [Disable downloader from download menu](#disable-downloader-from-download-menu) | Strips WebDownloadActivity's scheme/mimeType/host/pathPattern intent-filter data (action and category tags kept) so it no longer offers itself as a handler in the system download/"complete action using" chooser. |  |
+| [Remove from default browser list](#remove-from-default-browser-list) | Removes the unscoped http/https <data> entries from MainActivity's intent-filters (matched by scheme value, not position) so the app stops appearing as a candidate in the system's default browser / "open with" chooser. Other schemes and mimeTypes on the same filters (about, javascript, inline, file, text/html, etc., used for the app's internal WebView) are left in place. |  |
 | [Skip splash and language screens](#skip-splash-and-language-screens) | Jumps straight to the main activity from the splash screen, skipping the splash animation, the language-selection screen, and any ad/app-open dialog normally shown first. |  |
 
 </details>
 
 <details>
-<summary>📦 SnapTube&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
+<summary>📦 SnapTube&nbsp;&nbsp;•&nbsp;&nbsp;4 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -42,6 +43,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Clean SnapTube Settings Page](#clean-snaptube-settings-page) | Removes the Download tools and Phone clean categories, and their sub-items, from Settings. |  |
 | [Disable Annoying Snaptube Notifications](#disable-annoying-snaptube-notifications) | Turns off the Toolbar, Recommended contents, and Tool notifications channels by default. |  |
 | [Remove Watch Ad To Download](#remove-watch-ad-to-download) | Removes the requirement to watch a rewarded ad before a download starts. |  |
+| [Remove from default browser list](#remove-from-default-browser-list) | Strips the data schemes from the LinkHandleActivity alias's unscoped http/https intent-filter (identified by its unique snaptube.intent.action.OPEN_WEBVIEW action, not by position) so the app stops appearing as a candidate in the system's default browser / "open with" chooser. The other host-scoped deep-link filters on the same alias (facebook.com, tiktok.com, youtube.com, etc.) are untouched. |  |
 
 </details>
 
@@ -59,6 +61,16 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Clean main UI](#clean-main-ui) | Hides the bottom navigation bar, the top-right guide icon, and the Rate/Help/About drawer items, keeps the connect/create/join buttons on top, and stops them from being auto-hidden. Reapplied on create, resume, and drawer open (and retried for ~1.8s after each) since some of these views are inflated lazily. |  |
 | [Skip splash screen](#skip-splash-screen) | Jumps straight to the main activity from the splash screen, skipping the splash animation entirely. Also restores the storage-permission request and local media scan that the splash screen normally performs, so the Apps/Photo/Video tabs still load. |  |
 | [Speed up splash screen](#speed-up-splash-screen) | Enters the main activity directly after the splash permission check instead of delaying for the additional external-storage check. |  |
+
+</details>
+
+<details>
+<summary>📦 MiXplorer&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<br>
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Disable download chooser duplicates](#disable-download-chooser-duplicates) | Removes the ACTION_VIEW http/https intent filters from MiXplorer's Explore/Download/Copy to/Extract to shell activities so the app stops showing up multiple times in Firefox's (and other browsers') download-complete chooser. Share-to (SEND/SEND_MULTIPLE) entries and local/ftp/smb file handling are untouched. |  |
 
 </details>
 
@@ -152,7 +164,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Remove Debug Info](#remove-debug-info) | Removes debug information (line numbers, variable names, source file references) from every class in the .dex files to reduce overall APK size. |  |
 | [Remove Duplicate Graphics](#remove-duplicate-graphics) | Keeps images for only one screen density (like xhdpi) and removes copies for all other densities. Android will automatically scale the kept images, making the app significantly smaller. | • Target density |
 | [Remove Languages](#remove-languages) | Removes translations for languages you don't use across ALL resource types (strings, drawables, layouts, raw, xml, etc.). Only keeps the languages you pick. Base resources with no language code are always preserved. | • Languages to keep |
-| [Remove Splash Screen - Expert Only](#remove-splash-screen-expert-only) | EXPERT USERS ONLY. Renames the app's launcher activity in AndroidManifest.xml so the OS launches the real main screen directly, skipping the splash/intro. Manually Configure It To Point At Real Splash And Main Activity As Many Apps Use Other Names check the log, since the launcher activity may own other intent-filters (share,  | • Splash activity name<br>• Real main activity name |
+| [Remove Splash Screen - Expert Only](#remove-splash-screen-expert-only) | EXPERT USERS ONLY. Manually Configure It To Point At Real Splash And Main Activity As Many Apps Use Other Names. Check the log to know what the patch is doing Ensure App Doesnt Ask For Permission In Splash Screen. | • Splash activity name<br>• Real main activity name |
 
 </details>
 
