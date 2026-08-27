@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.42.0-dev.10",
+  "version": "1.42.0-dev.11",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -914,6 +914,32 @@
                 "X86_64": 239,
                 "X86": 239
               },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "Skip splash screen",
+      "description": "Renames the launcher activity's android:name from MainActivity to MainTabsActivity, so the app opens directly to the main screen instead of showing the splash screen first.",
+      "default": false,
+      "dependencies": [],
+      "compatiblePackages": [
+        {
+          "packageName": "video.downloader.videodownloader",
+          "name": "Video Downloader",
+          "description": null,
+          "apkFileType": null,
+          "appIconColor": null,
+          "signatures": null,
+          "targets": [
+            {
+              "version": null,
+              "versionCodes": null,
               "isExperimental": false,
               "minSdk": null,
               "description": null

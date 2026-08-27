@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.42.0-dev.10](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.42.0-dev.10)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;40 patches total
+> **[v1.42.0-dev.11](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.42.0-dev.11)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;41 patches total
 <details>
 <summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;5 patches</summary>
 <br>
@@ -94,13 +94,14 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 </details>
 
 <details>
-<summary>📦 Video Downloader&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
+<summary>📦 Video Downloader&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
 <br>
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
 | [Disable downloader from download menu](#disable-downloader-from-download-menu) | Removes the unscoped http/https <data> entries from BrowserDownloaderActivity's mimeType-scoped intent-filter (identified by having mimeType children but no pathPattern children, not by position) so the app stops offering itself in the system "Download file with" chooser for ordinary web downloads. The ftp/sftp schemes and mimeType entries on the same filter, and the separate extension-pathPattern filter used for direct file-link downloads, are left in place. |  |
 | [Remove from default browser list](#remove-from-default-browser-list) | Removes the unscoped http/https <data> entries from MainTabsActivity's mimeType-free intent-filter (identified by having no mimeType on any of its <data> children, not by position) so the app stops appearing as a candidate in the system's default browser / "open with" chooser. The about/javascript schemes on the same filter, and the other mimeType-scoped filters used for the app's internal WebView, are left in place. |  |
+| [Skip splash screen](#skip-splash-screen) | Renames the launcher activity's android:name from MainActivity to MainTabsActivity, so the app opens directly to the main screen instead of showing the splash screen first. |  |
 
 </details>
 
