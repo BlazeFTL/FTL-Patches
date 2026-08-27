@@ -1,3 +1,9 @@
+## [1.42.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/compare/v1.42.0-dev.1...v1.42.0-dev.2) (2026-08-27)
+
+### ✨ New Features
+
+* Add Skip Splash Screen Patch (Expert) ([d28a958](https://github.com/BlazeFTL/FTL-Patches/commit/d28a9582ace9881c5295931dbdb3832ea2b66a7e))
+
 ## [1.42.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.41.0...v1.42.0-dev.1) (2026-08-26)
 
 ### ✨ New Features
