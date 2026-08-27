@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.42.0-dev.4",
+  "version": "1.42.0-dev.5",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -675,11 +675,12 @@
         {
           "key": "keepLanguages",
           "title": "Languages to keep",
-          "description": "Language codes (e.g. en, ru, es) to preserve. All other language variants are deleted.",
+          "description": "Language codes to preserve (e.g. en, ru, es). A bare code with no region entries for that language keeps every region variant. Once you add ANY region-qualified entry (e.g. en-rIN) for a language, that language narrows to only what's explicitly listed — add the bare code too (e.g. en) if you also want the unqualified variant (values-en) kept.",
           "required": false,
           "type": "kotlin.collections.List<kotlin.String>",
           "default": [
             "en",
+            "en-rIN",
             "ru"
           ],
           "values": null
