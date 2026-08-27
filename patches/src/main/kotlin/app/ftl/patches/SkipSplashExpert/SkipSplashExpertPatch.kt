@@ -149,10 +149,9 @@ private fun guessRealMainActivity(
 @Suppress("unused")
 val universalSkipSplashScreenPatch = resourcePatch(
     name = "Remove Splash Screen - Expert Only",
-    description = "EXPERT USERS ONLY. Renames the app's launcher activity in AndroidManifest.xml so the " +
-        "OS launches the real main screen directly, skipping the splash/intro. " +
-        "Manually Configure It To Point At Real Splash And Main Activity As Many Apps Use Other Names " +
-        "check the log, since the launcher activity may own other intent-filters.",
+    description = "EXPERT USERS ONLY. Manually Configure It To Point At Real Splash And Main Activity As Many Apps Use Other Names. " +
+        "Check the log to know what the patch is doing " +
+        "Ensure App Doesnt Ask For Permission In Splash Screen.",
     default = false,
 ) {
     val sourceSuffixOption by stringOption(
