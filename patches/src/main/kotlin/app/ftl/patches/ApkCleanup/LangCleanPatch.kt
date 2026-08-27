@@ -76,10 +76,9 @@ val langCleanPatch = resourcePatch(
         key = "keepLanguages",
         default = listOf("en", "en-rIN", "ru"),
         title = "Languages to keep",
-        description = "Language codes to preserve (e.g. en, ru, es). A bare code with no region entries " +
-            "for that language keeps every region variant. Once you add ANY region-qualified entry " +
-            "(e.g. en-rIN) for a language, that language narrows to only what's explicitly listed — " +
-            "add the bare code too (e.g. en) if you also want the unqualified variant (values-en) kept.",
+        description = "Exact resource variants to preserve. \"ru\" keeps ONLY the unqualified ru dir " +
+            "(values-ru); it does NOT pull in ru-rRU or any other region. \"en-rIN\" keeps ONLY that " +
+            "region. List every variant you want kept, e.g. en, en-rIN, ru — anything not listed is removed.",
     )
 
     execute {
@@ -90,15 +89,14 @@ val langCleanPatch = resourcePatch(
             return@execute
         }
 
-        val keepEntries = (keepLanguages ?: emptyList()).map { raw ->
+        val keepSet: Set<Pair<String, String?>> = (keepLanguages ?: emptyList()).map { raw ->
             val parts = raw.split("-")
             val lang = parts[0].lowercase()
             val region = parts.getOrNull(1)
                 ?.takeIf { it.length == 3 && it.startsWith("r", ignoreCase = true) }
                 ?.drop(1)?.lowercase()
             lang to region
-        }
-        val byLang: Map<String, List<String?>> = keepEntries.groupBy({ it.first }, { it.second })
+        }.toSet()
 
         var removedDirs = 0
         var keptDirs = 0
@@ -112,19 +110,8 @@ val langCleanPatch = resourcePatch(
                 return@forEach
             }
 
-            val shouldKeep = qualifiers.any { q ->
-                val entries = byLang[q.lang] ?: return@any false
-                val regions = entries.filterNotNull().toSet()
-                val hasBare = entries.contains(null)
-                if (regions.isEmpty()) {
-                    // No region-specific entries for this language → bare entry keeps every region
-                    hasBare
-                } else {
-                    // Region-specific entries exist → only the unqualified dir (if listed) or a
-                    // matching region qualifies; other regions of this language are removed.
-                    (q.region == null && hasBare) || (q.region != null && q.region in regions)
-                }
-            }
+            // Keep only if this exact (lang, region) combo is explicitly listed
+            val shouldKeep = qualifiers.any { q -> (q.lang to q.region) in keepSet }
 
             if (shouldKeep) {
                 keptDirs++
