@@ -41,6 +41,12 @@ private val JUNK_PATTERNS = listOf(
     Regex(""".*META-INF/README\.md$"""),
     Regex(""".*META-INF/NOTICE.*"""),
     Regex(""".*META-INF/LICENSE.*"""),
+    Regex(""".*(?:^|/)LICENSES$"""),
+    Regex(""".*ion-java\.properties$"""),
+    Regex(""".*THIRD-PARTY-NOTICES\.txt$"""),
+    Regex(""".*licenses\.md$"""),
+    Regex(""".*debug\.keystore$"""),
+    Regex(""".*_trackers\.xml$"""),
 )
 
 private val EXCLUDED_PREFIXES = listOf("assets/", "res/")
@@ -124,6 +130,12 @@ val apkCleanupPatch = rawResourcePatch(
             removeTree("kotlin")
         } catch (e: Exception) {
             logger.severe("APK Cleanup: failed removing kotlin/ folder: ${e.message}")
+        }
+
+        try {
+            removeTree("assets/audience_network.dex")
+        } catch (e: Exception) {
+            logger.severe("APK Cleanup: failed removing assets/audience_network.dex: ${e.message}")
         }
 
         try {
