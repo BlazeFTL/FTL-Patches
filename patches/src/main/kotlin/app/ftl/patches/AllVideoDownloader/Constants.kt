@@ -20,6 +20,9 @@ internal const val LANGUAGE_ACTIVITY_CLASS =
 internal const val WEB_DOWNLOAD_ACTIVITY =
     "videoplayer.videodownloader.downloader.old.activity.WebDownloadActivity"
 
+internal const val MAIN_ACTIVITY_MANIFEST_NAME =
+    "videoplayer.videodownloader.downloader.activity.MainActivity"
+
 internal val COMPATIBILITY_ALL_VIDEO_DOWNLOADER = Compatibility(
     packageName = "videoplayer.videodownloader.downloader",
     name = "All Video Downloader & Ace Player",
