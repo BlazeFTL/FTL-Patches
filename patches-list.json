@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.42.0-dev.8",
+  "version": "1.42.0-dev.9",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -245,7 +245,7 @@
     },
     {
       "name": "Disable download chooser duplicates",
-      "description": "Removes the ACTION_VIEW http/https intent filters from MiXplorer's Explore/Download/Copy to/Extract to shell activities so the app stops showing up multiple times in Firefox's (and other browsers') download-complete chooser. Share-to (SEND/SEND_MULTIPLE) entries and local/ftp/smb file handling are untouched.",
+      "description": "Removes only the http/https <data> entries from MiXplorer's Explore/Download/Copy to/Extract to shell activities' VIEW intent filters, so the app stops showing up multiple times in Firefox's (and other browsers') pre-download link chooser. Every other scheme (file/content/smb/ftp/sftp), Share-to (SEND/SEND_MULTIPLE), and mimeType/pathPattern matching stay intact.",
       "default": false,
       "dependencies": [],
       "compatiblePackages": [

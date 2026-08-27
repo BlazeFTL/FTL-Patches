@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.42.0-dev.8](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.42.0-dev.8)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;38 patches total
+> **[v1.42.0-dev.9](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.42.0-dev.9)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;38 patches total
 <details>
 <summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;5 patches</summary>
 <br>
@@ -70,7 +70,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
-| [Disable download chooser duplicates](#disable-download-chooser-duplicates) | Removes the ACTION_VIEW http/https intent filters from MiXplorer's Explore/Download/Copy to/Extract to shell activities so the app stops showing up multiple times in Firefox's (and other browsers') download-complete chooser. Share-to (SEND/SEND_MULTIPLE) entries and local/ftp/smb file handling are untouched. |  |
+| [Disable download chooser duplicates](#disable-download-chooser-duplicates) | Removes only the http/https <data> entries from MiXplorer's Explore/Download/Copy to/Extract to shell activities' VIEW intent filters, so the app stops showing up multiple times in Firefox's (and other browsers') pre-download link chooser. Every other scheme (file/content/smb/ftp/sftp), Share-to (SEND/SEND_MULTIPLE), and mimeType/pathPattern matching stay intact. |  |
 
 </details>
 

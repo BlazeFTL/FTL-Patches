@@ -1,3 +1,10 @@
+## [1.42.0-dev.9](https://github.com/BlazeFTL/FTL-Patches/compare/v1.42.0-dev.8...v1.42.0-dev.9) (2026-08-27)
+
+### ✨ New Features
+
+* up ([4ca0619](https://github.com/BlazeFTL/FTL-Patches/commit/4ca06190c2de83b9ff8ba5fbe0010fe1c2b3510f))
+* Upd MixPlorer ([35a46ab](https://github.com/BlazeFTL/FTL-Patches/commit/35a46ab3af226d5f28e49f5239d2f99167e016fd))
+
 ## [1.42.0-dev.8](https://github.com/BlazeFTL/FTL-Patches/compare/v1.42.0-dev.7...v1.42.0-dev.8) (2026-08-27)
 
 ### ✨ New Features
