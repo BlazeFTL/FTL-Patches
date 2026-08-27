@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.42.0-dev.3](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.42.0-dev.3)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;38 patches total
+> **[v1.42.0-dev.4](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.42.0-dev.4)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;38 patches total
 <details>
 <summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;5 patches</summary>
 <br>
@@ -24,7 +24,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Boost Splash Screen](#boost-splash-screen) | Fixes Remove Ads And Remove Ads Lite Gettings Stuck In Splash Screen Useless if you also select skip splash and language activity patch. Also stops the splash from hiding the on-screen navigation buttons. | • Splash duration (ms) |
 | [Disable ad dialog when reopening app](#disable-ad-dialog-when-reopening-app) | Prevents the full-screen "loading ad" dialog from appearing when the app is reopened after being minimized. |  |
 | [Disable downloader from download menu](#disable-downloader-from-download-menu) | Strips WebDownloadActivity's scheme/mimeType/host/pathPattern intent-filter data (action and category tags kept) so it no longer offers itself as a handler in the system download/"complete action using" chooser. |  |
-| [Remove from default browser list](#remove-from-default-browser-list) | Removes the unscoped http/https <data> entries from MainActivity's intent-filters (matched by scheme value, not position) so the app stops appearing as a candidate in the system's default browser / "open with" chooser. Other schemes and mimeTypes on the same filters (about, javascript, inline, file, text/html, etc., used for the app's internal WebView) are left in place. |  |
+| [Remove from default browser list](#remove-from-default-browser-list) | Removes the unscoped http/https <data> entries from MainActivity's first intent-filter carrying them so the app stops appearing as a candidate in the system's default browser / "open with" chooser. Other schemes and mimeTypes on the same and other filters (about, javascript, inline, file, text/html, etc., used for the app's internal WebView) are left in place. |  |
 | [Skip splash and language screens](#skip-splash-and-language-screens) | Jumps straight to the main activity from the splash screen, skipping the splash animation, the language-selection screen, and any ad/app-open dialog normally shown first. |  |
 
 </details>
