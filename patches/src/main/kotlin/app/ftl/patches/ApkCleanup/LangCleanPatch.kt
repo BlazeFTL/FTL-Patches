@@ -69,7 +69,7 @@ private fun extractLanguageQualifiers(dirName: String): List<LangQualifier> {
 
 val langCleanPatch = resourcePatch(
     name = "Remove Languages",
-    description = "Removes translations for languages you don\'t use across ALL resource types (strings, drawables, layouts, raw, xml, etc.). Only keeps the languages you pick. Base resources with no language code are always preserved.",
+    description = "Removes translations for languages you don\'t use. Only keeps the languages you pick. ",
     default = false,
 ) {
     val keepLanguages by stringsOption(
