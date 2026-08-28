@@ -5,12 +5,9 @@ import org.w3c.dom.Element
 
 val disableDownloadHandlerPatch = resourcePatch(
     name = "Disable downloader from download menu",
-    description = "Removes the unscoped http/https <data> entries from BrowserDownloaderActivity's " +
-        "mimeType-scoped intent-filter (identified by having mimeType children but no pathPattern " +
-        "children, not by position) so the app stops offering itself in the system \"Download file " +
-        "with\" chooser for ordinary web downloads. The ftp/sftp schemes and mimeType entries on " +
-        "the same filter, and the separate extension-pathPattern filter used for direct file-link " +
-        "downloads, are left in place.",
+    description = "Removes the http/https <data> entries from BrowserDownloaderActivity's " +
+        "so the app stops offering itself in the system \"Download file " +
+        "with\" chooser for ordinary web downloads.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_VIDEO_DOWNLOADER)
