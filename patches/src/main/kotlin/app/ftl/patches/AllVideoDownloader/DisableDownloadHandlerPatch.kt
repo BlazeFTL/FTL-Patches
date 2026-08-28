@@ -5,8 +5,8 @@ import org.w3c.dom.Element
 
 val disableDownloadHandlerPatch = resourcePatch(
     name = "Disable downloader from download menu",
-    description = "Strips WebDownloadActivity's scheme/mimeType/host/pathPattern intent-filter data " +
-        "(action and category tags kept) so it no longer offers itself as a handler in the system " +
+    description = "Strips WebDownloadActivity's intent-filter data " +
+        "so it no longer offers itself as a handler in the system " +
         "download/\"complete action using\" chooser.",
     default = false,
 ) {

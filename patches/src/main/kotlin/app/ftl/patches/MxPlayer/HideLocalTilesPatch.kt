@@ -3,8 +3,8 @@ package app.ftl.patches.mxplayer
 import app.morphe.patcher.patch.resourcePatch
 
 val hideLocalTilesPatch = resourcePatch(
-    name = "Hide local tiles banner",
-    description = "Collapses the local device tiles banner.",
+    name = "Hide top tiles",
+    description = "Hides the top tiles.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_PRO)

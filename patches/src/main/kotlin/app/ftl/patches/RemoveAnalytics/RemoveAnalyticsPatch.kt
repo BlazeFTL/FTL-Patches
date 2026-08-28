@@ -279,7 +279,7 @@ private val FIREBASE_MANIFEST_KEEP = setOf(
 // pulls it in via dependsOn), so it doesn't show as its own toggle in the UI.
 val stripFirebaseManifestComponentsPatch = resourcePatch(
     name = null,
-    description = "Removes Firebase Analytics/Crashlytics provider, receiver, and service declarations from AndroidManifest.xml.",
+    description = "Removes Firebase Analytics/Crashlytics provider, receiver, and service declarations.",
 ) {
     execute {
         document("AndroidManifest.xml").use { document ->

@@ -69,7 +69,7 @@ private object ConnectButtonHiddenViewFingerprint : Fingerprint(
 
 val cleanMainUiPatch = bytecodePatch(
     name = "Clean main UI",
-    description = "Hides the bottom navigation bar, the top-right guide icon, and the Rate/Help/About drawer items, keeps the connect/create/join buttons on top, and stops them from being auto-hidden. Reapplied on create, resume, and drawer open (and retried for ~1.8s after each) since some of these views are inflated lazily.",
+    description = "Hides the bottom navigation bar, the top-right guide icon, and the Rate/Help/About drawer items, keeps the connect/create/join buttons on top, and stops them from being auto-hidden.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_XENDER)

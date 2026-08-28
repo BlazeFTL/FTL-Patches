@@ -1,0 +1,57 @@
+name: Sync Morphe Version
+
+on:
+  schedule:
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch upstream versions
+        id: upstream
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TOML=$(curl -sH "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/MorpheApp/morphe-patches-template/contents/gradle/libs.versions.toml" \
+            | jq -r '.content' | base64 -d)
+          SETTINGS=$(curl -sH "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/MorpheApp/morphe-patches-template/contents/settings.gradle.kts" \
+            | jq -r '.content' | base64 -d)
+
+          PATCHER_VER=$(echo "$TOML" | grep -m1 '^morphe-patcher' | sed -E 's/.*"([^"]+)".*/\1/')
+          PLUGIN_VER=$(echo "$SETTINGS" | grep -m1 'app\.morphe\.patches' | sed -E 's/.*version "([^"]+)".*/\1/')
+
+          if [ -z "$PATCHER_VER" ] || [ -z "$PLUGIN_VER" ]; then
+            echo "Failed to parse upstream versions" >&2
+            exit 1
+          fi
+
+          echo "patcher_ver=$PATCHER_VER" >> "$GITHUB_OUTPUT"
+          echo "plugin_ver=$PLUGIN_VER" >> "$GITHUB_OUTPUT"
+
+      - name: Update local files
+        run: |
+          sed -i -E 's/^(morphe-patcher = ")[^"]+(")/\1${{ steps.upstream.outputs.patcher_ver }}\2/' gradle/libs.versions.toml
+          sed -i -E 's/(id\("app\.morphe\.patches"\) version ")[^"]+(")/\1${{ steps.upstream.outputs.plugin_ver }}\2/' settings.gradle.kts
+
+      - name: Create PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: sync morphe-patcher ${{ steps.upstream.outputs.patcher_ver }} / plugin ${{ steps.upstream.outputs.plugin_ver }}"
+          title: "chore: sync Morphe patcher/plugin version"
+          body: |
+            Auto-synced from MorpheApp/morphe-patches-template.
+
+            - morphe-patcher: `${{ steps.upstream.outputs.patcher_ver }}`
+            - app.morphe.patches: `${{ steps.upstream.outputs.plugin_ver }}`
+          branch: sync/morphe-version
+          delete-branch: true

@@ -9,7 +9,7 @@ private val FRAGMENT_ME_LAYOUTS = listOf(
 )
 
 val hideMeTabPromoItemsPatch = resourcePatch(
-    name = "Hide Me tab promo items",
+    name = "Hide Settings Page UseLess Buttons",
     description = "Collapses the WhatsApp, Legal, and Help entries on the Me tab.",
     default = false,
 ) {

@@ -57,7 +57,7 @@ val skipSplashAndLanguagePatch = bytecodePatch(
     name = "Skip splash and language screens",
     description = "Jumps straight to the main activity from the splash screen, skipping the splash " +
         "animation, the language-selection screen, and any ad/app-open dialog normally shown first.",
-    default = false,
+    default = true,
 ) {
     compatibleWith(COMPATIBILITY_ALL_VIDEO_DOWNLOADER)
 
