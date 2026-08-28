@@ -7,7 +7,7 @@ private const val DOWNLOAD_ACTIVITY = "com.edili.filemanager.module.download.RsD
 
 val disableDownloadHandlerPatch = resourcePatch(
     name = "Disable downloader from download menu",
-    description = "Strips RsDownloadActivity's file-extension and scheme/mimeType intent filters so it no longer offers itself as a handler in the system download/\"complete action using\" chooser.",
+    description = "Strips RsDownloadActivity's intent filters so it no longer offers itself as a handler in the system download/\"complete action using\" chooser.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_RS_FILE_EXPLORER)
