@@ -29,7 +29,7 @@ private object SplashPermissionResultFingerprint : Fingerprint(
  */
 val fastSplashScreenPatch = bytecodePatch(
     name = "Speed up splash screen",
-    description = "Enters the main activity directly after the splash permission check instead of delaying for the additional external-storage check.",
+    description = "Enters the main activity directly after the splash screen.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_XENDER)
