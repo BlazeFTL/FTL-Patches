@@ -12,9 +12,8 @@ import org.w3c.dom.Element
  */
 val skipSplashPatch = resourcePatch(
     name = "Skip splash screen",
-    description = "Renames the launcher activity's android:name from MainActivity to " +
-        "MainTabsActivity, so the app opens directly to the main screen instead of " +
-        "showing the splash screen first.",
+    description = "Skips splash screen " +
+        "so the app opens directly to the main screen.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_VIDEO_DOWNLOADER)
