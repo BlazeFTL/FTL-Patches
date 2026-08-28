@@ -5,11 +5,9 @@ import org.w3c.dom.Element
 
 val removeBrowserRegistrationPatch = resourcePatch(
     name = "Remove from default browser list",
-    description = "Strips the data schemes from the LinkHandleActivity alias's unscoped " +
-        "http/https intent-filter (identified by its unique snaptube.intent.action.OPEN_WEBVIEW " +
-        "action, not by position) so the app stops appearing as a candidate in the system's " +
-        "default browser / \"open with\" chooser. The other host-scoped deep-link filters on the " +
-        "same alias (facebook.com, tiktok.com, youtube.com, etc.) are untouched.",
+    description = "Strips the LinkHandleActivity alias's unscoped " +
+        "so the app stops appearing as a candidate in the system's " +
+        "default browser / \"open with\" chooser. " +
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_SNAPTUBE)
