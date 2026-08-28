@@ -20,7 +20,7 @@ internal object ToolTilesArrayFingerprint : Fingerprint(
 
 val hideToolTilesPatch = bytecodePatch(
     name = "Hide File Transfer, Video Playlist, Private Folder tiles",
-    description = "Removes the File Transfer, Video Playlist, and Private Folder tiles from the tools tile list.",
+    description = "Removes the File Transfer, Video Playlist, and Private Folder tiles from settings Page.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_PRO)
