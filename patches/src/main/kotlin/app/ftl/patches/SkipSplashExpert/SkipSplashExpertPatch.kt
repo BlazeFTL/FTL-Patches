@@ -181,12 +181,9 @@ private fun guessRealMainActivity(
 @Suppress("unused")
 val universalSkipSplashScreenPatch = resourcePatch(
     name = "Skip Splash Screen - Expert Only",
-    description = "EXPERT USERS ONLY. Renames the app's launcher activity in AndroidManifest.xml so the " +
-        "OS launches the real main screen directly, skipping the splash/intro. With both options left " +
-        "blank it auto-detects both activities and refuses to touch anything it isn't confident about - " +
-        "check the log either way, since the launcher activity may own other intent-filters (share, " +
-        "file-open, deep links) that move along with the rename and won't work unless the target " +
-        "activity also implements them.",
+        description = "EXPERT USERS ONLY. Manually Configure It To Point At Real Splash And Main Activity As Many Apps Use Other Names. " +
+        "Check the log to know what the patch is doing " +
+        "Ensure App Doesnt Ask For Permission In Splash Screen.",
     default = false,
 ) {
     val sourceSuffixOption by stringOption(
