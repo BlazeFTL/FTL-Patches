@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.42.0-dev.12](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.42.0-dev.12)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;42 patches total
+> **[v1.42.0](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.42.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;42 patches total
 <details>
 <summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;5 patches</summary>
 <br>
@@ -102,7 +102,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Disable downloader from download menu](#disable-downloader-from-download-menu) | Removes the http/https <data> entries from BrowserDownloaderActivity's so the app stops offering itself in the system "Download file with" chooser for ordinary web downloads. |  |
 | [Remove from default browser list](#remove-from-default-browser-list) | Removes http/https <data> entries from MainTabsActivity's so the app stops appearing as a candidate in the system's default browser / "open with" chooser. |  |
 | [Skip splash screen](#skip-splash-screen) | Skips splash screen so the app opens directly to the main screen. |  |
-| [Unlock Pro](#unlock-pro) | Makes the purchase-verification check always report a valid Pro purchase. |  |
+| [Unlock Pro](#unlock-pro) | Manually Kill Signature First Or Use Doom's(rushiranpise) Patch (Spoof App Signature). |  |
 
 </details>
 

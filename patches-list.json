@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.42.0-dev.12",
+  "version": "1.42.0",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -1079,7 +1079,7 @@
     },
     {
       "name": "Unlock Pro",
-      "description": "Makes the purchase-verification check always report a valid Pro purchase.",
+      "description": "Manually Kill Signature First Or Use Doom's(rushiranpise) Patch (Spoof App Signature).",
       "default": true,
       "dependencies": [],
       "compatiblePackages": [

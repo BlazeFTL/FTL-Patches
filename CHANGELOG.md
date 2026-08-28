@@ -1,3 +1,27 @@
+## [1.42.0](https://github.com/BlazeFTL/FTL-Patches/compare/v1.41.0...v1.42.0) (2026-08-28)
+
+### ✨ New Features
+
+* Add Skip Splash Screen Patch (Expert) ([d28a958](https://github.com/BlazeFTL/FTL-Patches/commit/d28a9582ace9881c5295931dbdb3832ea2b66a7e))
+* Add Video Downloader Pro Unlock Patch ([54c6902](https://github.com/BlazeFTL/FTL-Patches/commit/54c690228fae6320165ef2459b1037735bd4b6e5))
+* up ([2a243e5](https://github.com/BlazeFTL/FTL-Patches/commit/2a243e57485ae9b60cb84f601a9f93418dabc8f6))
+* up ([38464ed](https://github.com/BlazeFTL/FTL-Patches/commit/38464ed04503691c59e188bd01831509323dac6d))
+* up ([5d0c787](https://github.com/BlazeFTL/FTL-Patches/commit/5d0c787a8eb530f304a3ce0c3e98d53caf6869d2))
+* up ([4ca0619](https://github.com/BlazeFTL/FTL-Patches/commit/4ca06190c2de83b9ff8ba5fbe0010fe1c2b3510f))
+* up ([3036139](https://github.com/BlazeFTL/FTL-Patches/commit/303613934202542602e0e4fc8559312a8d99caa7))
+* up ([8d358d1](https://github.com/BlazeFTL/FTL-Patches/commit/8d358d1071111cfb595d9d952aee4ad58c320929))
+* up ([78cf23b](https://github.com/BlazeFTL/FTL-Patches/commit/78cf23bf29c8b488d26a9e5b898441c0b4d008f1))
+* up ([b79a41f](https://github.com/BlazeFTL/FTL-Patches/commit/b79a41fed4f290723c2fff0fd7d8ce4aa722bddd))
+* up ([8b4422a](https://github.com/BlazeFTL/FTL-Patches/commit/8b4422ab036ecc06664f968e26ad9c2faa52909d))
+* up ([50244f6](https://github.com/BlazeFTL/FTL-Patches/commit/50244f6c8b14fd76332fe891dff608ebc46a9203))
+* up ([bdf081d](https://github.com/BlazeFTL/FTL-Patches/commit/bdf081d1720fdd908ecec035eacd49938458ad21))
+* up ([fc70066](https://github.com/BlazeFTL/FTL-Patches/commit/fc70066474926a7560118eaf9cba5cd3b1a7cf2b))
+* up ([99dcda5](https://github.com/BlazeFTL/FTL-Patches/commit/99dcda5a2a3fe97a592d2b45f09493aaabca9075))
+* up ([af35960](https://github.com/BlazeFTL/FTL-Patches/commit/af35960bb511c30417f645aa1d97d4584011a818))
+* up ([031d038](https://github.com/BlazeFTL/FTL-Patches/commit/031d038447928233a1da7239df057fecb24d44eb))
+* Up ([b5d6146](https://github.com/BlazeFTL/FTL-Patches/commit/b5d6146554733c16c84209b9b09e802e6db4cc5a))
+* Upd MixPlorer ([35a46ab](https://github.com/BlazeFTL/FTL-Patches/commit/35a46ab3af226d5f28e49f5239d2f99167e016fd))
+
 ## [1.42.0-dev.12](https://github.com/BlazeFTL/FTL-Patches/compare/v1.42.0-dev.11...v1.42.0-dev.12) (2026-08-28)
 
 ### ✨ New Features
