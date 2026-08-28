@@ -32,10 +32,10 @@ internal object IsPurchaseValidFingerprint : Fingerprint(
 
 val unlockProPatch = bytecodePatch(
     name = "Unlock Pro",
-    description = "Manually Kill Signature First Or Use Doom's(rushiranpise) Patch (Spoof App Signature).",
+    description = "Only For V2.7.2, Manually Kill Signature First Or Use Doom's(rushiranpise) Patch (Spoof App Signature).",
     default = true,
 ) {
-    compatibleWith(COMPATIBILITY_VIDEO_DOWNLOADER_2_7_2)
+    compatibleWith(COMPATIBILITY_VIDEO_DOWNLOADER)
 
     execute {
         IsPurchaseValidFingerprint.let {
