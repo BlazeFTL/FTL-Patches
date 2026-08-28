@@ -35,7 +35,7 @@ val unlockProPatch = bytecodePatch(
     description = "Manually Kill Signature First Or Use Doom's(rushiranpise) Patch (Spoof App Signature).",
     default = true,
 ) {
-    compatibleWith(COMPATIBILITY_VIDEO_DOWNLOADER)
+    compatibleWith(COMPATIBILITY_VIDEO_DOWNLOADER_2_7_2)
 
     execute {
         IsPurchaseValidFingerprint.let {
