@@ -7,9 +7,7 @@ val removeBrowserRegistrationPatch = resourcePatch(
     name = "Remove from default browser list",
     description = "Removes the unscoped http/https <data> entries from MainActivity's first " +
         "intent-filter carrying them so the app stops appearing as a candidate in the system's " +
-        "default browser / \"open with\" chooser. Other schemes and mimeTypes on the same and " +
-        "other filters (about, javascript, inline, file, text/html, etc., used for the app's " +
-        "internal WebView) are left in place.",
+        "default browser / \"open with\" chooser.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_ALL_VIDEO_DOWNLOADER)
