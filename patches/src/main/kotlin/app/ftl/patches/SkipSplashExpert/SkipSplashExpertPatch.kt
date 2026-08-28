@@ -139,22 +139,20 @@ private fun guessRealMainActivity(
                 "singleTask", "singleInstance" -> score += 3
                 "singleTop" -> score += 1
             }
-            // A bare VIEW filter with no BROWSABLE/data is typically an internal launch entry
+            // A bare VIEW filter with no <data> at all is typically an internal launch entry
             // (search, shortcuts, same-app navigation) - real hub-screen evidence. A VIEW filter
-            // with BROWSABLE + specific <data> (scheme/mimeType) is a content-type-open handler for
-            // files/links from OTHER apps - that's a utility activity (e.g. a player screen that
-            // accepts rtsp/mp4/etc. links), not the home screen, even though it's often the busiest
-            // and most "exported-looking" activity in the whole manifest. Reward the former, punish
-            // the latter instead of treating "more intent-filters" as uniformly positive.
+            // with specific <data> (scheme/mimeType), with or without BROWSABLE, is a content-type
+            // handler for files/links from OTHER apps - a utility activity (a player screen that
+            // accepts video/* or rtsp/mp4/etc.), not the home screen, even though it's often the
+            // busiest and most "exported-looking" activity in the whole manifest. Reward the former,
+            // penalize the latter instead of treating "more intent-filters" as uniformly positive.
             var genericView = false
             var contentHandlerFilters = 0
             filters.forEach { f ->
                 val actions = f.children("action").map { it.attr("android:name") }
-                val categories = f.children("category").map { it.attr("android:name") }
                 val hasData = f.children("data").isNotEmpty()
-                val isBrowsable = categories.contains("android.intent.category.BROWSABLE")
                 if (actions.contains("android.intent.action.VIEW")) {
-                    if (isBrowsable && hasData) contentHandlerFilters++ else genericView = true
+                    if (hasData) contentHandlerFilters++ else genericView = true
                 }
             }
             if (genericView) score += 3
@@ -182,10 +180,13 @@ private fun guessRealMainActivity(
 // per PatchBuilder.resolveDefaultValue(), since a universal patch cannot default to enabled.
 @Suppress("unused")
 val universalSkipSplashScreenPatch = resourcePatch(
-    name = "Remove Splash Screen - Expert Only",
-    description = "EXPERT USERS ONLY. Manually Configure It To Point At Real Splash And Main Activity As Many Apps Use Other Names. " +
-        "Check the log to know what the patch is doing " +
-        "Ensure App Doesnt Ask For Permission In Splash Screen.",
+    name = "Skip Splash Screen - Expert Only",
+    description = "EXPERT USERS ONLY. Renames the app's launcher activity in AndroidManifest.xml so the " +
+        "OS launches the real main screen directly, skipping the splash/intro. With both options left " +
+        "blank it auto-detects both activities and refuses to touch anything it isn't confident about - " +
+        "check the log either way, since the launcher activity may own other intent-filters (share, " +
+        "file-open, deep links) that move along with the rename and won't work unless the target " +
+        "activity also implements them.",
     default = false,
 ) {
     val sourceSuffixOption by stringOption(
