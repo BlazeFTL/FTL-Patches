@@ -7,7 +7,7 @@ val removeBrowserRegistrationPatch = resourcePatch(
     name = "Remove from default browser list",
     description = "Strips the LinkHandleActivity alias's unscoped " +
         "so the app stops appearing as a candidate in the system's " +
-        "default browser / \"open with\" chooser. " +
+        "default browser / \"open with\" chooser.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_SNAPTUBE)
