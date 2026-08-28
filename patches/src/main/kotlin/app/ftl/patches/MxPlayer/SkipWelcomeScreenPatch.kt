@@ -7,8 +7,8 @@ private const val WELCOME_ACTIVITY_SUFFIX = ".ActivityWelcomeMX"
 private const val MAIN_ACTIVITY_SUFFIX = ".ActivityMediaList"
 
 val skipWelcomeScreenPatch = resourcePatch(
-    name = "Skip welcome screen",
-    description = "Moves the launcher intent filters and app shortcuts from the welcome/splash activity to the main activity, so the app boots straight past the splash and update screen.",
+    name = "Skip Splash Screen",
+    description = "Skips Splash Screen so the app boots straight past the splash and update screen.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_PRO)
