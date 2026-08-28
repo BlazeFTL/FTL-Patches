@@ -5,12 +5,9 @@ import org.w3c.dom.Element
 
 val removeBrowserRegistrationPatch = resourcePatch(
     name = "Remove from default browser list",
-    description = "Removes the unscoped http/https <data> entries from MainTabsActivity's " +
-        "mimeType-free intent-filter (identified by having no mimeType on any of its <data> " +
-        "children, not by position) so the app stops appearing as a candidate in the system's " +
-        "default browser / \"open with\" chooser. The about/javascript schemes on the same " +
-        "filter, and the other mimeType-scoped filters used for the app's internal WebView, " +
-        "are left in place.",
+    description = "Removes http/https <data> entries from MainTabsActivity's " +
+        "so the app stops appearing as a candidate in the system's " +
+        "default browser / \"open with\" chooser.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_VIDEO_DOWNLOADER)
