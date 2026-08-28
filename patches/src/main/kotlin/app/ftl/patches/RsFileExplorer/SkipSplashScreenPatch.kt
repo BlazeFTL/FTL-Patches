@@ -99,7 +99,7 @@ internal val moveLauncherToMainActivityPatch = resourcePatch(
 
 val skipSplashScreenPatch = bytecodePatch(
     name = "Skip splash screen",
-    description = "Moves the launcher intent filter to the main activity and calls the all-files-access permission request directly, instead of showing the splash activity and its full-screen 'grant storage access' dialog.",
+    description = "Skips Splash Screen From 2nd App Opening",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_RS_FILE_EXPLORER)
