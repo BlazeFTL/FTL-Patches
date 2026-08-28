@@ -90,7 +90,7 @@ private fun Fingerprint.staticCallSmali(): String {
 
 val skipSplashPatch = bytecodePatch(
     name = "Skip splash screen",
-    description = "Jumps straight to the main activity from the splash screen, skipping the splash animation entirely. Also restores the storage-permission request and local media scan that the splash screen normally performs, so the Apps/Photo/Video tabs still load.",
+    description = "Jumps straight to the main activity from the splash screen, skipping the splash animation entirely.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_XENDER)
