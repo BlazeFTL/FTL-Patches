@@ -1,3 +1,10 @@
+## [1.42.0-dev.12](https://github.com/BlazeFTL/FTL-Patches/compare/v1.42.0-dev.11...v1.42.0-dev.12) (2026-08-28)
+
+### ✨ New Features
+
+* Add Video Downloader Pro Unlock Patch ([54c6902](https://github.com/BlazeFTL/FTL-Patches/commit/54c690228fae6320165ef2459b1037735bd4b6e5))
+* Up ([b5d6146](https://github.com/BlazeFTL/FTL-Patches/commit/b5d6146554733c16c84209b9b09e802e6db4cc5a))
+
 ## [1.42.0-dev.11](https://github.com/BlazeFTL/FTL-Patches/compare/v1.42.0-dev.10...v1.42.0-dev.11) (2026-08-27)
 
 ### ✨ New Features
