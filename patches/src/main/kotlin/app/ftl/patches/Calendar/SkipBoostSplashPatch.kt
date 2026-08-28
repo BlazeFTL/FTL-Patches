@@ -14,7 +14,7 @@ private const val SPLASH_ACTIVITY_RUNNABLE =
 val skipBoostSplashPatch = bytecodePatch(
     name = "Skip/Boost splash screen",
     description = "By default, skips the splash screen entirely on launch. Turn on \"Boost splash\" " +
-        "to instead keep it briefly on screen (configurable delay) rather than skipping it outright. " +
+        "to instead keep it briefly on screen (configurable delay) " +
         "Useless To Boost Splash Screen If You Select Unlock Premium Patch Too " +
         "Use If You Want To Skip Splash Screen Entirely",
     default = true,
