@@ -50,6 +50,7 @@ private val JUNK_PATTERNS = listOf(
     Regex(""".*version\.properties$"""),
     Regex(""".*integrity\.properties$"""),
     Regex(""".*androidannotations-api\.properties$"""),
+    Regex(""".*transport-.*\.properties$"""),
 )
 
 private val EXCLUDED_PREFIXES = listOf("assets/", "res/")
