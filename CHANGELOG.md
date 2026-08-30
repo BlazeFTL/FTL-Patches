@@ -1,3 +1,9 @@
+## [1.43.0-dev.4](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.3...v1.43.0-dev.4) (2026-08-30)
+
+### ✨ New Features
+
+* Add Bangla Dictionary Pro Patch ([82a0342](https://github.com/BlazeFTL/FTL-Patches/commit/82a03429231ac80170bcc3108cb7fcba69a65d0e))
+
 ## [1.43.0-dev.3](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.2...v1.43.0-dev.3) (2026-08-30)
 
 ### 🐛 Bug Fixes

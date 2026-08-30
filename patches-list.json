@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.43.0-dev.3",
+  "version": "1.43.0-dev.4",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -1126,7 +1126,7 @@
     },
     {
       "name": "Spoof app signature",
-      "description": "Makes the app think its signing certificate is unchanged after Morphe re-signs it.\n\nUseful when an app crashes or shows a tamper warning because it checks its own certificate.\n\nDoes not bypass Play Integrity / SafetyNet hardware attestation.",
+      "description": "Makes the app think its signing certificate is unchanged after Morphe re-signs it, useful when an app crashes or shows a tamper warning because it checks its own certificate. Does not bypass Play Integrity / SafetyNet hardware attestation. Apply with Original app certificate patch.",
       "default": false,
       "dependencies": [
         "ResourcePatch",
@@ -1145,6 +1145,37 @@
           "values": null
         }
       ]
+    },
+    {
+      "name": "Unlock Pro",
+      "description": "Forces the purchase check to always return true, unlocking Pro.",
+      "default": true,
+      "dependencies": [],
+      "compatiblePackages": [
+        {
+          "packageName": "com.hdictionary.bn",
+          "name": "Bangla Dictionary",
+          "description": null,
+          "apkFileType": null,
+          "appIconColor": null,
+          "signatures": null,
+          "targets": [
+            {
+              "version": "11.5.1",
+              "versionCodes": {
+                "ARM64_V8A": 24011893,
+                "ARMEABI_V7A": 24011893,
+                "X86_64": 24011893,
+                "X86": 24011893
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": []
     },
     {
       "name": "Unlock Pro",
@@ -1196,10 +1227,10 @@
             {
               "version": "9.4",
               "versionCodes": {
-                "ARM64_V8A": 24011893,
-                "ARMEABI_V7A": 24011893,
-                "X86_64": 24011893,
-                "X86": 24011893
+                "ARM64_V8A": 149,
+                "ARMEABI_V7A": 149,
+                "X86_64": 149,
+                "X86": 149
               },
               "isExperimental": false,
               "minSdk": null,
