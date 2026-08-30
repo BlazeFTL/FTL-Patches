@@ -16,6 +16,6 @@ internal val COMPATIBILITY_WIFI_ANALYZER_PRO = Compatibility(
         // versionCode taken from the supplied MT2 diff (info.json), not the
         // shorter "149" shown in-app/Play Store - apps often show a truncated
         // build label separate from the real manifest versionCode.
-        AppTarget(version = "9.4", versionCode = 24011893),
+        AppTarget(version = "9.4", versionCode = 149),
     ),
 )
