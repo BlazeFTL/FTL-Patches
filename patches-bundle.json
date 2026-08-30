@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-08-30T08:54:27",
-  "description": "## [1.43.0-dev.4](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.3...v1.43.0-dev.4) (2026-08-30)\n\n### ✨ New Features\n\n* Add Bangla Dictionary Pro Patch ([82a0342](https://github.com/BlazeFTL/FTL-Patches/commit/82a03429231ac80170bcc3108cb7fcba69a65d0e))",
-  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.43.0-dev.4/patches-1.43.0-dev.4.mpp",
+  "created_at": "2026-08-30T09:22:52",
+  "description": "## [1.43.0-dev.5](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.4...v1.43.0-dev.5) (2026-08-30)\n\n### ✨ New Features\n\n* up ([22db3b7](https://github.com/BlazeFTL/FTL-Patches/commit/22db3b7f635c3788faa7114bfc93af82c51e815a))",
+  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.43.0-dev.5/patches-1.43.0-dev.5.mpp",
   "signature_download_url": "",
-  "version": "1.43.0-dev.4"
+  "version": "1.43.0-dev.5"
 }
