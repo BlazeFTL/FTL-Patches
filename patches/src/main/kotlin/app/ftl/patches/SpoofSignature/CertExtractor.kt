@@ -145,7 +145,7 @@ internal fun extractFromFile(file: File, source: String = "extracted"): Boolean 
  * (e.g. from APKMirror or apksigner).
  */
 val extractApkCertificatePatch = rawResourcePatch(
-    name = "Provide Original app certificate",
+    name = null,
     description = "Automatically reads the signing certificate from the APK you are patching — " +
         "no original app installed or file provided needed. " +
         "Only fill the options below if you are patching an APK that was already re-signed " +
