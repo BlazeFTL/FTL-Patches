@@ -97,13 +97,10 @@ internal val injectSignatureHookAppPatch = resourcePatch {
 @Suppress("unused")
 val spoofSignatureVerificationPatch = bytecodePatch(
     name = "Spoof app signature",
-    description = """
-        Makes the app think its signing certificate is unchanged after Morphe re-signs it.
-
-        Useful when an app crashes or shows a tamper warning because it checks its own certificate.
-
-        Does not bypass Play Integrity / SafetyNet hardware attestation.
-    """.trimIndent(),
+    description = "Makes the app think its signing certificate is unchanged after Morphe " +
+    "re-signs it, useful when an app crashes or shows a tamper warning because it checks " +
+    "its own certificate. Does not bypass Play Integrity / SafetyNet hardware attestation. " +
+    "Apply with Original app certificate patch.",
     default = false,
 ) {
     val packageNameOption by stringOption(
