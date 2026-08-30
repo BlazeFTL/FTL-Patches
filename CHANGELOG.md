@@ -1,3 +1,23 @@
+## [1.43.0-dev.3](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.2...v1.43.0-dev.3) (2026-08-30)
+
+### 🐛 Bug Fixes
+
+* restore gradlew exec bit ([31c3452](https://github.com/BlazeFTL/FTL-Patches/commit/31c345233cec0cdc0f892fe89dc0f5308eb6f609))
+* restore gradlew exec bit ([ae3b2b2](https://github.com/BlazeFTL/FTL-Patches/commit/ae3b2b28fdb12b957791cdd886ed6165277036e1))
+* restore gradlew exec bit ([7195c60](https://github.com/BlazeFTL/FTL-Patches/commit/7195c6078e18e39ca2ff5c6e84a736e1cbef6bc2))
+* restore gradlew exec bit ([863deba](https://github.com/BlazeFTL/FTL-Patches/commit/863deba2f42cbdbb37169c593c66eb58b7138106))
+* restore gradlew exec bit ([37258c4](https://github.com/BlazeFTL/FTL-Patches/commit/37258c469bda7d4eda0c7e578b6f14a84692accd))
+
+### ✨ New Features
+
+* up ([998fcc2](https://github.com/BlazeFTL/FTL-Patches/commit/998fcc25f2ddeb415312854f33ea5a699723600b))
+* up ([2e6b22a](https://github.com/BlazeFTL/FTL-Patches/commit/2e6b22a0d58368e1530a450c3f9b52fe80a186d4))
+* up ([7d52791](https://github.com/BlazeFTL/FTL-Patches/commit/7d5279130b21292115aab77015a7d17f16375c19))
+* up ([2e2aea2](https://github.com/BlazeFTL/FTL-Patches/commit/2e2aea2d7ad85479db88b9e2137985586a14589a))
+* up ([59f5f60](https://github.com/BlazeFTL/FTL-Patches/commit/59f5f60605deed02ffd25194d902365815af6dc5))
+* up ([83f35ec](https://github.com/BlazeFTL/FTL-Patches/commit/83f35ec5e32cccfeaadb10fd5a4c5429b6ea05f6))
+* Up ([942f4fd](https://github.com/BlazeFTL/FTL-Patches/commit/942f4fda6b1465c0322f97f0dec0521c4ff19f21))
+
 ## [1.43.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.1...v1.43.0-dev.2) (2026-08-28)
 
 ### ✨ New Features
