@@ -182,8 +182,8 @@ private fun guessRealMainActivity(
 val universalSkipSplashScreenPatch = resourcePatch(
     name = "Skip Splash Screen - Expert Only",
         description = "EXPERT USERS ONLY. Manually Configure It To Point At Real Splash And Main Activity As Many Apps Use Other Names. " +
-        "Check the log to know what the patch is doing " +
-        "Ensure App Doesnt Ask For Permission In Splash Screen.",
+        "Check the log to know what the patch is doing. " +
+        "Ensure App Doesnt Ask For Permissions In Splash Screen.",
     default = false,
 ) {
     val sourceSuffixOption by stringOption(
