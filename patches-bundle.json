@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-08-30T10:24:25",
-  "description": "## [1.43.0-dev.6](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.5...v1.43.0-dev.6) (2026-08-30)\n\n### ✨ New Features\n\n* Hide Apk Cert Patch ([938f5e7](https://github.com/BlazeFTL/FTL-Patches/commit/938f5e7502b15fafcbed18894d8377beb8ccd0b1))\n* up ([4d1ae53](https://github.com/BlazeFTL/FTL-Patches/commit/4d1ae53b091557ca1ea9e2be9cc08bbe089c034b))",
-  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.43.0-dev.6/patches-1.43.0-dev.6.mpp",
+  "created_at": "2026-08-30T11:48:58",
+  "description": "## [1.43.0-dev.7](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.6...v1.43.0-dev.7) (2026-08-30)\n\n### 🐛 Bug Fixes\n\n* Remove Analytics Causing Crash ([7e9f8a9](https://github.com/BlazeFTL/FTL-Patches/commit/7e9f8a946ceaa4ae9889a6226c9121b7bc0b5b28))",
+  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.43.0-dev.7/patches-1.43.0-dev.7.mpp",
   "signature_download_url": "",
-  "version": "1.43.0-dev.6"
+  "version": "1.43.0-dev.7"
 }

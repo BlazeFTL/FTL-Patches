@@ -1,3 +1,9 @@
+## [1.43.0-dev.7](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.6...v1.43.0-dev.7) (2026-08-30)
+
+### 🐛 Bug Fixes
+
+* Remove Analytics Causing Crash ([7e9f8a9](https://github.com/BlazeFTL/FTL-Patches/commit/7e9f8a946ceaa4ae9889a6226c9121b7bc0b5b28))
+
 ## [1.43.0-dev.6](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.5...v1.43.0-dev.6) (2026-08-30)
 
 ### ✨ New Features
