@@ -266,13 +266,21 @@ private fun isSignatureVerifyCall(reference: MethodReference) =
         reference.parameterTypes.singleOrNull() == "[B" &&
         reference.returnType == "Z"
 
-// Provider entries that must survive the strip below even though their name
-// starts with "com.google.firebase" — removing FirebaseInitProvider prevents
-// FirebaseApp.initializeApp() from ever running, which crashes any code path
-// that calls FirebaseApp.getInstance() / FirebaseKt.getApp(), regardless of
-// whether logEvent()/recordException() are stubbed out.
+// Provider/service entries that must survive the strip below even though
+// their name starts with "com.google.firebase":
+// - FirebaseInitProvider: removing it prevents FirebaseApp.initializeApp()
+//   from ever running, crashing any code path that calls
+//   FirebaseApp.getInstance() / FirebaseKt.getApp(), regardless of whether
+//   logEvent()/recordException() are stubbed out.
+// - ComponentDiscoveryService: reads the <meta-data> registrar list and
+//   registers every Firebase product (Analytics, Crashlytics, RemoteConfig,
+//   Installations, ...) in the component container. Removing it starves
+//   RemoteConfigComponent.getDefault() (and any other product) of its
+//   registration, returning null -> NPE on first use, even though the
+//   analytics call sites themselves are separately stubbed via bytecode.
 private val FIREBASE_MANIFEST_KEEP = setOf(
     "com.google.firebase.provider.FirebaseInitProvider",
+    "com.google.firebase.components.ComponentDiscoveryService",
 )
 
 // name = null keeps this out of PatchLoader's top-level list (removeAnalyticsPatch
@@ -303,6 +311,7 @@ val stripFirebaseManifestComponentsPatch = resourcePatch(
                     }
                     "service" -> {
                         val name = node.getAttribute("android:name")
+                        if (name in FIREBASE_MANIFEST_KEEP) continue
                         val actions = node.getElementsByTagName("action")
                         val hasFirebaseAction = (0 until actions.length).any { j ->
                             (actions.item(j) as Element).getAttribute("android:name").startsWith("com.google.firebase")
