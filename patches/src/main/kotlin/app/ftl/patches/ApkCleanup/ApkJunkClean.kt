@@ -12,7 +12,7 @@ private val PROTECTED_PATTERNS = listOf(
     Regex(""".*META-INF/MANIFEST\.MF$"""),
     Regex(""".*META-INF/services/.*"""),
     Regex(""".*META-INF/.*\.(RSA|SF|DSA|EC)$"""),
-    Regex(""".*classes\d*\.dex$"""),
+    Regex("""^(root/)?classes\d*\.dex$"""),
     Regex(""".*resources\.arsc$"""),
     Regex(""".*AndroidManifest\.xml$"""),
 )
