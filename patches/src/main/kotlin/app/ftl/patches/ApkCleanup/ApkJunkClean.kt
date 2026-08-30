@@ -47,6 +47,9 @@ private val JUNK_PATTERNS = listOf(
     Regex(""".*licenses\.md$"""),
     Regex(""".*debug\.keystore$"""),
     Regex(""".*_trackers\.xml$"""),
+    Regex(""".*version\.properties$"""),
+    Regex(""".*integrity\.properties$"""),
+    Regex(""".*androidannotations-api\.properties$"""),
 )
 
 private val EXCLUDED_PREFIXES = listOf("assets/", "res/")
