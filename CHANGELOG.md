@@ -1,3 +1,10 @@
+## [1.43.0-dev.6](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.5...v1.43.0-dev.6) (2026-08-30)
+
+### ✨ New Features
+
+* Hide Apk Cert Patch ([938f5e7](https://github.com/BlazeFTL/FTL-Patches/commit/938f5e7502b15fafcbed18894d8377beb8ccd0b1))
+* up ([4d1ae53](https://github.com/BlazeFTL/FTL-Patches/commit/4d1ae53b091557ca1ea9e2be9cc08bbe089c034b))
+
 ## [1.43.0-dev.5](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.4...v1.43.0-dev.5) (2026-08-30)
 
 ### ✨ New Features
