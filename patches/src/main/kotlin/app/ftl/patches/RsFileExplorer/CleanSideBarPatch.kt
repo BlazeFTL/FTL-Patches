@@ -48,34 +48,68 @@ private object CategoryListFingerprint : Fingerprint(
 
 /**
  * Matches the method that builds the Storage section's entry list (root storage, SD
- * card, OTG, encrypted vault, downloader, ...). "root" alone is too generic a literal
- * to trust app-wide, so it's pinned down by its exact surroundings instead: a real
- * ArrayList allocation earlier in the method, "root" itself, an immediate
- * String.equals() call against it (the actual comparison, not just an adjacent
- * instruction), and further down the loop's own increment immediately followed by its
- * goto. All 5 are real SDK calls, real literals, or their fixed relative order - no
- * obfuscated name anywhere.
+ * card, OTG, encrypted vault, downloader, ...). Found via the "root" scheme literal
+ * every entry is compared against, plus the loop's own increment immediately followed
+ * by its goto - both fixed points in this method, not obfuscated names.
  */
 private object StorageEntryListFingerprint : Fingerprint(
     returnType = "V",
     parameters = emptyList(),
     filters = listOf(
-        methodCall(
-            definingClass = "Ljava/util/ArrayList;",
-            name = "<init>",
-            parameters = emptyList(),
-            returnType = "V",
-        ),
         string("root"),
-        methodCall(
-            definingClass = "Ljava/lang/String;",
-            name = "equals",
-            parameters = listOf("Ljava/lang/Object;"),
-            returnType = "Z",
-            location = InstructionLocation.MatchAfterImmediately(),
-        ),
         opcode(Opcode.ADD_INT_LIT8),
         opcode(Opcode.GOTO, InstructionLocation.MatchAfterImmediately()),
+    ),
+)
+
+/**
+ * Matches the method that (re)builds the Bookmarks section list. Its own
+ * class, the private List field it clears/repopulates, and the 0-arg static
+ * factory it reads from are all obfuscated and reshuffle every build, so
+ * none of those are pinned. Instead this is matched by a chain of only real,
+ * unobfuscated JDK calls that occur back-to-back nowhere else in the class:
+ * an IGET_OBJECT read of a List field, immediately cleared via the real
+ * `java.util.List#clear()`, immediately followed by a re-read of the same
+ * shape of field, an obfuscated 0-arg factory returning the real
+ * `java.util.ArrayList`, and immediately repopulated via the real
+ * `java.util.List#addAll(Collection)`. A near-identical clear+refill idiom
+ * exists elsewhere in this class (a conditional "refresh" method), but there
+ * it's separated by other instructions rather than fully back-to-back, so
+ * requiring every step immediately after the last is what keeps this
+ * fingerprint pointed at only this one method. `classFingerprint` reuses
+ * [RemoteConnectionListFingerprint] purely to confirm both live in the same
+ * class - not to pin any obfuscated name.
+ */
+private object BookmarksListFingerprint : Fingerprint(
+    classFingerprint = RemoteConnectionListFingerprint,
+    returnType = "V",
+    parameters = emptyList(),
+    filters = listOf(
+        opcode(Opcode.IGET_OBJECT),
+        methodCall(
+            definingClass = "Ljava/util/List;",
+            name = "clear",
+            parameters = emptyList(),
+            returnType = "V",
+            opcode = Opcode.INVOKE_INTERFACE,
+            location = InstructionLocation.MatchAfterImmediately(),
+        ),
+        opcode(Opcode.IGET_OBJECT, InstructionLocation.MatchAfterImmediately()),
+        methodCall(
+            parameters = emptyList(),
+            returnType = "Ljava/util/ArrayList;",
+            opcode = Opcode.INVOKE_STATIC,
+            location = InstructionLocation.MatchAfterImmediately(),
+        ),
+        opcode(Opcode.MOVE_RESULT_OBJECT, InstructionLocation.MatchAfterImmediately()),
+        methodCall(
+            definingClass = "Ljava/util/List;",
+            name = "addAll",
+            parameters = listOf("Ljava/util/Collection;"),
+            returnType = "Z",
+            opcode = Opcode.INVOKE_INTERFACE,
+            location = InstructionLocation.MatchAfterImmediately(),
+        ),
     ),
 )
 
@@ -88,16 +122,17 @@ private fun MutableMethod.gut() {
 
 val cleanSideBarPatch = bytecodePatch(
     name = "Clean sidebar",
-    description = "Hides the remote-connection and Category sections from the navigation sidebar, and hides Encrypt and Downloader from the Storage section.",
+    description = "Hides the Bookmarks, remote-connection and Category sections from the navigation sidebar, and hides Encrypt and Downloader from the Storage section.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_RS_FILE_EXPLORER)
 
     execute {
-        // Both are private, single-purpose section builders; gutting them to
+        // All 3 are private, single-purpose section builders; gutting them to
         // return-void means their section is never built and never added to the
         // sidebar's section list. Matched and edited independently - neither depends
-        // on the other, or on locating their (obfuscated) caller.
+        // on the others, or on locating their (obfuscated) caller.
+        BookmarksListFingerprint.method.gut()
         RemoteConnectionListFingerprint.method.gut()
         CategoryListFingerprint.method.gut()
 
@@ -106,9 +141,8 @@ val cleanSideBarPatch = bytecodePatch(
         val storageMethod = StorageEntryListFingerprint.method
         val storageInstructions = storageMethod.implementation!!.instructions
 
-        val rootStringMatch = StorageEntryListFingerprint.instructionMatches[1]
-        val equalsCallMatch = StorageEntryListFingerprint.instructionMatches[2]
-        val incrementIndex = StorageEntryListFingerprint.instructionMatches[3].index
+        val rootStringMatch = StorageEntryListFingerprint.instructionMatches[0]
+        val incrementIndex = StorageEntryListFingerprint.instructionMatches[1].index
         // Captured as an instruction object, not an index, so it stays valid after the
         // insertion below shifts every later index.
         val incrementInstruction = storageInstructions[incrementIndex]
@@ -117,9 +151,11 @@ val cleanSideBarPatch = bytecodePatch(
         // in the original code (about to be reassigned to "root" itself), so it's
         // reused here as scratch space for the two new string checks.
         val scratchRegister = rootStringMatch.getInstruction<OneRegisterInstruction>().registerA
-        // The register holding the entry's own scheme identifier, read directly off
-        // the matched equals() call rather than assumed by position.
-        val identifierRegister = equalsCallMatch.getInstruction<FiveRegisterInstruction>().registerD
+        // The register holding the entry's own scheme identifier, being compared
+        // against "root" on the very next instruction - the same value the new checks
+        // need to test.
+        val identifierRegister =
+            (storageInstructions[rootStringMatch.index + 1] as FiveRegisterInstruction).registerD
 
         storageMethod.addInstructionsWithLabels(
             rootStringMatch.index,
