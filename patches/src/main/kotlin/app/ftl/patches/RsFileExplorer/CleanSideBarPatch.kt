@@ -5,6 +5,7 @@ import app.morphe.patcher.InstructionLocation
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.extensions.InstructionExtensions.removeInstructions
+import app.morphe.patcher.methodCall
 import app.morphe.patcher.opcode
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.string
@@ -47,15 +48,32 @@ private object CategoryListFingerprint : Fingerprint(
 
 /**
  * Matches the method that builds the Storage section's entry list (root storage, SD
- * card, OTG, encrypted vault, downloader, ...). Found via the "root" scheme literal
- * every entry is compared against, plus the loop's own increment immediately followed
- * by its goto - both fixed points in this method, not obfuscated names.
+ * card, OTG, encrypted vault, downloader, ...). "root" alone is too generic a literal
+ * to trust app-wide, so it's pinned down by its exact surroundings instead: a real
+ * ArrayList allocation earlier in the method, "root" itself, an immediate
+ * String.equals() call against it (the actual comparison, not just an adjacent
+ * instruction), and further down the loop's own increment immediately followed by its
+ * goto. All 5 are real SDK calls, real literals, or their fixed relative order - no
+ * obfuscated name anywhere.
  */
 private object StorageEntryListFingerprint : Fingerprint(
     returnType = "V",
     parameters = emptyList(),
     filters = listOf(
+        methodCall(
+            definingClass = "Ljava/util/ArrayList;",
+            name = "<init>",
+            parameters = emptyList(),
+            returnType = "V",
+        ),
         string("root"),
+        methodCall(
+            definingClass = "Ljava/lang/String;",
+            name = "equals",
+            parameters = listOf("Ljava/lang/Object;"),
+            returnType = "Z",
+            location = InstructionLocation.MatchAfterImmediately(),
+        ),
         opcode(Opcode.ADD_INT_LIT8),
         opcode(Opcode.GOTO, InstructionLocation.MatchAfterImmediately()),
     ),
@@ -88,8 +106,9 @@ val cleanSideBarPatch = bytecodePatch(
         val storageMethod = StorageEntryListFingerprint.method
         val storageInstructions = storageMethod.implementation!!.instructions
 
-        val rootStringMatch = StorageEntryListFingerprint.instructionMatches[0]
-        val incrementIndex = StorageEntryListFingerprint.instructionMatches[1].index
+        val rootStringMatch = StorageEntryListFingerprint.instructionMatches[1]
+        val equalsCallMatch = StorageEntryListFingerprint.instructionMatches[2]
+        val incrementIndex = StorageEntryListFingerprint.instructionMatches[3].index
         // Captured as an instruction object, not an index, so it stays valid after the
         // insertion below shifts every later index.
         val incrementInstruction = storageInstructions[incrementIndex]
@@ -98,11 +117,9 @@ val cleanSideBarPatch = bytecodePatch(
         // in the original code (about to be reassigned to "root" itself), so it's
         // reused here as scratch space for the two new string checks.
         val scratchRegister = rootStringMatch.getInstruction<OneRegisterInstruction>().registerA
-        // The register holding the entry's own scheme identifier, being compared
-        // against "root" on the very next instruction - the same value the new checks
-        // need to test.
-        val identifierRegister =
-            (storageInstructions[rootStringMatch.index + 1] as FiveRegisterInstruction).registerD
+        // The register holding the entry's own scheme identifier, read directly off
+        // the matched equals() call rather than assumed by position.
+        val identifierRegister = equalsCallMatch.getInstruction<FiveRegisterInstruction>().registerD
 
         storageMethod.addInstructionsWithLabels(
             rootStringMatch.index,
