@@ -1,3 +1,9 @@
+## [1.43.0-dev.12](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.11...v1.43.0-dev.12) (2026-08-31)
+
+### 🐛 Bug Fixes
+
+* Rs Clean SideBar ([074e61c](https://github.com/BlazeFTL/FTL-Patches/commit/074e61c4b9f93dde844f3b490297787619b474a9))
+
 ## [1.43.0-dev.11](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.10...v1.43.0-dev.11) (2026-08-31)
 
 ### ✨ New Features
