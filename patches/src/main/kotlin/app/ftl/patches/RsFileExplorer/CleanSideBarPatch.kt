@@ -11,6 +11,7 @@ import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.string
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import app.morphe.patcher.util.smali.ExternalLabel
+import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
@@ -24,8 +25,17 @@ import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
  * method in some unrelated class elsewhere in the app - the bug that broke the
  * previous version of this patch (an unscoped fingerprint silently matched an
  * unrelated method elsewhere that also happened to contain the word "root").
+ *
+ * `accessFlags = PRIVATE` matters here specifically: `<clinit>` builds the
+ * very array these two scheme strings live in, so it contains both literals
+ * too and would otherwise satisfy this same filter chain. `<clinit>` is a
+ * static constructor, never private, so pinning PRIVATE is what keeps this
+ * fingerprint pointed at the real method (R()) instead of silently gutting
+ * the class's static array initializers - exactly what broke the sidebar on
+ * the first build of this rewrite (NPEs in R()/T() reading now-null arrays).
  */
 private object RemoteConnectionListFingerprint : Fingerprint(
+    accessFlags = listOf(AccessFlags.PRIVATE),
     returnType = "V",
     parameters = emptyList(),
     filters = listOf(
@@ -40,6 +50,7 @@ private object RemoteConnectionListFingerprint : Fingerprint(
  */
 private object CategoryListFingerprint : Fingerprint(
     classFingerprint = RemoteConnectionListFingerprint,
+    accessFlags = listOf(AccessFlags.PRIVATE),
     returnType = "V",
     parameters = emptyList(),
     filters = listOf(
@@ -69,6 +80,7 @@ private object CategoryListFingerprint : Fingerprint(
  */
 private object BookmarksListFingerprint : Fingerprint(
     classFingerprint = RemoteConnectionListFingerprint,
+    accessFlags = listOf(AccessFlags.PRIVATE),
     returnType = "V",
     parameters = emptyList(),
     filters = listOf(
@@ -116,6 +128,7 @@ private object BookmarksListFingerprint : Fingerprint(
  */
 private object StorageEntryListFingerprint : Fingerprint(
     classFingerprint = RemoteConnectionListFingerprint,
+    accessFlags = listOf(AccessFlags.PRIVATE),
     returnType = "V",
     parameters = emptyList(),
     filters = listOf(
