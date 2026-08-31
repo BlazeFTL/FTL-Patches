@@ -112,6 +112,8 @@ val apkCleanupPatch = rawResourcePatch(
             }
         }
 
+        var junkMatched = 0
+        var junkDeleted = 0
         apkRoot.walkTopDown()
             .filter { it.isFile }
             .toList()
@@ -122,14 +124,19 @@ val apkCleanupPatch = rawResourcePatch(
                 if (EXCLUDED_PREFIXES.any { relativePath.startsWith(it) }) return@forEach
 
                 if (JUNK_PATTERNS.any { it.matches(relativePath) }) {
+                    junkMatched++
                     val size = file.length()
                     if (file.delete()) {
+                        junkDeleted++
                         removedFiles++
                         freedBytes += size
-                        logger.fine("Removed file: $relativePath (${size}B)")
+                        logger.info("APK Cleanup: removed junk $relativePath (${size}B)")
+                    } else {
+                        logger.warning("APK Cleanup: matched but failed to delete $relativePath")
                     }
                 }
             }
+        logger.info("APK Cleanup: JUNK_PATTERNS matched=$junkMatched deleted=$junkDeleted")
 
         try {
             removeTree("kotlin")
