@@ -2,12 +2,13 @@ package app.ftl.patches.rsfileexplorer
 
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.InstructionLocation
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
-import app.morphe.patcher.extensions.InstructionExtensions.removeInstruction
-import app.morphe.patcher.methodCall
+import app.morphe.patcher.extensions.InstructionExtensions.removeInstructions
 import app.morphe.patcher.opcode
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.string
+import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
@@ -60,52 +61,27 @@ private object StorageEntryListFingerprint : Fingerprint(
     ),
 )
 
+/** Replaces a matched no-arg void method's entire body with a single `return-void`. */
+private fun MutableMethod.gut() {
+    val instructionCount = implementation!!.instructions.size
+    removeInstructions(0, instructionCount)
+    addInstructions(0, "return-void")
+}
+
 val cleanSideBarPatch = bytecodePatch(
     name = "Clean sidebar",
-    description = "Hides the saved-network-locations, remote-connection and Category sections from the navigation sidebar, and hides Encrypt and Downloader from the Storage section.",
+    description = "Hides the remote-connection and Category sections from the navigation sidebar, and hides Encrypt and Downloader from the Storage section.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_RS_FILE_EXPLORER)
 
     execute {
-        val remoteMethod = RemoteConnectionListFingerprint.originalMethod
-        val categoryMethod = CategoryListFingerprint.originalMethod
-
-        // Matches the private method that builds every sidebar section and adds each
-        // to the section list, in a fixed call order. Declared here (not as a top-level
-        // object) since it depends on the two methods resolved above. Found by the
-        // calls it makes to those already-resolved methods - the exact obfuscated
-        // method references are read back off their matches, never hardcoded - not by
-        // its own (also obfuscated) name.
-        val sectionBuilderFingerprint = Fingerprint(
-            returnType = "V",
-            parameters = emptyList(),
-            filters = listOf(
-                methodCall(reference = remoteMethod),
-                methodCall(reference = categoryMethod),
-            ),
-        )
-
-        val builderMethod = sectionBuilderFingerprint.method
-        val builderInstructions = builderMethod.implementation!!.instructions
-
-        val remoteCallIndex = sectionBuilderFingerprint.instructionMatches[0].index
-        val categoryCallIndex = sectionBuilderFingerprint.instructionMatches[1].index
-
-        // Exactly one call sits between the remote-connection and Category calls in
-        // the build order: the saved-network-locations section. Found by position
-        // between two content-verified neighbors, since it has no strings or other
-        // unobfuscated anchor of its own.
-        val networkCallIndex = (remoteCallIndex + 1 until categoryCallIndex).single {
-            builderInstructions[it].opcode == Opcode.INVOKE_DIRECT
-        }
-
-        // Remove highest index first so earlier indexes stay valid. The 3 section
-        // builder methods are left as unreachable dead code; never invoked again means
-        // never added to the sidebar's section list.
-        builderMethod.removeInstruction(categoryCallIndex)
-        builderMethod.removeInstruction(networkCallIndex)
-        builderMethod.removeInstruction(remoteCallIndex)
+        // Both are private, single-purpose section builders; gutting them to
+        // return-void means their section is never built and never added to the
+        // sidebar's section list. Matched and edited independently - neither depends
+        // on the other, or on locating their (obfuscated) caller.
+        RemoteConnectionListFingerprint.method.gut()
+        CategoryListFingerprint.method.gut()
 
         // --- Storage section: hide the Encrypt and Downloader entries only ---
 
