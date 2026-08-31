@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.43.0-dev.10",
+  "version": "1.43.0-dev.11",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -172,6 +172,37 @@
             {
               "version": "18.8.0.prime",
               "versionCodes": null,
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "Clean sidebar",
+      "description": "Hides the saved-network-locations, remote-connection and Category sections from the navigation sidebar, and hides Encrypt and Downloader from the Storage section.",
+      "default": false,
+      "dependencies": [],
+      "compatiblePackages": [
+        {
+          "packageName": "com.rs.explorer.filemanager",
+          "name": "RS File Manager",
+          "description": null,
+          "apkFileType": null,
+          "appIconColor": null,
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.3.0.4",
+              "versionCodes": {
+                "ARM64_V8A": 239,
+                "ARMEABI_V7A": 239,
+                "X86_64": 239,
+                "X86": 239
+              },
               "isExperimental": false,
               "minSdk": null,
               "description": null
@@ -1217,6 +1248,39 @@
                 "ARMEABI_V7A": 149,
                 "X86_64": 149,
                 "X86": 149
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "Unlock Pro & Skip Splash Screen",
+      "description": "Forces the ad-removed/Pro check to always return true, and renames the launcher activity from SplashActivity to MainActivity so the splash screen is skipped.",
+      "default": true,
+      "dependencies": [
+        "ResourcePatch"
+      ],
+      "compatiblePackages": [
+        {
+          "packageName": "files.fileexplorer.filemanager",
+          "name": "File Manager - XFolder",
+          "description": null,
+          "apkFileType": null,
+          "appIconColor": null,
+          "signatures": null,
+          "targets": [
+            {
+              "version": "1.5.5.7",
+              "versionCodes": {
+                "ARM64_V8A": 1557000,
+                "ARMEABI_V7A": 1557000,
+                "X86_64": 1557000,
+                "X86": 1557000
               },
               "isExperimental": false,
               "minSdk": null,

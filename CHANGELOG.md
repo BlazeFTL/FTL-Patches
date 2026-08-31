@@ -1,3 +1,10 @@
+## [1.43.0-dev.11](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.10...v1.43.0-dev.11) (2026-08-31)
+
+### ✨ New Features
+
+* Add File Manager XFolder Unlock Pro ([297adaa](https://github.com/BlazeFTL/FTL-Patches/commit/297adaadfd749ce1644bfead217df9cbb9d1d12c))
+* Add Rs File Clean SideBar ([d315e45](https://github.com/BlazeFTL/FTL-Patches/commit/d315e4554a0511943f9946513f914c3fde53b06b))
+
 ## [1.43.0-dev.10](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.9...v1.43.0-dev.10) (2026-08-30)
 
 ### ✨ New Features
