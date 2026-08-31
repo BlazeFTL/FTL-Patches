@@ -1,3 +1,9 @@
+## [1.43.0-dev.19](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.18...v1.43.0-dev.19) (2026-08-31)
+
+### ✨ New Features
+
+* Add WpsApp Pro ByPass License Check ([bdeec85](https://github.com/BlazeFTL/FTL-Patches/commit/bdeec8500ca6b1b46b3c747f4afbee1436b8754e))
+
 ## [1.43.0-dev.18](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.17...v1.43.0-dev.18) (2026-08-31)
 
 ### 🐛 Bug Fixes

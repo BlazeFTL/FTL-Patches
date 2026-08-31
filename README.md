@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.0-dev.18](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.0-dev.18)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;50 patches total
+> **[v1.43.0-dev.19](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.0-dev.19)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;51 patches total
 <details>
 <summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;5 patches</summary>
 <br>
@@ -159,6 +159,21 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
 | [Material Colors Upgrade Peach And Purple](#material-colors-upgrade-peach-and-purple) | Updates Accent/Primary/CardBgDark to the newer Material color palette. |  |
+
+</details>
+
+<details>
+<summary>📦 WPSApp Pro&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<br>
+
+**🎯 Supported versions:**
+
+| 1.7.05 |
+| :---: |
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Remove license verification](#remove-license-verification) | Spoofs every PackageManager.getInstallerPackageName() check to report "com.android.vending", so Pro features unlock regardless of install source. |  |
 
 </details>
 
