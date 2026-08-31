@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.0-dev.14](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.0-dev.14)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;50 patches total
+> **[v1.43.0-dev.15](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.0-dev.15)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;50 patches total
 <details>
 <summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;5 patches</summary>
 <br>
@@ -92,7 +92,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
-| [Clean sidebar](#clean-sidebar) | Hides the remote-connection and Category sections from the navigation sidebar, and hides Encrypt and Downloader from the Storage section. |  |
+| [Clean sidebar](#clean-sidebar) | Hides the Bookmarks, remote-connection and Category sections from the navigation sidebar, and hides Encrypt and Downloader from the Storage section. |  |
 | [Disable downloader from download menu](#disable-downloader-from-download-menu) | Strips RsDownloadActivity's intent filters so it no longer offers itself as a handler in the system download/"complete action using" chooser. |  |
 | [Disable rate us dialog](#disable-rate-us-dialog) | Overrides show() on the in-app "rate us" dialog so it's still built but never displayed. |  |
 | [Hide more actions](#hide-more-actions) | Hides Hide, Add to desktop, Encrypt, Decrypt, Add bookmark, Web Search, Copy to, Move to, Transfer, and Playing from the "More actions" menu. |  |
