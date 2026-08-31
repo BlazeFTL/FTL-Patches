@@ -1,3 +1,9 @@
+## [1.43.0-dev.22](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.21...v1.43.0-dev.22) (2026-08-31)
+
+### 🐛 Bug Fixes
+
+* Apk Junk ([25306fb](https://github.com/BlazeFTL/FTL-Patches/commit/25306fb13b30233230e55fe284537c74c416389a))
+
 ## [1.43.0-dev.21](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.20...v1.43.0-dev.21) (2026-08-31)
 
 ### 🐛 Bug Fixes
