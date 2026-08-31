@@ -41,17 +41,6 @@ private val JUNK_PATTERNS = listOf(
     Regex(""".*META-INF/README\.md$"""),
     Regex(""".*META-INF/NOTICE.*"""),
     Regex(""".*META-INF/LICENSE.*"""),
-    Regex(""".*(?:^|/)LICENSES$"""),
-    Regex(""".*ion-java\.properties$"""),
-    Regex(""".*THIRD-PARTY-NOTICES\.txt$"""),
-    Regex(""".*licenses\.md$"""),
-    Regex(""".*debug\.keystore$"""),
-    Regex(""".*_trackers\.xml$"""),
-    Regex(""".*version\.properties$"""),
-    Regex(""".*integrity\.properties$"""),
-    Regex(""".*androidannotations-api\.properties$"""),
-    Regex(""".*transport-.*\.properties$"""),
-    Regex(""".*jetty-dir\.css$"""),
 )
 
 private val EXCLUDED_PREFIXES = listOf("assets/", "res/")
@@ -83,7 +72,7 @@ val apkCleanupPatch = rawResourcePatch(
 
     execute {
         val manifestFile = get("AndroidManifest.xml")
-        val apkRoot = get("META-INF").parentFile ?: File(".")
+        val apkRoot = manifestFile.parentFile ?: File(".")
 
         var removedFiles = 0
         var freedBytes = 0L
