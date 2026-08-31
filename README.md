@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.0-dev.13](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.0-dev.13)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;48 patches total
+> **[v1.43.0-dev.14](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.0-dev.14)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;50 patches total
 <details>
 <summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;5 patches</summary>
 <br>
@@ -26,6 +26,23 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Disable downloader from download menu](#disable-downloader-from-download-menu) | Strips WebDownloadActivity's intent-filter data so it no longer offers itself as a handler in the system download/"complete action using" chooser. |  |
 | [Remove from default browser list](#remove-from-default-browser-list) | Removes the unscoped http/https <data> entries from MainActivity's first intent-filter carrying them so the app stops appearing as a candidate in the system's default browser / "open with" chooser. |  |
 | [Skip splash and language screens](#skip-splash-and-language-screens) | Jumps straight to the main activity from the splash screen, skipping the splash animation, the language-selection screen, and any ad/app-open dialog normally shown first. |  |
+
+</details>
+
+<details>
+<summary>📦 File Manager - XFolder&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
+<br>
+
+**🎯 Supported versions:**
+
+| 1.5.5.7 |
+| :---: |
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Change Cleaner & Media Tab Defaults](#change-cleaner-media-tab-defaults) | Changes first-run defaults: hides the Image, Video, Audio and Cleaner tabs, and shows hidden files by default. Only affects users who have never changed the setting themselves - the preference override still takes priority. |  |
+| [Disable Rate Us Dialog](#disable-rate-us-dialog) | Prevents the in-app rate-us dialog from ever being shown. |  |
+| [Unlock Pro & Skip Splash Screen](#unlock-pro-skip-splash-screen) | Forces the ad-removed/Pro check to always return true, and renames the launcher activity from SplashActivity to MainActivity so the splash screen is skipped. |  |
 
 </details>
 
@@ -203,21 +220,6 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
 | [Unlock Pro & Disable Rate Dialog](#unlock-pro-disable-rate-dialog) | Forces the premium check to always return true, unlocking every Pro feature, and stops the in-app "rate us" dialog from ever triggering. |  |
-
-</details>
-
-<details>
-<summary>📦 File Manager - XFolder&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
-<br>
-
-**🎯 Supported versions:**
-
-| 1.5.5.7 |
-| :---: |
-
-| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
-|----------|----------------|-----------|
-| [Unlock Pro & Skip Splash Screen](#unlock-pro-skip-splash-screen) | Forces the ad-removed/Pro check to always return true, and renames the launcher activity from SplashActivity to MainActivity so the splash screen is skipped. |  |
 
 </details>
 

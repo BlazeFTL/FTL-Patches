@@ -1,3 +1,9 @@
+## [1.43.0-dev.14](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.13...v1.43.0-dev.14) (2026-08-31)
+
+### ✨ New Features
+
+* Add Xfolder Disable Rate ([bfcca9b](https://github.com/BlazeFTL/FTL-Patches/commit/bfcca9b05ed797aec633d6471597e2c3c23282e4))
+
 ## [1.43.0-dev.13](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.12...v1.43.0-dev.13) (2026-08-31)
 
 ### 🐛 Bug Fixes

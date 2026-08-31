@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-08-31T04:32:40",
-  "description": "## [1.43.0-dev.13](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.12...v1.43.0-dev.13) (2026-08-31)\n\n### 🐛 Bug Fixes\n\n* Rs Clean ([adc7b41](https://github.com/BlazeFTL/FTL-Patches/commit/adc7b41789393ff0c26d329d00034123714dd399))",
-  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.43.0-dev.13/patches-1.43.0-dev.13.mpp",
+  "created_at": "2026-08-31T04:37:54",
+  "description": "## [1.43.0-dev.14](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.13...v1.43.0-dev.14) (2026-08-31)\n\n### ✨ New Features\n\n* Add Xfolder Disable Rate ([bfcca9b](https://github.com/BlazeFTL/FTL-Patches/commit/bfcca9b05ed797aec633d6471597e2c3c23282e4))",
+  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.43.0-dev.14/patches-1.43.0-dev.14.mpp",
   "signature_download_url": "",
-  "version": "1.43.0-dev.13"
+  "version": "1.43.0-dev.14"
 }

@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.43.0-dev.13",
+  "version": "1.43.0-dev.14",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -103,6 +103,37 @@
           "values": null
         }
       ]
+    },
+    {
+      "name": "Change Cleaner & Media Tab Defaults",
+      "description": "Changes first-run defaults: hides the Image, Video, Audio and Cleaner tabs, and shows hidden files by default. Only affects users who have never changed the setting themselves - the preference override still takes priority.",
+      "default": true,
+      "dependencies": [],
+      "compatiblePackages": [
+        {
+          "packageName": "files.fileexplorer.filemanager",
+          "name": "File Manager - XFolder",
+          "description": null,
+          "apkFileType": null,
+          "appIconColor": null,
+          "signatures": null,
+          "targets": [
+            {
+              "version": "1.5.5.7",
+              "versionCodes": {
+                "ARM64_V8A": 1557000,
+                "ARMEABI_V7A": 1557000,
+                "X86_64": 1557000,
+                "X86": 1557000
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": []
     },
     {
       "name": "Change Display Size",
@@ -260,6 +291,37 @@
             {
               "version": null,
               "versionCodes": null,
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "Disable Rate Us Dialog",
+      "description": "Prevents the in-app rate-us dialog from ever being shown.",
+      "default": true,
+      "dependencies": [],
+      "compatiblePackages": [
+        {
+          "packageName": "files.fileexplorer.filemanager",
+          "name": "File Manager - XFolder",
+          "description": null,
+          "apkFileType": null,
+          "appIconColor": null,
+          "signatures": null,
+          "targets": [
+            {
+              "version": "1.5.5.7",
+              "versionCodes": {
+                "ARM64_V8A": 1557000,
+                "ARMEABI_V7A": 1557000,
+                "X86_64": 1557000,
+                "X86": 1557000
+              },
               "isExperimental": false,
               "minSdk": null,
               "description": null
