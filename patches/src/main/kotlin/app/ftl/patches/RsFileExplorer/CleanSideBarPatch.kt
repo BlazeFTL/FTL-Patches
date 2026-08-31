@@ -192,6 +192,11 @@ val cleanSideBarPatch = bytecodePatch(
         // compared against "root" - the same value the new checks need to test.
         val identifierRegister = equalsCallMatch.getInstruction<FiveRegisterInstruction>().registerD
 
+        // The trailing "nop" after :keep_entry is required, not decorative: addInstructionsWithLabels
+        // appends ":loop_increment\nnop" to the end of this text before compiling it as one block. A
+        // label with nothing after it merges onto that same appended nop, and anything landing there
+        // gets rewired to the external label - so without its own nop, :keep_entry would silently
+        // become a second name for :loop_increment instead of falling through to the original code.
         storageMethod.addInstructionsWithLabels(
             rootStringMatch.index,
             """
@@ -206,6 +211,7 @@ val cleanSideBarPatch = bytecodePatch(
                 :skip_entry
                 goto :loop_increment
                 :keep_entry
+                nop
             """.trimIndent(),
             ExternalLabel("loop_increment", incrementInstruction),
         )
