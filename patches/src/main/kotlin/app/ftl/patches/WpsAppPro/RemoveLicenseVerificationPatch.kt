@@ -26,7 +26,7 @@ private fun MethodReference.isGetInstallerPackageNameCall() =
         returnType == "Ljava/lang/String;"
 
 val removeLicenseVerificationPatch = bytecodePatch(
-    name = "Remove license verification",
+    name = "Remove License Verification",
     description = "Spoofs every PackageManager.getInstallerPackageName() check to report " +
         "\"com.android.vending\", so Pro features unlock regardless of install source.",
     default = true,
