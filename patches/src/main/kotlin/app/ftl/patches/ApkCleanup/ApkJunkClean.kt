@@ -12,7 +12,7 @@ private val PROTECTED_PATTERNS = listOf(
     Regex(""".*META-INF/MANIFEST\.MF$"""),
     Regex(""".*META-INF/services/.*"""),
     Regex(""".*META-INF/.*\.(RSA|SF|DSA|EC)$"""),
-    Regex(""".*classes\d*\.dex$"""),
+    Regex("""^(root/)?classes\d*\.dex$"""),
     Regex(""".*resources\.arsc$"""),
     Regex(""".*AndroidManifest\.xml$"""),
 )
@@ -135,6 +135,18 @@ val apkCleanupPatch = rawResourcePatch(
             removeTree("kotlin")
         } catch (e: Exception) {
             logger.severe("APK Cleanup: failed removing kotlin/ folder: ${e.message}")
+        }
+
+        try {
+            removeTree("assets/audience_network.dex")
+        } catch (e: Exception) {
+            logger.severe("APK Cleanup: failed removing assets/audience_network.dex: ${e.message}")
+        }
+
+        try {
+            removeTree("assets/audience_network")
+        } catch (e: Exception) {
+            logger.severe("APK Cleanup: failed removing assets/audience_network/: ${e.message}")
         }
 
         try {
