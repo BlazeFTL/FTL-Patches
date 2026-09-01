@@ -12,7 +12,7 @@ private val PROTECTED_PATTERNS = listOf(
     Regex(""".*META-INF/MANIFEST\.MF$"""),
     Regex(""".*META-INF/services/.*"""),
     Regex(""".*META-INF/.*\.(RSA|SF|DSA|EC)$"""),
-    Regex("""^(root/)?classes\d*\.dex$"""),
+    Regex(""".*classes\d*\.dex$"""),
     Regex(""".*resources\.arsc$"""),
     Regex(""".*AndroidManifest\.xml$"""),
 )
@@ -41,6 +41,17 @@ private val JUNK_PATTERNS = listOf(
     Regex(""".*META-INF/README\.md$"""),
     Regex(""".*META-INF/NOTICE.*"""),
     Regex(""".*META-INF/LICENSE.*"""),
+    Regex(""".*(?:^|/)LICENSES$"""),
+    Regex(""".*ion-java\.properties$"""),
+    Regex(""".*THIRD-PARTY-NOTICES\.txt$"""),
+    Regex(""".*licenses\.md$"""),
+    Regex(""".*debug\.keystore$"""),
+    Regex(""".*_trackers\.xml$"""),
+    Regex(""".*version\.properties$"""),
+    Regex(""".*integrity\.properties$"""),
+    Regex(""".*androidannotations-api\.properties$"""),
+    Regex(""".*transport-.*\.properties$"""),
+    Regex(""".*jetty-dir\.css$"""),
 )
 
 private val EXCLUDED_PREFIXES = listOf("assets/", "res/")
@@ -71,12 +82,8 @@ val apkCleanupPatch = rawResourcePatch(
     )
 
     execute {
-        // Derived from META-INF instead of AndroidManifest.xml: AndroidManifest.xml is
-        // special-cased in ArsclibResourceCoder.getFile() to resolve directly under
-        // workingDir, one level above where every other path (kotlin/, META-INF/,
-        // assets/, loose root files) actually resolves (otherResourcesRootDirectory,
-        // aka workingDir/root). META-INF always exists, so anchor there instead.
-        val apkRoot = get("META-INF").parentFile ?: get("AndroidManifest.xml").parentFile ?: File(".")
+        val manifestFile = get("AndroidManifest.xml")
+        val apkRoot = manifestFile.parentFile ?: File(".")
 
         var removedFiles = 0
         var freedBytes = 0L
@@ -105,8 +112,6 @@ val apkCleanupPatch = rawResourcePatch(
             }
         }
 
-        var junkMatched = 0
-        var junkDeleted = 0
         apkRoot.walkTopDown()
             .filter { it.isFile }
             .toList()
@@ -117,36 +122,19 @@ val apkCleanupPatch = rawResourcePatch(
                 if (EXCLUDED_PREFIXES.any { relativePath.startsWith(it) }) return@forEach
 
                 if (JUNK_PATTERNS.any { it.matches(relativePath) }) {
-                    junkMatched++
                     val size = file.length()
                     if (file.delete()) {
-                        junkDeleted++
                         removedFiles++
                         freedBytes += size
-                        logger.info("APK Cleanup: removed junk $relativePath (${size}B)")
-                    } else {
-                        logger.warning("APK Cleanup: matched but failed to delete $relativePath")
+                        logger.fine("Removed file: $relativePath (${size}B)")
                     }
                 }
             }
-        logger.info("APK Cleanup: JUNK_PATTERNS matched=$junkMatched deleted=$junkDeleted (apkRoot=${apkRoot.absolutePath})")
 
         try {
             removeTree("kotlin")
         } catch (e: Exception) {
             logger.severe("APK Cleanup: failed removing kotlin/ folder: ${e.message}")
-        }
-
-        try {
-            removeTree("assets/audience_network.dex")
-        } catch (e: Exception) {
-            logger.severe("APK Cleanup: failed removing assets/audience_network.dex: ${e.message}")
-        }
-
-        try {
-            removeTree("assets/audience_network")
-        } catch (e: Exception) {
-            logger.severe("APK Cleanup: failed removing assets/audience_network/: ${e.message}")
         }
 
         try {
