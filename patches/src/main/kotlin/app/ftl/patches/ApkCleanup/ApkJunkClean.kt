@@ -71,8 +71,12 @@ val apkCleanupPatch = rawResourcePatch(
     )
 
     execute {
-        val manifestFile = get("AndroidManifest.xml")
-        val apkRoot = manifestFile.parentFile ?: File(".")
+        // Derived from META-INF instead of AndroidManifest.xml: AndroidManifest.xml is
+        // special-cased in ArsclibResourceCoder.getFile() to resolve directly under
+        // workingDir, one level above where every other path (kotlin/, META-INF/,
+        // assets/, loose root files) actually resolves (otherResourcesRootDirectory,
+        // aka workingDir/root). META-INF always exists, so anchor there instead.
+        val apkRoot = get("META-INF").parentFile ?: get("AndroidManifest.xml").parentFile ?: File(".")
 
         var removedFiles = 0
         var freedBytes = 0L
@@ -101,6 +105,8 @@ val apkCleanupPatch = rawResourcePatch(
             }
         }
 
+        var junkMatched = 0
+        var junkDeleted = 0
         apkRoot.walkTopDown()
             .filter { it.isFile }
             .toList()
@@ -111,14 +117,19 @@ val apkCleanupPatch = rawResourcePatch(
                 if (EXCLUDED_PREFIXES.any { relativePath.startsWith(it) }) return@forEach
 
                 if (JUNK_PATTERNS.any { it.matches(relativePath) }) {
+                    junkMatched++
                     val size = file.length()
                     if (file.delete()) {
+                        junkDeleted++
                         removedFiles++
                         freedBytes += size
-                        logger.fine("Removed file: $relativePath (${size}B)")
+                        logger.info("APK Cleanup: removed junk $relativePath (${size}B)")
+                    } else {
+                        logger.warning("APK Cleanup: matched but failed to delete $relativePath")
                     }
                 }
             }
+        logger.info("APK Cleanup: JUNK_PATTERNS matched=$junkMatched deleted=$junkDeleted (apkRoot=${apkRoot.absolutePath})")
 
         try {
             removeTree("kotlin")
