@@ -1,3 +1,10 @@
+## [1.43.0-dev.33](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.32...v1.43.0-dev.33) (2026-09-02)
+
+### ✨ New Features
+
+* Up Junk,Toast ([16868b7](https://github.com/BlazeFTL/FTL-Patches/commit/16868b7be181cdb5bbbe7424125b0a1889ff976b))
+* Update Toast Patch ([845a494](https://github.com/BlazeFTL/FTL-Patches/commit/845a494b9321c41531666a8c3dd35dc38bada30d))
+
 ## [1.43.0-dev.32](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.31...v1.43.0-dev.32) (2026-09-02)
 
 ### ✨ New Features
