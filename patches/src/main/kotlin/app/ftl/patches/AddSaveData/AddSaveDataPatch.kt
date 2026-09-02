@@ -7,6 +7,7 @@ import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.RawResourcePatch
 import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.filePathOption
 import app.morphe.patcher.patch.rawResourcePatch
 import app.morphe.patcher.patch.stringOption
 import app.morphe.patcher.util.proxy.mutableTypes.MutableClass
@@ -108,28 +109,33 @@ val addSaveDataPatch: BytecodePatch = bytecodePatch(
     // Registered here (not on embedSaveDataPatch) so they actually show up in the UI —
     // see the comment on embedSaveDataPatch above. Not bound with `by`: nothing in this
     // patch's own execute{} reads them, embedSaveDataPatch.execute{} does.
-    stringOption(
+    // filePathOption (not plain stringOption) so editors render a native file picker
+    // instead of a manual-entry text field.
+    filePathOption(
         key = KEY_INTERNAL_ZIP,
         default = null,
         title = "1. Select data/data zip",
         description = "Zip of the app's internal storage. Restored to /data/data/<package> on first launch.",
         required = false,
+        allowedExtensions = listOf("zip"),
     )
 
-    stringOption(
+    filePathOption(
         key = KEY_EXTERNAL_ZIP,
         default = null,
         title = "2. Select Android/data zip",
         description = "Zip of the app's external storage folder. Restored to Android/data/<package> on first launch.",
         required = false,
+        allowedExtensions = listOf("zip"),
     )
 
-    stringOption(
+    filePathOption(
         key = KEY_OBB_ZIP,
         default = null,
         title = "3. Select Android/obb zip",
         description = "Zip of the app's OBB files. Restored to Android/obb/<package> on first launch.",
         required = false,
+        allowedExtensions = listOf("zip"),
     )
 
     val addToast by booleanOption(
