@@ -52,7 +52,9 @@ private val JUNK_PATTERNS = listOf(
     Regex(""".*jetty-dir\.css$"""),
 )
 
-private val EXCLUDED_PREFIXES = listOf("assets/", "res/")
+// Note: "assets/" was removed so we can target specific ad SDKs inside assets/.
+// "res/" remains excluded because deleting raw resource files can break resources.arsc.
+private val EXCLUDED_PREFIXES = listOf("res/")
 
 val apkCleanupPatch = rawResourcePatch(
     name = "APK Junk Cleanup",
@@ -70,8 +72,6 @@ val apkCleanupPatch = rawResourcePatch(
         fun deleteEntry(entryName: String) {
             if (isProtected(entryName)) return
             try {
-                // These entries are staged at decode (everything except lib/), so the
-                // snapshot diff detects their deletion and they are dropped from the output.
                 val file = get(entryName)
                 if (file.isFile) {
                     val size = file.length()
@@ -89,41 +89,43 @@ val apkCleanupPatch = rawResourcePatch(
         }
 
         listApkEntries().forEach { entryName ->
-            // Native libraries are never staged: deleting a lazily extracted copy is
-            // discarded as an unused extraction and the original entry survives in the
-            // output APK (morphe-patcher#188/#192, see FTL-Patches#54). ABI stripping is
-            // delegated to the patcher's keepArchitectures — never touch lib/ here.
+            // Native libraries are never staged (PR #192). Deleting them silently fails
+            // because the encoder restores them from the original APK.
             if (entryName.startsWith("lib/")) return@forEach
+            
             if (EXCLUDED_PREFIXES.any { entryName.startsWith(it) }) return@forEach
 
             val shouldDelete = when {
                 JUNK_PATTERNS.any { it.matches(entryName) } -> true
                 entryName == "kotlin" || entryName.startsWith("kotlin/") -> true
+                
+                // Explicitly target audience network and other ad SDKs in assets
                 entryName == "assets/audience_network.dex" ||
-                    entryName == "assets/audience_network" ||
                     entryName.startsWith("assets/audience_network/") -> true
-                entryName.startsWith("META-INF/") && !entryName.startsWith("META-INF/services/") -> true
+                // Add other specific asset folders here if needed:
+                // entryName.startsWith("assets/some_other_ad_sdk/") -> true
+                
+                // PROTECTED_PATTERNS already guards signatures, MANIFEST.MF, and services/
+                entryName.startsWith("META-INF/") -> true
+                
                 else -> false
             }
 
             if (shouldDelete) deleteEntry(entryName)
         }
 
-        // listApkEntries("lib/") still reads the archive directly, so use it to detect
-        // shipped ABIs and point the user at the patcher-level option.
         val shippedAbis = listApkEntries("lib/")
             .mapNotNull { it.split("/").getOrNull(1) }
             .distinct()
-        if (shippedAbis.size > 1) {
-            logger.warning(
-                "APK Cleanup: this APK ships ${shippedAbis.size} native ABIs " +
-                    "(${shippedAbis.joinToString()}). Patches can no longer remove native " +
-                    "libraries; to keep a single architecture, enable strip-libs in Morphe " +
-                    "Manager or pass --striplibs to Morphe Desktop."
+            
+        if (shippedAbis.isNotEmpty()) {
+            logger.info(
+                "APK Cleanup: Detected native ABIs: ${shippedAbis.joinToString()}. " +
+                "To strip unused architectures, enable 'Strip unused architectures' in Morphe Manager " +
+                "or use '--striplibs' in Morphe Desktop."
             )
         }
 
-        // Prune directories left empty in the working directory.
         val manifestFile = get("AndroidManifest.xml")
         val apkRoot = manifestFile.parentFile ?: File(".")
 
