@@ -155,7 +155,7 @@ val addSaveDataPatch: BytecodePatch = bytecodePatch(
 
     val showOnce by booleanOption(
         key = "showOnce",
-        default = true,
+        default = false,
         title = "Show toast once",
         description = "On: the toast only shows on the first launch. Off: it shows on every launch.",
     )
