@@ -1,3 +1,9 @@
+## [1.43.0-dev.31](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.30...v1.43.0-dev.31) (2026-09-02)
+
+### ✨ New Features
+
+* Apk Junk Up ([025ecf3](https://github.com/BlazeFTL/FTL-Patches/commit/025ecf3d7d092c67e29ac86e74eb705dcf734055))
+
 ## [1.43.0-dev.30](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.29...v1.43.0-dev.30) (2026-09-02)
 
 ### ✨ New Features
