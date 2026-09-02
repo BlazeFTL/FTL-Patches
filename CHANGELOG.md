@@ -1,3 +1,12 @@
+## [1.43.0-dev.32](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.31...v1.43.0-dev.32) (2026-09-02)
+
+### ✨ New Features
+
+* Add Save Data Up ([63e7eb7](https://github.com/BlazeFTL/FTL-Patches/commit/63e7eb7def3c8c1ce5d1f840083c3473172d1869))
+* Apk Clean Up ([1ef5071](https://github.com/BlazeFTL/FTL-Patches/commit/1ef5071ce920bf59c74b07870011fe87e775d26e))
+* Fix For Morphe Dev ([c2c166d](https://github.com/BlazeFTL/FTL-Patches/commit/c2c166de327948dc5aebc814b63c8bc071fdf669))
+* Up Add Save ([e5b2d18](https://github.com/BlazeFTL/FTL-Patches/commit/e5b2d18f5418f8a5bc2fd704565eb4174a545e20))
+
 ## [1.43.0-dev.31](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.30...v1.43.0-dev.31) (2026-09-02)
 
 ### ✨ New Features
