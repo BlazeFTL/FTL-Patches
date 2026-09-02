@@ -1,8 +1,6 @@
 package app.ftl.patches.apkcleanup
 
 import app.morphe.patcher.patch.rawResourcePatch
-import app.morphe.patcher.patch.booleanOption
-import app.morphe.patcher.patch.stringOption
 import java.io.File
 import java.util.logging.Logger
 
@@ -58,29 +56,11 @@ private val EXCLUDED_PREFIXES = listOf("assets/", "res/")
 
 val apkCleanupPatch = rawResourcePatch(
     name = "APK Junk Cleanup",
-    description = "Removes junk and useless files with no runtime purpose inside apk.",
+    description = "Removes junk and useless files with no runtime purpose inside apk. " +
+        "To keep only one CPU architecture, use the patcher's strip-libs option " +
+        "(Morphe Manager) or --striplibs (Morphe Desktop).",
     default = false,
 ) {
-    val splitByArch by booleanOption(
-        key = "splitByArch",
-        default = false,
-        title = "Keep Only One Architecture",
-        description = "Keep native libraries (.so files) for only one CPU architecture. To generate separate APKs for each architecture, run this patch multiple times with a different architecture selected each time.",
-    )
-
-    val targetArch by stringOption(
-        key = "targetArch",
-        default = "arm64-v8a",
-        values = mapOf(
-            "arm64-v8a" to "ARM64 (arm64-v8a)",
-            "armeabi-v7a" to "ARMv7 (armeabi-v7a)",
-            "x86" to "x86",
-            "x86_64" to "x86_64",
-        ),
-        title = "Target architecture",
-        description = "Which architecture to keep when splitting is enabled.",
-    )
-
     execute {
         var removedFiles = 0
         var freedBytes = 0L
@@ -90,6 +70,8 @@ val apkCleanupPatch = rawResourcePatch(
         fun deleteEntry(entryName: String) {
             if (isProtected(entryName)) return
             try {
+                // These entries are staged at decode (everything except lib/), so the
+                // snapshot diff detects their deletion and they are dropped from the output.
                 val file = get(entryName)
                 if (file.isFile) {
                     val size = file.length()
@@ -106,61 +88,45 @@ val apkCleanupPatch = rawResourcePatch(
             }
         }
 
-        // Process all entries in the APK directly from the archive
         listApkEntries().forEach { entryName ->
+            // Native libraries are never staged: deleting a lazily extracted copy is
+            // discarded as an unused extraction and the original entry survives in the
+            // output APK (morphe-patcher#188/#192, see FTL-Patches#54). ABI stripping is
+            // delegated to the patcher's keepArchitectures — never touch lib/ here.
+            if (entryName.startsWith("lib/")) return@forEach
             if (EXCLUDED_PREFIXES.any { entryName.startsWith(it) }) return@forEach
-            
-            var shouldDelete = false
-            
-            if (JUNK_PATTERNS.any { it.matches(entryName) }) {
-                shouldDelete = true
-            } else if (entryName.startsWith("kotlin/") || entryName == "kotlin") {
-                shouldDelete = true
-            } else if (entryName == "assets/audience_network.dex" || entryName.startsWith("assets/audience_network/") || entryName == "assets/audience_network") {
-                shouldDelete = true
-            } else if (entryName.startsWith("META-INF/") && !entryName.startsWith("META-INF/services/")) {
-                shouldDelete = true
+
+            val shouldDelete = when {
+                JUNK_PATTERNS.any { it.matches(entryName) } -> true
+                entryName == "kotlin" || entryName.startsWith("kotlin/") -> true
+                entryName == "assets/audience_network.dex" ||
+                    entryName == "assets/audience_network" ||
+                    entryName.startsWith("assets/audience_network/") -> true
+                entryName.startsWith("META-INF/") && !entryName.startsWith("META-INF/services/") -> true
+                else -> false
             }
 
-            if (shouldDelete) {
-                deleteEntry(entryName)
-            }
+            if (shouldDelete) deleteEntry(entryName)
         }
 
-        if (splitByArch == true) {
-            val archToKeep = targetArch ?: "arm64-v8a"
-            val libEntries = listApkEntries("lib/")
-            
-            // Extract architecture names directly from the archive listing
-            val archNames = libEntries.mapNotNull { 
-                val parts = it.split("/")
-                if (parts.size >= 2) parts[1] else null
-            }.distinct()
-            
-            val hasTarget = archNames.contains(archToKeep)
-
-            if (hasTarget) {
-                libEntries.forEach { entryName ->
-                    val parts = entryName.split("/")
-                    if (parts.size >= 2) {
-                        val arch = parts[1]
-                        if (arch != archToKeep) {
-                            deleteEntry(entryName)
-                        }
-                    }
-                }
-            } else {
-                logger.warning(
-                    "APK Cleanup: selected architecture \"$archToKeep\" not found in lib/. " +
-                    "Available: ${archNames.joinToString()}. Keeping all architectures."
-                )
-            }
+        // listApkEntries("lib/") still reads the archive directly, so use it to detect
+        // shipped ABIs and point the user at the patcher-level option.
+        val shippedAbis = listApkEntries("lib/")
+            .mapNotNull { it.split("/").getOrNull(1) }
+            .distinct()
+        if (shippedAbis.size > 1) {
+            logger.warning(
+                "APK Cleanup: this APK ships ${shippedAbis.size} native ABIs " +
+                    "(${shippedAbis.joinToString()}). Patches can no longer remove native " +
+                    "libraries; to keep a single architecture, enable strip-libs in Morphe " +
+                    "Manager or pass --striplibs to Morphe Desktop."
+            )
         }
 
-        // Clean up empty directories left behind in the working directory
+        // Prune directories left empty in the working directory.
         val manifestFile = get("AndroidManifest.xml")
         val apkRoot = manifestFile.parentFile ?: File(".")
-        
+
         apkRoot.walkBottomUp()
             .filter { it.isDirectory && it != apkRoot && it.listFiles()?.isEmpty() == true }
             .forEach { it.delete() }
