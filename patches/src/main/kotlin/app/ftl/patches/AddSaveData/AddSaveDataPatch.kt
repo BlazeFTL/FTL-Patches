@@ -30,49 +30,36 @@ private fun String.toClassType() = "L${replace('.', '/')};"
 
 private fun String.smaliEscape() = replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")
 
+private const val KEY_INTERNAL_ZIP = "internalDataZip"
+private const val KEY_EXTERNAL_ZIP = "externalDataZip"
+private const val KEY_OBB_ZIP = "obbZip"
+
 /**
  * Not a Swift Backup .dat/.extdat export as-is (those are encrypted 7z containers).
  * Each option here must be a plain zip whose contents ARE what should land in that location,
- * e.g. zip up the extracted /data/data/<pkg> folder and point internalDataZip at it.
+ * e.g. zip up the extracted /data/data/<pkg> folder and point that option at it.
  *
  * At least one of the three zips is required. Each is renamed internally to a fixed
  * asset name matching its restore destination, regardless of the original filename:
- *   res0 -> /data/data/<package>    (internalDataZip)
- *   res1 -> Android/data/<package>  (externalDataZip)
- *   res2 -> Android/obb/<package>   (obbZip)
+ *   res0 -> /data/data/<package>    (KEY_INTERNAL_ZIP)
+ *   res1 -> Android/data/<package>  (KEY_EXTERNAL_ZIP)
+ *   res2 -> Android/obb/<package>   (KEY_OBB_ZIP)
+ *
+ * The 3 options themselves are declared on addSaveDataPatch below, not here: options are
+ * only shown in the UI / settable for patches with a name (PatchUtils.setOptions filters
+ * `it.name != null`), and this patch is intentionally unnamed so it doesn't show up as its
+ * own toggle in the patch list. This patch just reads the values back off
+ * addSaveDataPatch.options once all options across the bundle have been set, which always
+ * happens before any patch's execute() runs.
  */
 // name omitted (null): internal, pulled in by addSaveDataPatch via dependsOn.
 val embedSaveDataPatch = rawResourcePatch(
     description = "Embeds the provided save-data zip(s) into assets/.",
 ) {
-    val internalDataZip by stringOption(
-        key = "internalDataZip",
-        default = null,
-        title = "1. Select data/data zip",
-        description = "Zip of the app's internal storage. Restored to /data/data/<package> on first launch.",
-        required = false,
-    )
-
-    val externalDataZip by stringOption(
-        key = "externalDataZip",
-        default = null,
-        title = "2. Select Android/data zip",
-        description = "Zip of the app's external storage folder. Restored to Android/data/<package> on first launch.",
-        required = false,
-    )
-
-    val obbZip by stringOption(
-        key = "obbZip",
-        default = null,
-        title = "3. Select Android/obb zip",
-        description = "Zip of the app's OBB files. Restored to Android/obb/<package> on first launch.",
-        required = false,
-    )
-
     execute {
-        val internal = internalDataZip?.takeIf { it.isNotBlank() }
-        val external = externalDataZip?.takeIf { it.isNotBlank() }
-        val obb = obbZip?.takeIf { it.isNotBlank() }
+        val internal = (addSaveDataPatch.options[KEY_INTERNAL_ZIP].value as String?)?.takeIf { it.isNotBlank() }
+        val external = (addSaveDataPatch.options[KEY_EXTERNAL_ZIP].value as String?)?.takeIf { it.isNotBlank() }
+        val obb = (addSaveDataPatch.options[KEY_OBB_ZIP].value as String?)?.takeIf { it.isNotBlank() }
 
         if (internal == null && external == null && obb == null) {
             throw PatchException(
@@ -111,6 +98,33 @@ val addSaveDataPatch = bytecodePatch(
 
     extendWith("extensions/addsave.mpe")
     extendWith("extensions/toast.mpe")
+
+    // Registered here (not on embedSaveDataPatch) so they actually show up in the UI —
+    // see the comment on embedSaveDataPatch above. Not bound with `by`: nothing in this
+    // patch's own execute{} reads them, embedSaveDataPatch.execute{} does.
+    stringOption(
+        key = KEY_INTERNAL_ZIP,
+        default = null,
+        title = "1. Select data/data zip",
+        description = "Zip of the app's internal storage. Restored to /data/data/<package> on first launch.",
+        required = false,
+    )
+
+    stringOption(
+        key = KEY_EXTERNAL_ZIP,
+        default = null,
+        title = "2. Select Android/data zip",
+        description = "Zip of the app's external storage folder. Restored to Android/data/<package> on first launch.",
+        required = false,
+    )
+
+    stringOption(
+        key = KEY_OBB_ZIP,
+        default = null,
+        title = "3. Select Android/obb zip",
+        description = "Zip of the app's OBB files. Restored to Android/obb/<package> on first launch.",
+        required = false,
+    )
 
     val addToast by booleanOption(
         key = "addToast",
