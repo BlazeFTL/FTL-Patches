@@ -1,8 +1,10 @@
 package app.ftl.patches.addsavedata
 
+import app.morphe.patcher.patch.BytecodePatch
 import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.PatchException
+import app.morphe.patcher.patch.RawResourcePatch
 import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.rawResourcePatch
@@ -52,8 +54,12 @@ private const val KEY_OBB_ZIP = "obbZip"
  * addSaveDataPatch.options once all options across the bundle have been set, which always
  * happens before any patch's execute() runs.
  */
+// Explicit type: embedSaveDataPatch's execute{} forward-references addSaveDataPatch (declared
+// below) and addSaveDataPatch's dependsOn references embedSaveDataPatch back — without an
+// explicit type on at least one side, Kotlin's inference can't resolve that cycle ("Type
+// checking has run into a recursive problem").
 // name omitted (null): internal, pulled in by addSaveDataPatch via dependsOn.
-val embedSaveDataPatch = rawResourcePatch(
+val embedSaveDataPatch: RawResourcePatch = rawResourcePatch(
     description = "Embeds the provided save-data zip(s) into assets/.",
 ) {
     execute {
@@ -89,7 +95,7 @@ val embedSaveDataPatch = rawResourcePatch(
 
 // Universal patch (no compatibleWith), so `default` must be false.
 @Suppress("unused")
-val addSaveDataPatch = bytecodePatch(
+val addSaveDataPatch: BytecodePatch = bytecodePatch(
     "Add Save Data",
     "Unpacks bundled save-data zip(s) into the app's storage on first launch.",
     false,
