@@ -1,3 +1,9 @@
+## [1.43.0-dev.27](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.26...v1.43.0-dev.27) (2026-09-02)
+
+### ✨ New Features
+
+* Add Save Data Extract Patch ([9efba3c](https://github.com/BlazeFTL/FTL-Patches/commit/9efba3ce5363bc6b7b58fda16e8f7bc7c96b834e))
+
 ## [1.43.0-dev.26](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.25...v1.43.0-dev.26) (2026-09-01)
 
 ### 🐛 Bug Fixes
