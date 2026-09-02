@@ -1,3 +1,10 @@
+## [1.43.0-dev.30](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.29...v1.43.0-dev.30) (2026-09-02)
+
+### ✨ New Features
+
+* Prepare For Apk Junk New Api ([e8e6e47](https://github.com/BlazeFTL/FTL-Patches/commit/e8e6e4704aed17df4f24809e9033c5098a204fbc))
+* up ([aa75121](https://github.com/BlazeFTL/FTL-Patches/commit/aa7512103d4b1349ea6f90656501fd5d7507e50c))
+
 ## [1.43.0-dev.29](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.28...v1.43.0-dev.29) (2026-09-02)
 
 ### ✨ New Features
