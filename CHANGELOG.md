@@ -1,3 +1,9 @@
+## [1.43.0-dev.41](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.40...v1.43.0-dev.41) (2026-09-03)
+
+### ✨ New Features
+
+* Up Skip Splash Expert ([1164699](https://github.com/BlazeFTL/FTL-Patches/commit/1164699060cc6d2ba350a8e3635572b585469e4d))
+
 ## [1.43.0-dev.40](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.39...v1.43.0-dev.40) (2026-09-03)
 
 ### ✨ New Features
