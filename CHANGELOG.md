@@ -1,3 +1,9 @@
+## [1.43.0-dev.35](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.34...v1.43.0-dev.35) (2026-09-03)
+
+### 🐛 Bug Fixes
+
+* Remove Analytics R8 ([7532199](https://github.com/BlazeFTL/FTL-Patches/commit/7532199e6ef61832f3bb21c45dd66fdaa6e54153))
+
 ## [1.43.0-dev.34](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.33...v1.43.0-dev.34) (2026-09-03)
 
 ### ✨ New Features

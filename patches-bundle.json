@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-09-03T05:38:51",
-  "description": "## [1.43.0-dev.34](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.33...v1.43.0-dev.34) (2026-09-03)\n\n### ✨ New Features\n\n* Up Remove Ads Error ([6831ef4](https://github.com/BlazeFTL/FTL-Patches/commit/6831ef4ea2e942e0fd2afbbc55dcd5c47491f4bd))",
-  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.43.0-dev.34/patches-1.43.0-dev.34.mpp",
+  "created_at": "2026-09-03T05:48:09",
+  "description": "## [1.43.0-dev.35](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.34...v1.43.0-dev.35) (2026-09-03)\n\n### 🐛 Bug Fixes\n\n* Remove Analytics R8 ([7532199](https://github.com/BlazeFTL/FTL-Patches/commit/7532199e6ef61832f3bb21c45dd66fdaa6e54153))",
+  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.43.0-dev.35/patches-1.43.0-dev.35.mpp",
   "signature_download_url": "",
-  "version": "1.43.0-dev.34"
+  "version": "1.43.0-dev.35"
 }
