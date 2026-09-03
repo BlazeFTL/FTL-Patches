@@ -22,6 +22,13 @@ private val KNOWN_LAUNCHER_CATEGORIES = PURE_LAUNCHER_MARKERS + setOf(
 // Below this combined confidence score, auto-detect refuses to rename anything.
 private const val SPLASH_SCORE_THRESHOLD = 4
 
+// packageName -> (splashActivitySuffix, realMainActivitySuffix). Skips scoring/guessing entirely
+// for listed packages - same effect as the user typing these into sourceSuffix/targetSuffix.
+private val PACKAGE_OVERRIDES: Map<String, Pair<String, String>> = mapOf(
+    "com.cloudflare.onedotonedotonedotone" to ("SplashActivity" to "MainActivity"),
+    // "some.package" to ("MainActivity" to "MainTabsActivity"),
+)
+
 private fun Element.attr(name: String): String = getAttribute(name)
 
 private fun Element.children(tag: String): List<Element> {
@@ -222,7 +229,14 @@ val universalSkipSplashScreenPatch = resourcePatch(
 
             val riskyFilters = launcher.children("intent-filter").filterNot(::isBareLauncherFilter)
 
-            val forcedSource = sourceSuffixOption?.takeIf { it.isNotBlank() }
+            val override = PACKAGE_OVERRIDES[packageName]
+            val effectiveSourceSuffix = override?.first ?: sourceSuffixOption
+            val effectiveTargetSuffix = override?.second ?: targetSuffixOption
+            if (override != null) {
+                logger.info("Skip splash screen: package \"$packageName\" has a hardcoded override - skipping scoring/guessing.")
+            }
+
+            val forcedSource = effectiveSourceSuffix?.takeIf { it.isNotBlank() }
             if (forcedSource != null) {
                 val suffix = ".${forcedSource.removePrefix(".")}"
                 if (!originalName.endsWith(suffix)) {
@@ -263,17 +277,30 @@ val universalSkipSplashScreenPatch = resourcePatch(
                 )
             }
 
-            val forcedTarget = targetSuffixOption?.takeIf { it.isNotBlank() }
+            val forcedTarget = effectiveTargetSuffix?.takeIf { it.isNotBlank() }
+            val targetElement: Element
             val newName: String
             if (forcedTarget != null) {
                 val sourceSuffix = ".${originalName.substringAfterLast('.')}"
                 newName = originalName.removeSuffix(sourceSuffix) + ".${forcedTarget.removePrefix(".")}"
+                val found = document.documentElement.children("activity")
+                    .filter { it !== launcher }
+                    .firstOrNull { it.resolvedName(packageName) == newName }
+                if (found == null) {
+                    logger.warning(
+                        "Skip splash screen: no existing activity named \"$newName\" found in the manifest - " +
+                            "targetSuffix must match an activity that's already declared. Nothing changed.",
+                    )
+                    return@use
+                }
+                targetElement = found
             } else {
                 val exactMain = document.documentElement.children("activity")
                     .filter { it !== launcher }
                     .filter { it.resolvedName(packageName).startsWith("$packageName.") }
                     .firstOrNull { isExactMainName(it.attr("android:name")) }
                 if (exactMain != null) {
+                    targetElement = exactMain
                     newName = exactMain.resolvedName(packageName)
                     logger.info(
                         "Skip splash screen: found an activity literally named MainActivity " +
@@ -289,6 +316,7 @@ val universalSkipSplashScreenPatch = resourcePatch(
                         return@use
                     }
                     val (candidate, score) = guess
+                    targetElement = candidate
                     newName = candidate.resolvedName(packageName)
                     logger.info(
                         "Skip splash screen: auto-detected real main activity \"$newName\" (confidence score " +
@@ -297,8 +325,32 @@ val universalSkipSplashScreenPatch = resourcePatch(
                 }
             }
 
-            launcher.setAttribute("android:name", newName)
-            logger.info("Skip splash screen: renamed launcher activity \"$originalName\" -> \"$newName\".")
+            // Move the intent-filter(s) from the splash activity onto the real target activity instead
+            // of renaming android:name. Renaming leaves TWO <activity> elements declaring the same class
+            // -> duplicate component -> package parser rejects the APK ("app not installed"). Moving the
+            // filter element(s) keeps both classes intact and just swaps which one the system launches.
+            val filtersToMove = launcher.children("intent-filter")
+            if (filtersToMove.isEmpty()) {
+                logger.warning("Skip splash screen: \"$originalName\" has no intent-filter to move - nothing changed.")
+                return@use
+            }
+            filtersToMove.forEach { filter -> targetElement.appendChild(filter) }
+
+            // targetSdk 31+ requires android:exported to be explicit on any component that now has an
+            // intent-filter, or the install fails ("must include android:exported"). This is the other
+            // half of the same crash renaming used to cause when the target had no explicit value.
+            if (targetElement.attr("android:exported").isBlank()) {
+                targetElement.setAttribute("android:exported", "true")
+                logger.info(
+                    "Skip splash screen: added explicit android:exported=\"true\" to \"$newName\" " +
+                        "(required now that it owns an intent-filter).",
+                )
+            }
+
+            logger.info(
+                "Skip splash screen: moved ${filtersToMove.size} intent-filter(s) from \"$originalName\" to " +
+                    "\"$newName\" - \"$originalName\" keeps its class name but is no longer the launcher entry.",
+            )
 
             var aliasesRenamed = 0
             document.documentElement.children("activity-alias").forEach { alias ->
