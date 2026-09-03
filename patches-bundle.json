@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-09-03T06:06:36",
-  "description": "## [1.43.0-dev.36](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.35...v1.43.0-dev.36) (2026-09-03)\n\n### 🐛 Bug Fixes\n\n* Remove Analytics Causing Crash ([555a458](https://github.com/BlazeFTL/FTL-Patches/commit/555a4583823753ce8b63e1b98d8505b7f8bc4456))",
-  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.43.0-dev.36/patches-1.43.0-dev.36.mpp",
+  "created_at": "2026-09-03T08:41:20",
+  "description": "## [1.43.0-dev.37](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.36...v1.43.0-dev.37) (2026-09-03)\n\n### ✨ New Features\n\n* Add New Analytics Patch ([85f907f](https://github.com/BlazeFTL/FTL-Patches/commit/85f907f5407080f4666bd3885ca79994685f3d76))",
+  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.43.0-dev.37/patches-1.43.0-dev.37.mpp",
   "signature_download_url": "",
-  "version": "1.43.0-dev.36"
+  "version": "1.43.0-dev.37"
 }

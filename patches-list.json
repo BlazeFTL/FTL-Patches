@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.43.0-dev.36",
+  "version": "1.43.0-dev.37",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -735,6 +735,16 @@
       "dependencies": [
         "ResourcePatch",
         "BytecodePatch"
+      ],
+      "compatiblePackages": null,
+      "options": []
+    },
+    {
+      "name": "Remove Ads & Analytics",
+      "description": "Corrupts ad/analytics network URLs and split-scheme string obfuscation inside the code, and strips matching manifest components.",
+      "default": false,
+      "dependencies": [
+        "ResourcePatch"
       ],
       "compatiblePackages": null,
       "options": []
