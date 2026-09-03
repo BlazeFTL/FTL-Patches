@@ -1,4 +1,4 @@
-package app.ftl.patches.removeadsanalytics
+package app.ftl.patches.removeanalyticsnew
 
 import app.morphe.patcher.extensions.InstructionExtensions.instructionsOrNull
 import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
