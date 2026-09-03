@@ -58,8 +58,6 @@ internal object AdjustTrackEventFingerprint : Fingerprint(
 )
 
 internal val ANALYTICS_STRING_BLACKLIST = listOf(
-    "akamaitechnologies.com",
-    "amazonaws.com",
     "amplitude.com",
     "api.branch.io",
     "api.crittercism.com",
@@ -68,9 +66,7 @@ internal val ANALYTICS_STRING_BLACKLIST = listOf(
     "appmetrica.yandex.ru",
     "appsflyer.com",
     "audience_network",
-    "azure.com",
     "chartboost.com",
-    "cloudfront.net",
     "com.google.analytics",
     "com.google.android.gms.analytics",
     "com.google.firebase.analytics",
