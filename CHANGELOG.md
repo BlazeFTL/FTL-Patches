@@ -1,3 +1,9 @@
+## [1.43.0-dev.40](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.39...v1.43.0-dev.40) (2026-09-03)
+
+### ✨ New Features
+
+* Up AddSave Data Test ([6dcbf80](https://github.com/BlazeFTL/FTL-Patches/commit/6dcbf80ff5dfa0bb9fc1a74d3543958cd6dc2f09))
+
 ## [1.43.0-dev.39](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.38...v1.43.0-dev.39) (2026-09-03)
 
 ### ✨ New Features
