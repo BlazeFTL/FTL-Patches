@@ -1,3 +1,9 @@
+## [1.43.0-dev.34](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.33...v1.43.0-dev.34) (2026-09-03)
+
+### ✨ New Features
+
+* Up Remove Ads Error ([6831ef4](https://github.com/BlazeFTL/FTL-Patches/commit/6831ef4ea2e942e0fd2afbbc55dcd5c47491f4bd))
+
 ## [1.43.0-dev.33](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.32...v1.43.0-dev.33) (2026-09-02)
 
 ### ✨ New Features
