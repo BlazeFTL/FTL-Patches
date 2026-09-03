@@ -336,13 +336,13 @@ val removeAnalyticsPatch = bytecodePatch(
     dependsOn(stripFirebaseManifestComponentsPatch)
 
     execute {
-        FirebaseAnalyticsLogEventFingerprint.methodOrNull?.addInstructions(0, "return-void")
-        CrashlyticsRecordExceptionFingerprint.methodOrNull?.addInstructions(0, "return-void")
-        FlurryAgentLogEventFingerprint.methodOrNull?.addInstructions(0, "return-void")
-        GoogleAnalyticsTrackerSendFingerprint.methodOrNull?.addInstructions(0, "return-void")
-        YandexMetricaReportEventFingerprint.methodOrNull?.addInstructions(0, "return-void")
-        AppsFlyerLogEventFingerprint.methodOrNull?.addInstructions(0, "return-void")
-        AdjustTrackEventFingerprint.methodOrNull?.addInstructions(0, "return-void")
+        FirebaseAnalyticsLogEventFingerprint.methodOrNull?.takeIf { it.instructionsOrNull != null }?.addInstructions(0, "return-void")
+        CrashlyticsRecordExceptionFingerprint.methodOrNull?.takeIf { it.instructionsOrNull != null }?.addInstructions(0, "return-void")
+        FlurryAgentLogEventFingerprint.methodOrNull?.takeIf { it.instructionsOrNull != null }?.addInstructions(0, "return-void")
+        GoogleAnalyticsTrackerSendFingerprint.methodOrNull?.takeIf { it.instructionsOrNull != null }?.addInstructions(0, "return-void")
+        YandexMetricaReportEventFingerprint.methodOrNull?.takeIf { it.instructionsOrNull != null }?.addInstructions(0, "return-void")
+        AppsFlyerLogEventFingerprint.methodOrNull?.takeIf { it.instructionsOrNull != null }?.addInstructions(0, "return-void")
+        AdjustTrackEventFingerprint.methodOrNull?.takeIf { it.instructionsOrNull != null }?.addInstructions(0, "return-void")
 
         classDefForEach { classDef ->
             val hasStringMatch = classDef.methods.any { method ->
