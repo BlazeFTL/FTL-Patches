@@ -200,8 +200,15 @@ private fun BytecodePatchContext.injectApplicationRestore(
         // Strictly no-arg: Application.onCreate() never takes a Bundle. A looser filter
         // here can latch onto an unrelated onCreate(Bundle) higher in the hierarchy
         // (e.g. from some SDK's lifecycle interface) before reaching the real one.
+        // implementation != null: the hierarchy walk can also land on an abstract
+        // onCreate() from an interface/base class with a matching signature but no
+        // body — addInstructions() on that throws (implementation!! NPE) and aborts
+        // the whole patch build.
         val onCreate = methods.firstOrNull {
-            it.name == "onCreate" && it.parameters.isEmpty() && it.returnType == "V"
+            it.name == "onCreate" &&
+                it.parameters.isEmpty() &&
+                it.returnType == "V" &&
+                it.implementation != null
         } ?: return@traverseClassHierarchy
 
         injected = injectRestore(onCreate, addToast, message, once)
@@ -227,7 +234,8 @@ private fun BytecodePatchContext.injectActivityRestore(
         val onCreate = methods.firstOrNull {
             it.name == "onCreate" &&
                 it.parameters == listOf("Landroid/os/Bundle;") &&
-                it.returnType == "V"
+                it.returnType == "V" &&
+                it.implementation != null
         } ?: return@traverseClassHierarchy
 
         injected = injectRestore(onCreate, addToast, message, once)
