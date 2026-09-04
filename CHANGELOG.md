@@ -1,3 +1,9 @@
+## [1.43.0-dev.44](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.43...v1.43.0-dev.44) (2026-09-04)
+
+### 🐛 Bug Fixes
+
+* Mx Ad Me Tab Tiles ([79380a4](https://github.com/BlazeFTL/FTL-Patches/commit/79380a4d2c767ce435dc18d42d26ee99f6f08f82))
+
 ## [1.43.0-dev.43](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.42...v1.43.0-dev.43) (2026-09-04)
 
 ### 🐛 Bug Fixes
