@@ -17,34 +17,21 @@ import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 
 /**
- * Resolves the class that owns the bottom nav bar. Anchored on the real, stable
- * `@id/online_bottom_layout` resource id used to findViewById() it, followed by the
- * ViewGroup cast and the field store - all real Android API calls, no obfuscated
- * class/method/field names pinned. The obfuscated class itself (`nob` in the sample
- * build) is whatever falls out of this match.
- */
-private object BottomBarHostClassFingerprint : Fingerprint(
-    filters = listOf(
-        literal(0x7f0b1101),
-        opcode(Opcode.CHECK_CAST, location = MatchAfterWithin(2)),
-        fieldAccess(
-            definingClass = "this",
-            type = "Landroid/view/ViewGroup;",
-            opcode = Opcode.IPUT_OBJECT,
-            location = MatchAfterImmediately(),
-        ),
-    ),
-)
-
-/**
  * Resolves the bottom bar's show/hide method (`X0(ZZ)V` in the sample build) purely
- * structurally within the resolved host class: reads a ViewGroup field, branches on
- * the first boolean, and sets that view's visibility to GONE (8) on one branch. Never
- * pins the method name or the field name, both of which are obfuscated and reshuffle
- * every build.
+ * structurally, app-wide: takes exactly two booleans, returns void, reads a ViewGroup
+ * field, branches on the first boolean, and sets that view's visibility to GONE (8) on
+ * one branch. Never pins the method name or the field name, both of which are
+ * obfuscated and reshuffle every build.
+ *
+ * This intentionally does NOT resolve the host class via the `@id/online_bottom_layout`
+ * findViewById() site first (e.g. via a classFingerprint) - that id is also read by
+ * other generated code for the same layout (a ViewBinding bind() method, for one),
+ * and a plain "first class that touches this id" lookup can land on one of those
+ * instead of the actual bottom-bar host, which then has no (Z,Z)V method at all and
+ * fails this fingerprint. The (Z,Z)V signature plus this exact body shape is
+ * discriminating enough on its own without that detour.
  */
 private object ToggleBottomBarFingerprint : Fingerprint(
-    classFingerprint = BottomBarHostClassFingerprint,
     returnType = "V",
     parameters = listOf("Z", "Z"),
     filters = listOf(
