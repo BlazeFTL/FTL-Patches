@@ -1,3 +1,9 @@
+## [1.43.0-dev.47](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.46...v1.43.0-dev.47) (2026-09-04)
+
+### ✨ New Features
+
+* Make Es File Explorer Patch More Robust Against R8 ([3a86771](https://github.com/BlazeFTL/FTL-Patches/commit/3a867717abb712b0c1898a6fe2f3c91c616c37b9))
+
 ## [1.43.0-dev.46](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.45...v1.43.0-dev.46) (2026-09-04)
 
 ### 🐛 Bug Fixes
