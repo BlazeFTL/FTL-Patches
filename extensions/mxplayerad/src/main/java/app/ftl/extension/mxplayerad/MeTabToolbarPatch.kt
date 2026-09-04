@@ -2,6 +2,7 @@ package app.ftl.extension.mxplayerad
 
 import android.app.Activity
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
@@ -19,7 +20,18 @@ object MeTabToolbarPatch {
             val itemId = res.getIdentifier("me_toolbar_action", "id", pkg)
             if (itemId == 0) return
 
-            val actionView = menu.findItem(itemId)?.actionView ?: return
+            val item = menu.findItem(itemId) ?: return
+
+            // This app builds its own action-view menu items by inflating and
+            // attaching the view in code rather than via app:actionLayout, so do
+            // the same here. Guard on an already-set action view so repeated
+            // onPrepareOptionsMenu passes don't re-inflate/re-wire every time.
+            if (item.actionView != null) return
+
+            val layoutId = res.getIdentifier("me_toolbar_action", "layout", pkg)
+            if (layoutId == 0) return
+
+            val actionView = LayoutInflater.from(activity).inflate(layoutId, null) ?: return
 
             val tabId = res.getIdentifier("local_tab", "id", pkg)
             val tabView = if (tabId != 0) activity.findViewById<View>(tabId) else null
@@ -36,6 +48,8 @@ object MeTabToolbarPatch {
             actionView.setOnClickListener {
                 tabView?.performClick()
             }
+
+            item.actionView = actionView
         } catch (t: Throwable) {
             Log.e(TAG, "wireMeTabMenuItem failed", t)
         }
