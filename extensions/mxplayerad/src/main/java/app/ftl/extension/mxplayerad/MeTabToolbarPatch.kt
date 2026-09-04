@@ -4,6 +4,8 @@ import android.app.Activity
 import android.util.Log
 import android.view.Menu
 import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
 
 object MeTabToolbarPatch {
     private const val TAG = "MorpheMeTabToolbar"
@@ -19,12 +21,33 @@ object MeTabToolbarPatch {
 
             val actionView = menu.findItem(itemId)?.actionView ?: return
 
+            val tabId = res.getIdentifier("local_tab", "id", pkg)
+            val tabView = if (tabId != 0) activity.findViewById<View>(tabId) else null
+
+            // Reuse whatever icon the existing Me tab already shows, rather than
+            // shipping a guessed drawable name that may not exist in this build.
+            val iconId = res.getIdentifier("iv_me_toolbar", "id", pkg)
+            val icon = if (iconId != 0) actionView.findViewById<ImageView>(iconId) else null
+            val source = tabView?.let { findFirstImageView(it) }
+            if (icon != null && source?.drawable != null) {
+                icon.setImageDrawable(source.drawable)
+            }
+
             actionView.setOnClickListener {
-                val tabId = res.getIdentifier("local_tab", "id", pkg)
-                if (tabId != 0) activity.findViewById<View>(tabId)?.performClick()
+                tabView?.performClick()
             }
         } catch (t: Throwable) {
             Log.e(TAG, "wireMeTabMenuItem failed", t)
         }
+    }
+
+    private fun findFirstImageView(view: View): ImageView? {
+        if (view is ImageView) return view
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) {
+                findFirstImageView(view.getChildAt(i))?.let { return it }
+            }
+        }
+        return null
     }
 }
