@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-09-03T18:37:41",
-  "description": "## [1.43.0-dev.41](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.40...v1.43.0-dev.41) (2026-09-03)\n\n### ✨ New Features\n\n* Up Skip Splash Expert ([1164699](https://github.com/BlazeFTL/FTL-Patches/commit/1164699060cc6d2ba350a8e3635572b585469e4d))",
-  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.43.0-dev.41/patches-1.43.0-dev.41.mpp",
+  "created_at": "2026-09-04T09:31:47",
+  "description": "## [1.43.0-dev.42](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.41...v1.43.0-dev.42) (2026-09-04)\n\n### ✨ New Features\n\n* Add Mx Player AD Patches ([d936d7a](https://github.com/BlazeFTL/FTL-Patches/commit/d936d7aafd706b392503befb696647ef15d158ae))",
+  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.43.0-dev.42/patches-1.43.0-dev.42.mpp",
   "signature_download_url": "",
-  "version": "1.43.0-dev.41"
+  "version": "1.43.0-dev.42"
 }

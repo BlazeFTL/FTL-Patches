@@ -9,7 +9,19 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.0-dev.41](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.0-dev.41)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;53 patches total
+> **[v1.43.0-dev.42](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.0-dev.42)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;56 patches total
+<details>
+<summary>📦 MX Player&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
+<br>
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Add Network Stream To Me Tab](#add-network-stream-to-me-tab) | Repurposes the Video Playlists tile on the Me tab into a Network Stream tile. |  |
+| [Clean Me Tab](#clean-me-tab) | Removes promo rows and unused tiles from the Me tab: WhatsApp Status Saver, Legal/Help, the local-tiles pager, Local Network, Music Player, Cloud Drive, MX Share, and Private Folder. |  |
+| [Disable Bottom Bar And Add Me Tab To Top](#disable-bottom-bar-and-add-me-tab-to-top) | Hides the bottom navigation bar and adds a Me tab button to the toolbar. |  |
+
+</details>
+
 <details>
 <summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;5 patches</summary>
 <br>

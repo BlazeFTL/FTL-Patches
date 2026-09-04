@@ -1,3 +1,9 @@
+## [1.43.0-dev.42](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.41...v1.43.0-dev.42) (2026-09-04)
+
+### ✨ New Features
+
+* Add Mx Player AD Patches ([d936d7a](https://github.com/BlazeFTL/FTL-Patches/commit/d936d7aafd706b392503befb696647ef15d158ae))
+
 ## [1.43.0-dev.41](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.40...v1.43.0-dev.41) (2026-09-03)
 
 ### ✨ New Features
