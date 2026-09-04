@@ -1,3 +1,9 @@
+## [1.43.0-dev.50](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.49...v1.43.0-dev.50) (2026-09-04)
+
+### 🐛 Bug Fixes
+
+* Mx Ad ([c4bd4f7](https://github.com/BlazeFTL/FTL-Patches/commit/c4bd4f7131c9c8f8a58e2e21b83007e4ca9bf7a0))
+
 ## [1.43.0-dev.49](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.48...v1.43.0-dev.49) (2026-09-04)
 
 ### 🐛 Bug Fixes
