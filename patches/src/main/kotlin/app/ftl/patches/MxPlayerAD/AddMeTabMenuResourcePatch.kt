@@ -40,6 +40,18 @@ internal val addMeTabMenuResourcePatch = resourcePatch(
 
         OPTIONS_MENU_FILES.forEach { path ->
             document(path).use { document ->
+                val root = document.documentElement
+
+                // Make sure the app: namespace is actually declared on the root,
+                // regardless of whether the decompiled file already carried it -
+                // a bare setAttribute("app:...", ...) below has no namespace
+                // binding of its own, so a later strict re-parse (e.g. while
+                // registering the new @+id) will throw "Undefined Prefix: app"
+                // if this declaration isn't textually present.
+                if (root.getAttribute("xmlns:app").isEmpty()) {
+                    root.setAttribute("xmlns:app", "http://schemas.android.com/apk/res-auto")
+                }
+
                 val item = document.createElement("item")
                 item.setAttribute("android:id", "@+id/me_toolbar_action")
                 item.setAttribute("android:visible", "true")
@@ -49,7 +61,7 @@ internal val addMeTabMenuResourcePatch = resourcePatch(
                 item.setAttribute("app:actionLayout", "@layout/me_toolbar_action")
                 item.setAttribute("app:showAsAction", "always")
 
-                document.documentElement.appendChild(item)
+                root.appendChild(item)
             }
         }
     }
