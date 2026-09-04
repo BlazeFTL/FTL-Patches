@@ -1,3 +1,9 @@
+## [1.43.0-dev.43](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.42...v1.43.0-dev.43) (2026-09-04)
+
+### 🐛 Bug Fixes
+
+* MX Ad Disable Bottom ([622959b](https://github.com/BlazeFTL/FTL-Patches/commit/622959b648c5111413533aee01d77e182101ad06))
+
 ## [1.43.0-dev.42](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.41...v1.43.0-dev.42) (2026-09-04)
 
 ### ✨ New Features
