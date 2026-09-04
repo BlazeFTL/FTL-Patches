@@ -8,8 +8,8 @@ import app.morphe.patcher.patch.bytecodePatch
 // in via dependsOn, so the user only sees one "Clean Me Tab" toggle.
 internal val cleanMeTabTilesPatch = bytecodePatch(
     name = null,
-    description = "Removes the Local Network, Music Player, and Cloud Drive tiles, and " +
-        "forces the MX Share and Private Folder tiles off.",
+    description = "Removes the Music Player and Cloud Drive tiles, and forces the " +
+        "MX Share and Private Folder tiles off.",
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
 
@@ -17,7 +17,6 @@ internal val cleanMeTabTilesPatch = bytecodePatch(
         val matches = LocalMeTilesFingerprint.stringMatches
         val mxShareIndex = matches[0].index
         val privateFolderIndex = matches[1].index
-        val localNetworkIndex = matches[3].index
         val musicPlayerIndex = matches[4].index
         val cloudDriveIndex = matches[5].index
         val method = LocalMeTilesFingerprint.method
@@ -25,13 +24,9 @@ internal val cleanMeTabTilesPatch = bytecodePatch(
         // Each tile is: new-instance, icon const, title const, name const-string,
         // invoke-direct <init>, invoke-virtual add - 6 instructions starting 3 before
         // the row's name string. Removed from the bottom up so earlier indices stay valid.
+        // Local Network is left untouched - it's a real, current tile, not clutter.
         method.removeInstructions(cloudDriveIndex - 3, 6)
         method.removeInstructions(musicPlayerIndex - 3, 6)
-
-        // Local Network: only drop the init+add (2 instructions right after its name
-        // string) - the new-instance/consts above are left dead, same as the reference
-        // patch, since register v1 is reassigned before anything reads it.
-        method.removeInstructions(localNetworkIndex + 1, 2)
 
         // MX Share / Private Folder: each guarded by `invoke-static {}, LX;->y()Z` then
         // `move-result v1` 6 and 5 instructions before its name string. Force the
