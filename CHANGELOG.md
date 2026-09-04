@@ -1,3 +1,9 @@
+## [1.43.0-dev.49](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.48...v1.43.0-dev.49) (2026-09-04)
+
+### 🐛 Bug Fixes
+
+* Mx Af ([1359397](https://github.com/BlazeFTL/FTL-Patches/commit/13593973ec9c2add4df055910f09a596b4ba470d))
+
 ## [1.43.0-dev.48](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.47...v1.43.0-dev.48) (2026-09-04)
 
 ### 🐛 Bug Fixes
