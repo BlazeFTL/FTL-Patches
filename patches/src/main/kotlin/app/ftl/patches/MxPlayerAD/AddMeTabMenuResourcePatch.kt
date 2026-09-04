@@ -55,7 +55,6 @@ internal val addMeTabMenuResourcePatch = resourcePatch(
                 item.setAttribute("android:menuCategory", "container")
                 item.setAttribute("android:orderInCategory", "5")
                 item.setAttribute("android:title", "Me")
-                item.setAttribute("app:actionLayout", "@layout/me_toolbar_action")
                 item.setAttribute("app:showAsAction", "always")
 
                 root.appendChild(item)
