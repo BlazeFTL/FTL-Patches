@@ -27,8 +27,8 @@ private const val ME_TOOLBAR_ACTION_LAYOUT = """<?xml version="1.0" encoding="ut
 // and getIdentifier() came back 0 at runtime when we relied on it.
 private const val IDS_VALUES_XML = """<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <item name="me_toolbar_action" type="id" />
-    <item name="iv_me_toolbar" type="id" />
+    <id name="me_toolbar_action" />
+    <id name="iv_me_toolbar" />
 </resources>
 """
 
