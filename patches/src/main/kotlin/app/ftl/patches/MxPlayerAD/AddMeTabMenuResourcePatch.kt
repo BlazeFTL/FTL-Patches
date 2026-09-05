@@ -9,6 +9,7 @@ private val OPTIONS_MENU_FILES = listOf(
 
 private const val ME_TOOLBAR_ACTION_LAYOUT = """<?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="?attr/actionBarItemBackground"
     android:layout_width="48dp"
     android:layout_height="match_parent"
@@ -17,7 +18,9 @@ private const val ME_TOOLBAR_ACTION_LAYOUT = """<?xml version="1.0" encoding="ut
         android:layout_gravity="center"
         android:id="@+id/iv_me_toolbar"
         android:layout_width="24dp"
-        android:layout_height="24dp" />
+        android:layout_height="24dp"
+        android:src="@drawable/mxskin__aurora_tab_me_icon__light"
+        app:mxSkin="src" />
 </FrameLayout>
 """
 
@@ -54,7 +57,8 @@ internal val addMeTabMenuResourcePatch = resourcePatch(
                 item.setAttribute("android:visible", "true")
                 item.setAttribute("android:menuCategory", "container")
                 item.setAttribute("android:orderInCategory", "5")
-                item.setAttribute("android:title", "Me")
+                item.setAttribute("android:title", "@string/tab_me")
+                item.setAttribute("app:actionLayout", "@layout/me_toolbar_action")
                 item.setAttribute("app:showAsAction", "always")
 
                 root.appendChild(item)
