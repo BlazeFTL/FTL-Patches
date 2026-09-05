@@ -17,23 +17,23 @@ import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
 
-// Two things were wrong with the "Me icon does nothing" regression, both now fixed:
-//
-// 1. The navigate call (`R()V` in the sample build) was invoked through reflection
-//    (`javaClass.getMethod(name).invoke(delegate)`) from the mxplayerad extension. Now
-//    resolved structurally (see NavigateToMeFingerprint) and called with a direct
-//    invoke-virtual from a real OnClickListener implementation added onto the delegate
-//    class itself - matches what a manual smali diff against a confirmed-working build
-//    actually does.
-// 2. The action view was found via `Resources.getIdentifier("me_toolbar_action", "id",
-//    pkg)` - a runtime name-based lookup against the entry this same patch's resourcePatch
-//    adds. That's still nothing when clicked even with fix #1 applied: the icon renders
-//    fine (its action-layout reference is compiled directly into the binary menu XML, no
-//    runtime resolution involved), but getIdentifier's *name* lookup for the freshly-added
-//    id isn't resolving, so the listener never actually gets attached. Replaced with a
-//    plain-string android:tag on the action view's root (see ME_TOOLBAR_ACTION_TAG in
-//    AddMeTabMenuResourcePatch.kt) that the extension matches at runtime - no resource ID
-//    resolution of any kind.
+// The "Me icon does nothing" regression went through two rounds of fixes that both
+// checked out byte-for-byte correct on decompile, yet still didn't work at runtime:
+// 1. reflection to call the navigate method - replaced with a direct invoke-virtual
+//    from a real OnClickListener implementation added onto the delegate class, using
+//    NavigateToMeFingerprint to resolve the obfuscated method structurally.
+// 2. a cross-dex call into the mxplayerad extension to find+wire the action view
+//    (first via Resources.getIdentifier, then via an android:tag scan) - still nothing
+//    when clicked, with no way to see why from smali alone.
+// A manual smali diff against a confirmed-working build resolves the action view with
+// a hardcoded numeric id, entirely inline in c0(Menu)Z - no extension call at all - and
+// that works. So that's what this does now: the resource id below is a hardcoded
+// literal, specific to MX Player v3.1.4 / versionCode 24011893, exactly like the
+// working reference. If a future app version stops finding this item (a "no such
+// item"-shaped failure, or the wrong item lights up), re-diff against a confirmed-
+// working build (compare stock vs. that build) to get the new numeric id and swap it
+// in here. The R() resolution above it stays dynamic since that part has held up
+// correctly across two separate rebuilds already.
 
 /**
  * Resolves the bottom bar's show/hide method (`X0(ZZ)V` in the sample build) purely
@@ -117,8 +117,6 @@ val disableBottomBarAndAddMeTabPatch = bytecodePatch(
 
     dependsOn(addMeTabMenuResourcePatch)
 
-    extendWith("extensions/mxplayerad.mpe")
-
     execute {
         // Always take the "hide" branch, regardless of what the caller passes.
         ToggleBottomBarFingerprint.method.addInstruction(0, "const/4 p1, 0x1")
@@ -162,14 +160,20 @@ val disableBottomBarAndAddMeTabPatch = bytecodePatch(
             val method = fingerprint.method
             val insertionIndex = fingerprint.instructionMatches[1].index
 
-            // p0 now implements View.OnClickListener (added above), so it's passed
-            // straight through as the listener. The extension matches the action view
-            // by its android:tag, so nothing else - no Activity, no resource id, no
-            // spare register - needs to be threaded through here at all.
+            // Confirmed by manual smali diff against a working build (MX Player
+            // v3.1.4 / versionCode 24011893): find the item by its build-assigned
+            // numeric id, get its action view, wire it directly - no extension call.
+            // p0 already implements View.OnClickListener (added above), so it's
+            // passed straight through as its own listener.
             method.addInstructions(
                 insertionIndex,
                 """
-                    invoke-static {p1, p0}, Lapp/ftl/extension/mxplayerad/MeTabToolbarPatch;->wireMeTabMenuItem(Landroid/view/Menu;Landroid/view/View${'$'}OnClickListener;)V
+                    const v4, 0x7f0b1d9a
+                    invoke-interface {p1, v4}, Landroid/view/Menu;->findItem(I)Landroid/view/MenuItem;
+                    move-result-object v3
+                    invoke-interface {v3}, Landroid/view/MenuItem;->getActionView()Landroid/view/View;
+                    move-result-object v3
+                    invoke-virtual {v3, p0}, Landroid/view/View;->setOnClickListener(Landroid/view/View${'$'}OnClickListener;)V
                 """.trimIndent(),
             )
         }
