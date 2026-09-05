@@ -7,16 +7,9 @@ private val OPTIONS_MENU_FILES = listOf(
     "res/menu/menu_list_local_only.xml",
 )
 
-// Plain string, not a resource reference - compiled straight into the binary XML as
-// a literal value, so the extension can identify this view at runtime without going
-// through Resources.getIdentifier() at all (which failed to resolve this same item's
-// @+id/me_toolbar_action by name - see MeTabToolbarPatch.kt).
-internal const val ME_TOOLBAR_ACTION_TAG = "ftl_me_toolbar_action"
-
 private const val ME_TOOLBAR_ACTION_LAYOUT = """<?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:tag="$ME_TOOLBAR_ACTION_TAG"
     android:background="?attr/actionBarItemBackground"
     android:layout_width="48dp"
     android:layout_height="match_parent"
