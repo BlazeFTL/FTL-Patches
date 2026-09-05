@@ -9,14 +9,14 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.0-dev.57](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.0-dev.57)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;56 patches total
+> **[v1.43.0-dev.58](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.0-dev.58)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;56 patches total
 <details>
 <summary>📦 MX Player&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
 <br>
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
-| [Add Network Stream To Me Tab](#add-network-stream-to-me-tab) | Repurposes the Video Playlists tile on the Me tab into a Network Stream tile. |  |
+| [Add Network Stream To Me Tab](#add-network-stream-to-me-tab) | WARNING MX PLAYER HAS INTEGRITY CHECK. Mod By Youarefinished Also Has Their Own Integrity Check. So Download From Play Store Use URV Manager With Signing Turned Off, Patch And Then Kill Signature Verification With MT Manager Enhanced (VIP Only) Or Modded Build. |  |
 | [Clean Me Tab](#clean-me-tab) | Removes promo rows and unused tiles from the Me tab: WhatsApp Status Saver, Legal/Help, the local-tiles pager, Local Network, Music Player, Cloud Drive, MX Share, and Private Folder. |  |
 | [Disable Bottom Bar And Add Me Tab To Top](#disable-bottom-bar-and-add-me-tab-to-top) | Hides the bottom navigation bar and adds a Me tab button to the toolbar. |  |
 
