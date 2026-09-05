@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-09-05T11:30:29",
-  "description": "## [1.43.0-dev.54](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.53...v1.43.0-dev.54) (2026-09-05)\n\n### ✨ New Features\n\n* Up ([42db7cc](https://github.com/BlazeFTL/FTL-Patches/commit/42db7ccf8e41581a95950c5cec5d97b42b5bc9fc))",
-  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.43.0-dev.54/patches-1.43.0-dev.54.mpp",
+  "created_at": "2026-09-05T12:05:47",
+  "description": "## [1.43.0-dev.55](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0-dev.54...v1.43.0-dev.55) (2026-09-05)\n\n### 🐛 Bug Fixes\n\n* up ([8b3dea7](https://github.com/BlazeFTL/FTL-Patches/commit/8b3dea7cedb7798f497877066bf5676ac99016a2))",
+  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.43.0-dev.55/patches-1.43.0-dev.55.mpp",
   "signature_download_url": "",
-  "version": "1.43.0-dev.54"
+  "version": "1.43.0-dev.55"
 }
