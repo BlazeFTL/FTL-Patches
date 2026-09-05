@@ -17,23 +17,23 @@ import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
 
-// The "Me icon does nothing" regression went through two rounds of fixes that both
-// checked out byte-for-byte correct on decompile, yet still didn't work at runtime:
-// 1. reflection to call the navigate method - replaced with a direct invoke-virtual
-//    from a real OnClickListener implementation added onto the delegate class, using
-//    NavigateToMeFingerprint to resolve the obfuscated method structurally.
-// 2. a cross-dex call into the mxplayerad extension to find+wire the action view
-//    (first via Resources.getIdentifier, then via an android:tag scan) - still nothing
-//    when clicked, with no way to see why from smali alone.
-// A manual smali diff against a confirmed-working build resolves the action view with
-// a hardcoded numeric id, entirely inline in c0(Menu)Z - no extension call at all - and
-// that works. So that's what this does now: the resource id below is a hardcoded
-// literal, specific to MX Player v3.1.4 / versionCode 24011893, exactly like the
-// working reference. If a future app version stops finding this item (a "no such
-// item"-shaped failure, or the wrong item lights up), re-diff against a confirmed-
-// working build (compare stock vs. that build) to get the new numeric id and swap it
-// in here. The R() resolution above it stays dynamic since that part has held up
-// correctly across two separate rebuilds already.
+// The "Me icon does nothing" regression survived three straight fixes (reflection,
+// then two different action-view lookups) that all checked out correct on decompile,
+// because none of them were the actual bug. c0(Menu)Z has several early-exit branches
+// (feature-flag checks, null checks - see the full body) that all jump straight to
+// :cond_4/:goto_1, which sit immediately before the M0(Menu) call - and every prior
+// version of this patch inserted its wiring code AT that same position
+// (instructionMatches[1].index, i.e. right before M0). Dexlib2 keeps a label bound to
+// the instruction it originally pointed at (M0) rather than moving it onto newly-
+// inserted code placed before that instruction, so anything reaching M0 via one of
+// those jumps landed past the insert and skipped it outright - while looking completely
+// correct in a top-to-bottom decompile, since the label still renders directly above M0
+// either way. Confirmed by the user moving the insert by hand (raw smali text naturally
+// rebinds a label to whatever line comes first when reassembled) and testing it working.
+// Fix: insert right after M0 instead of right before it (instructionMatches[2].index -
+// the already-captured RETURN match, since M0 falls straight through to it with no
+// label in between). Every path through this method reaches that point unconditionally
+// after M0 runs, so nothing can jump around it.
 
 /**
  * Resolves the bottom bar's show/hide method (`X0(ZZ)V` in the sample build) purely
@@ -158,7 +158,12 @@ val disableBottomBarAndAddMeTabPatch = bytecodePatch(
 
         MjMenuPrepareFingerprint.let { fingerprint ->
             val method = fingerprint.method
-            val insertionIndex = fingerprint.instructionMatches[1].index
+
+            // instructionMatches[2] is the RETURN right after M0 (filter[2] above,
+            // MatchAfterImmediately). Inserting here - not at instructionMatches[1],
+            // M0's own position - is the actual fix: nothing branches to this point,
+            // so every path through the method hits it unconditionally after M0 runs.
+            val insertionIndex = fingerprint.instructionMatches[2].index
 
             // Confirmed by manual smali diff against a working build (MX Player
             // v3.1.4 / versionCode 24011893): find the item by its build-assigned
