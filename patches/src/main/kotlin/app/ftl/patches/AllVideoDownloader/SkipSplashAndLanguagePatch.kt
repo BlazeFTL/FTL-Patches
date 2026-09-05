@@ -1,5 +1,6 @@
 package app.ftl.patches.alldownloader
 
+import app.ftl.patches.spoofsignature.spoofSignatureVerificationPatch
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.fieldAccess
@@ -60,6 +61,8 @@ val skipSplashAndLanguagePatch = bytecodePatch(
     default = true,
 ) {
     compatibleWith(COMPATIBILITY_ALL_VIDEO_DOWNLOADER)
+
+    dependsOn(spoofSignatureVerificationPatch)
 
     execute {
         // Resolve the obfuscated guard field's current name before touching onCreate.

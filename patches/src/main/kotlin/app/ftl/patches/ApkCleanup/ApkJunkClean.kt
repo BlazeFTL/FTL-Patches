@@ -1,8 +1,6 @@
 package app.ftl.patches.apkcleanup
 
 import app.morphe.patcher.patch.rawResourcePatch
-import app.morphe.patcher.patch.booleanOption
-import app.morphe.patcher.patch.stringOption
 import java.io.File
 import java.util.logging.Logger
 
@@ -12,7 +10,7 @@ private val PROTECTED_PATTERNS = listOf(
     Regex(""".*META-INF/MANIFEST\.MF$"""),
     Regex(""".*META-INF/services/.*"""),
     Regex(""".*META-INF/.*\.(RSA|SF|DSA|EC)$"""),
-    Regex(""".*classes\d*\.dex$"""),
+    Regex("""^(root/)?classes\d*\.dex$"""),
     Regex(""".*resources\.arsc$"""),
     Regex(""".*AndroidManifest\.xml$"""),
 )
@@ -47,141 +45,97 @@ private val JUNK_PATTERNS = listOf(
     Regex(""".*licenses\.md$"""),
     Regex(""".*debug\.keystore$"""),
     Regex(""".*_trackers\.xml$"""),
+    Regex(""".*version\.properties$"""),
+    Regex(""".*integrity\.properties$"""),
+    Regex(""".*androidannotations-api\.properties$"""),
+    Regex(""".*transport-.*\.properties$"""),
+    Regex(""".*jetty-dir\.css$"""),
+    // ART baseline profiles (also catches APKs that ship them outside assets/dexopt/)
+    Regex(""".*(?:^|/)baseline\.profm?$"""),
 )
 
-private val EXCLUDED_PREFIXES = listOf("assets/", "res/")
+// Directories whose ENTIRE content gets deleted, no matter what's inside.
+private val JUNK_DIRECTORY_PREFIXES = listOf(
+    "assets/dexopt/",
+    "com/clevertap/",
+    "org/jacoco/",
+    "org/joda/",
+    "services/",
+)
+
+// "res/" stays excluded: deleting raw resource files without updating resources.arsc breaks the app.
+private val EXCLUDED_PREFIXES = listOf("res/")
 
 val apkCleanupPatch = rawResourcePatch(
     name = "APK Junk Cleanup",
-    description = "Removes junk and useless files with no runtime purpose inside apk.",
+    description = "Removes junk and useless files with no runtime purpose inside apk. " +
+        "To keep only one CPU architecture, use the patcher's strip-libs option " +
+        "(Morphe Manager) or --striplibs (Morphe Desktop).",
     default = false,
 ) {
-    val splitByArch by booleanOption(
-        key = "splitByArch",
-        default = false,
-        title = "Keep Only One Architecture",
-        description = "Keep native libraries (.so files) for only one CPU architecture. To generate separate APKs for each architecture, run this patch multiple times with a different architecture selected each time.",
-    )
-
-    val targetArch by stringOption(
-        key = "targetArch",
-        default = "arm64-v8a",
-        values = mapOf(
-            "arm64-v8a" to "ARM64 (arm64-v8a)",
-            "armeabi-v7a" to "ARMv7 (armeabi-v7a)",
-            "x86" to "x86",
-            "x86_64" to "x86_64",
-        ),
-        title = "Target architecture",
-        description = "Which architecture to keep when splitting is enabled.",
-    )
-
     execute {
-        val manifestFile = get("AndroidManifest.xml")
-        val apkRoot = manifestFile.parentFile ?: File(".")
-
         var removedFiles = 0
         var freedBytes = 0L
 
         fun isProtected(relativePath: String) = PROTECTED_PATTERNS.any { it.matches(relativePath) }
 
-        fun removeTree(path: String) {
-            val entry = get(path)
-            if (entry.isDirectory) {
-                val children = entry.list()
-                val preview = children?.take(5)?.joinToString()
-                logger.info("APK Cleanup: $path/ -> ${children?.size ?: -1} entries (e.g. $preview)")
-                children?.forEach { child -> removeTree("$path/$child") }
-            } else if (entry.isFile) {
-                if (isProtected(path)) return
-                val size = entry.length()
-                if (entry.delete()) {
-                    removedFiles++
-                    freedBytes += size
-                    logger.fine("Removed: $path (${size}B)")
-                } else {
-                    logger.warning("APK Cleanup: failed to delete $path")
-                }
-            } else {
-                logger.info("APK Cleanup: $path -> neither file nor directory")
-            }
-        }
-
-        apkRoot.walkTopDown()
-            .filter { it.isFile }
-            .toList()
-            .forEach { file ->
-                val relativePath = file.relativeTo(apkRoot).path.replace("\\", "/")
-
-                if (isProtected(relativePath)) return@forEach
-                if (EXCLUDED_PREFIXES.any { relativePath.startsWith(it) }) return@forEach
-
-                if (JUNK_PATTERNS.any { it.matches(relativePath) }) {
+        fun deleteEntry(entryName: String) {
+            if (isProtected(entryName)) return
+            try {
+                val file = get(entryName)
+                if (file.isFile) {
                     val size = file.length()
                     if (file.delete()) {
                         removedFiles++
                         freedBytes += size
-                        logger.fine("Removed file: $relativePath (${size}B)")
+                        logger.fine("Removed file: $entryName (${size}B)")
+                    } else {
+                        logger.warning("APK Cleanup: failed to delete $entryName")
                     }
                 }
+            } catch (e: Exception) {
+                logger.warning("APK Cleanup: failed to access $entryName: ${e.message}")
+            }
+        }
+
+        listApkEntries().forEach { entryName ->
+            // Native libraries are never staged (morphe-patcher#192); deleting a lazily
+            // extracted copy does nothing. ABI stripping is the patcher's job now.
+            if (entryName.startsWith("lib/")) return@forEach
+            if (EXCLUDED_PREFIXES.any { entryName.startsWith(it) }) return@forEach
+
+            val shouldDelete = when {
+                JUNK_PATTERNS.any { it.matches(entryName) } -> true
+                JUNK_DIRECTORY_PREFIXES.any { entryName.startsWith(it) } -> true
+                entryName == "kotlin" || entryName.startsWith("kotlin/") -> true
+                entryName == "assets/audience_network.dex" ||
+                    entryName.startsWith("assets/audience_network/") -> true
+                // Signatures / MANIFEST.MF / services are still guarded by PROTECTED_PATTERNS
+                entryName.startsWith("META-INF/") -> true
+                else -> false
             }
 
-        try {
-            removeTree("kotlin")
-        } catch (e: Exception) {
-            logger.severe("APK Cleanup: failed removing kotlin/ folder: ${e.message}")
+            if (shouldDelete) deleteEntry(entryName)
         }
 
-        try {
-            removeTree("assets/audience_network.dex")
-        } catch (e: Exception) {
-            logger.severe("APK Cleanup: failed removing assets/audience_network.dex: ${e.message}")
+        val shippedAbis = listApkEntries("lib/")
+            .mapNotNull { it.split("/").getOrNull(1) }
+            .distinct()
+
+        if (shippedAbis.isNotEmpty()) {
+            logger.info(
+                "APK Cleanup: detected native ABIs: ${shippedAbis.joinToString()}. " +
+                    "To strip unused architectures, enable strip-libs in Morphe Manager " +
+                    "or use --striplibs in Morphe Desktop."
+            )
         }
 
-        try {
-            val metaInf = get("META-INF")
-            if (metaInf.isDirectory) {
-                metaInf.list()?.forEach { name ->
-                    if (name.lowercase() == "services") return@forEach
-                    try {
-                        removeTree("META-INF/$name")
-                    } catch (e: Exception) {
-                        logger.severe("APK Cleanup: failed removing META-INF/$name/: ${e.message}")
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            logger.severe("APK Cleanup: failed scanning META-INF/: ${e.message}")
-        }
+        val manifestFile = get("AndroidManifest.xml")
+        val apkRoot = manifestFile.parentFile ?: File(".")
 
         apkRoot.walkBottomUp()
             .filter { it.isDirectory && it != apkRoot && it.listFiles()?.isEmpty() == true }
             .forEach { it.delete() }
-
-        if (splitByArch == true) {
-            val archToKeep = targetArch ?: "arm64-v8a"
-            val libDir = get("lib")
-
-            if (libDir.isDirectory) {
-                val archNames = libDir.list()?.toList() ?: emptyList()
-                val hasTarget = archNames.contains(archToKeep)
-
-                if (hasTarget) {
-                    archNames.filter { it != archToKeep }.forEach { arch ->
-                        try {
-                            removeTree("lib/$arch")
-                        } catch (e: Exception) {
-                            logger.severe("APK Cleanup: failed removing lib/$arch/: ${e.message}")
-                        }
-                    }
-                } else {
-                    logger.warning(
-                        "APK Cleanup: selected architecture \"$archToKeep\" not found in lib/. " +
-                        "Available: ${archNames.joinToString()}. Keeping all architectures."
-                    )
-                }
-            }
-        }
 
         logger.info("APK Cleanup: removed $removedFiles files, freed ${freedBytes / 1024}KB")
     }

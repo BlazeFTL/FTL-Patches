@@ -13,7 +13,7 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Fetch upstream versions
         id: upstream
@@ -44,7 +44,7 @@ jobs:
           sed -i -E 's/(id\("app\.morphe\.patches"\) version ")[^"]+(")/\1${{ steps.upstream.outputs.plugin_ver }}\2/' settings.gradle.kts
 
       - name: Create PR
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "chore: sync morphe-patcher ${{ steps.upstream.outputs.patcher_ver }} / plugin ${{ steps.upstream.outputs.plugin_ver }}"
           title: "chore: sync Morphe patcher/plugin version"

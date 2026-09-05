@@ -1,5 +1,6 @@
 package app.ftl.patches.videodownloader
 
+import app.ftl.patches.spoofsignature.spoofSignatureVerificationPatch
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
@@ -32,10 +33,13 @@ internal object IsPurchaseValidFingerprint : Fingerprint(
 
 val unlockProPatch = bytecodePatch(
     name = "Unlock Pro",
-    description = "Manually Kill Signature First Or Use Doom's(rushiranpise) Patch (Spoof App Signature).",
+    description = "Only Use In V2.7.2. Signature verification is spoofed automatically " +
+        "so the purchase check passes without manually applying Spoof app signature.",
     default = true,
 ) {
-    compatibleWith(COMPATIBILITY_VIDEO_DOWNLOADER)
+    compatibleWith(COMPATIBILITY_VIDEO_DOWNLOADER_UNLOCK_PRO)
+
+    dependsOn(spoofSignatureVerificationPatch)
 
     execute {
         IsPurchaseValidFingerprint.let {

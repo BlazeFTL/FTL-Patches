@@ -15,3 +15,11 @@ internal val COMPATIBILITY_VIDEO_DOWNLOADER = Compatibility(
     name = "Video Downloader",
     targets = listOf(AppTarget(version = null))
 )
+
+// Unlock Pro's fingerprint/patch only holds on this exact build - restrict separately
+// from the shared (version-agnostic) compatibility above.
+internal val COMPATIBILITY_VIDEO_DOWNLOADER_UNLOCK_PRO = Compatibility(
+    packageName = "video.downloader.videodownloader",
+    name = "Video Downloader",
+    targets = listOf(AppTarget(version = "2.7.2", versionCode = 172)),
+)

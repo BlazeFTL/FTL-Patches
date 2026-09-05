@@ -54,15 +54,10 @@ val addToastPatch = bytecodePatch(
         val text = (message ?: "Mod By BlazeFTL").smaliEscape()
         val once = showOnce ?: true
 
-        val applicationClass = AppEntryPoint.applicationClassName
-            ?.toClassType()
-            ?.let { mutableClassDefByOrNull(it) }
-
-        if (applicationClass != null && injectApplicationToast(applicationClass, text, once)) {
-            return@execute
-        }
-
-        // No usable Application.onCreate() found, fall back to the launcher activity.
+        // Activity onCreate only — never Application.onCreate(). A toast needs a
+        // foreground screen to mean anything, and Application.onCreate() fires on
+        // every process start (background services, receivers, JobScheduler, etc.),
+        // not just when the user opens the app. See issue #53.
         val launcherClass = AppEntryPoint.launcherActivityClassName
             ?.toClassType()
             ?.let { mutableClassDefByOrNull(it) }
@@ -70,48 +65,6 @@ val addToastPatch = bytecodePatch(
 
         injectActivityToast(launcherClass, text, once)
     }
-}
-
-/**
- * @return true if injection succeeded.
- */
-private fun BytecodePatchContext.injectApplicationToast(
-    applicationClass: MutableClass,
-    message: String,
-    once: Boolean,
-): Boolean {
-    var injected = false
-
-    traverseClassHierarchy(applicationClass) {
-        if (injected) return@traverseClassHierarchy
-
-        // Strictly no-arg: Application.onCreate() never takes a Bundle. A looser filter
-        // here can latch onto an unrelated onCreate(Bundle) higher in the hierarchy
-        // (e.g. from some SDK's lifecycle interface) before reaching the real one.
-        val onCreate = methods.firstOrNull {
-            it.name == "onCreate" && it.parameters.isEmpty() && it.returnType == "V"
-        } ?: return@traverseClassHierarchy
-
-        val register = try {
-            onCreate.getFreeRegisterProvider(1, 1, onCreate.getInstruction(0).registersUsed).getFreeRegister()
-        } catch (e: IllegalArgumentException) {
-            return@traverseClassHierarchy
-        }
-
-        onCreate.addInstructions(
-            0,
-            """
-                const-string v$register, "$message"
-                invoke-static/range { v$register .. v$register }, $EXTENSION_SET_MESSAGE
-                const v$register, ${if (once) "0x1" else "0x0"}
-                invoke-static/range { v$register .. v$register }, $EXTENSION_SET_SHOW_ONCE
-                invoke-static/range { p0 .. p0 }, $EXTENSION_SHOW
-            """,
-        )
-        injected = true
-    }
-
-    return injected
 }
 
 /**

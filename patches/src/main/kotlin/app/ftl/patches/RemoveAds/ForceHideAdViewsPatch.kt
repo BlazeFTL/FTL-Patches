@@ -140,7 +140,7 @@ val forceHideAdViewsPatch = bytecodePatch(
                 val instructions = method.instructionsOrNull?.toList() ?: return@forEach
                 val hits = scanMethod(instructions, adResourceIds, adRelatedFields, recordFieldWrites = false)
                 hits.asReversed().forEach { hit ->
-                    method.addInstruction(hit.index, "const/4 v${hit.valReg}, 0x8")
+                    method.addInstruction(hit.index, "const/16 v${hit.valReg}, 0x8")
                 }
             }
         }
