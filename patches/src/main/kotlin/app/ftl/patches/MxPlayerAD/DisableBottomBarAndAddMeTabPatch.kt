@@ -12,16 +12,23 @@ import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.instructions
 import app.ftl.util.getFreeRegisterProvider
 import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
+import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
+import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
+import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
 
-// Confirmed by manual smali diff against a working build: the toolbar item's onClick
-// must call this zero-arg method on the mj/nob-style delegate to actually navigate to
-// the Me tab. It's obfuscated and WILL change on future rebuilds - if the button stops
-// navigating, re-diff a working build (compare stock vs the last known-good patched
-// smali for this method) and update this one constant.
-private const val NAVIGATE_METHOD_NAME = "R"
+// Root cause of the "Me icon does nothing" regression: the previous version of this patch
+// invoked the navigate method (`R()V` in the sample build) through reflection
+// (`javaClass.getMethod(name).invoke(delegate)`) from the mxplayerad extension. A manual
+// smali diff against a confirmed-working build (compare stock vs. patched) shows the real
+// fix never goes through reflection at all - it directly `invoke-virtual`s the method from
+// a compiled OnClickListener. This version does the same: it resolves the method
+// structurally (see NavigateToMeFingerprint below) and adds a direct invoke-virtual call,
+// by giving the Menu-owning delegate class itself a real OnClickListener implementation.
 
 /**
  * Resolves the bottom bar's show/hide method (`X0(ZZ)V` in the sample build) purely
@@ -81,6 +88,21 @@ private object MjMenuPrepareFingerprint : Fingerprint(
     ),
 )
 
+/**
+ * Resolves the "navigate to Me tab" method (`R()V` in the sample build). Restricted to
+ * the same class as [MjMenuPrepareFingerprint] (via classFingerprint) and matched by
+ * shape alone: a zero-argument void method containing the literal string "me_local".
+ * That string is real app data - a tab-selection key the app itself passes to a Bundle
+ * and to MXLocalMePageActivity - never renamed by R8, unlike the method's own name and
+ * defining class, which are obfuscated and reshuffle every build and so are never pinned.
+ */
+private object NavigateToMeFingerprint : Fingerprint(
+    classFingerprint = MjMenuPrepareFingerprint,
+    returnType = "V",
+    parameters = emptyList(),
+    strings = listOf("me_local"),
+)
+
 val disableBottomBarAndAddMeTabPatch = bytecodePatch(
     name = "Disable Bottom Bar And Add Me Tab To Top",
     description = "Hides the bottom navigation bar and adds a Me tab button to the toolbar.",
@@ -95,6 +117,41 @@ val disableBottomBarAndAddMeTabPatch = bytecodePatch(
     execute {
         // Always take the "hide" branch, regardless of what the caller passes.
         ToggleBottomBarFingerprint.method.addInstruction(0, "const/4 p1, 0x1")
+
+        val mjClass = MjMenuPrepareFingerprint.classDef
+        val navigateMethod = NavigateToMeFingerprint.method
+
+        // Give the delegate class a real OnClickListener implementation instead of
+        // reaching the navigate method through reflection: the interface and the
+        // method below are added directly onto the same class R() already lives on,
+        // so calling it is a plain same-class invoke-virtual against whatever name
+        // this build's fingerprint resolved - never a hardcoded/obfuscated identifier,
+        // and never a runtime reflective lookup that can silently fail.
+        val onClickListenerType = "Landroid/view/View\$OnClickListener;"
+        if (onClickListenerType !in mjClass.interfaces) {
+            mjClass.interfaces.add(onClickListenerType)
+        }
+
+        val onClickMethod = ImmutableMethod(
+            mjClass.type,
+            "onClick",
+            listOf(ImmutableMethodParameter("Landroid/view/View;", null, null)),
+            "V",
+            AccessFlags.PUBLIC.value or AccessFlags.FINAL.value,
+            null,
+            null,
+            MutableMethodImplementation(2),
+        ).toMutable()
+
+        onClickMethod.addInstructions(
+            0,
+            """
+                invoke-virtual {p0}, ${mjClass.type}->${navigateMethod.name}()V
+                return-void
+            """.trimIndent(),
+        )
+
+        mjClass.methods.add(onClickMethod)
 
         MjMenuPrepareFingerprint.let { fingerprint ->
             val method = fingerprint.method
@@ -117,22 +174,18 @@ val disableBottomBarAndAddMeTabPatch = bytecodePatch(
             // v0-v4 are all live/used elsewhere in this method by the time control
             // reaches this point from different branches, so ask for a register that's
             // verified free right here rather than guessing one.
-            val registers = method.getFreeRegisterProvider(insertionIndex, 2, emptyList())
-            val activityRegister = registers.getFreeRegister()
-            val stringRegister = registers.getFreeRegister()
+            val activityRegister = method
+                .getFreeRegisterProvider(insertionIndex, 1, emptyList())
+                .getFreeRegister()
 
-            // Confirmed against a manually verified working build: the toolbar item's
-            // click must invoke this zero-arg method on the delegate (p0) itself - not
-            // forward a click to the (now-hidden) bottom-nav view, which has no
-            // listener of its own. The method name is obfuscated and will need
-            // re-checking against a fresh smali diff on future app versions if this
-            // patch stops navigating.
+            // p0 now implements View.OnClickListener (added above), so it's passed
+            // straight through as the listener - the extension only has to resolve
+            // the id and wire it up, it never has to call back into app code itself.
             method.addInstructions(
                 insertionIndex,
                 """
                     iget-object v$activityRegister, p0, $activityFieldSmali
-                    const-string v$stringRegister, "$NAVIGATE_METHOD_NAME"
-                    invoke-static {p1, v$activityRegister, p0, v$stringRegister}, Lapp/ftl/extension/mxplayerad/MeTabToolbarPatch;->wireMeTabMenuItem(Landroid/view/Menu;Landroid/app/Activity;Ljava/lang/Object;Ljava/lang/String;)V
+                    invoke-static {p1, v$activityRegister, p0}, Lapp/ftl/extension/mxplayerad/MeTabToolbarPatch;->wireMeTabMenuItem(Landroid/view/Menu;Landroid/app/Activity;Landroid/view/View${'$'}OnClickListener;)V
                 """.trimIndent(),
             )
         }
