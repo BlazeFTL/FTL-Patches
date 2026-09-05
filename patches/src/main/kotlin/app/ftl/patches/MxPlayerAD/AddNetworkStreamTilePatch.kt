@@ -5,7 +5,7 @@ import app.morphe.patcher.patch.bytecodePatch
 
 val addNetworkStreamTilePatch = bytecodePatch(
     name = "Add Network Stream To Me Tab",
-    description = "Repurposes the Video Playlists tile on the Me tab into a Network Stream tile.",
+    description = "WARNING MX PLAYER HAS INTEGRITY CHECK. Mod By Youarefinished Also Has Their Own Integrity Check. So Download From Play Store Use URV Manager With Signing Turned Off, Patch And Then Kill Signature Verification With MT Manager Enhanced (VIP Only).",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
