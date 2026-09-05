@@ -16,6 +16,13 @@ import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 
+// Confirmed by manual smali diff against a working build: the toolbar item's onClick
+// must call this zero-arg method on the mj/nob-style delegate to actually navigate to
+// the Me tab. It's obfuscated and WILL change on future rebuilds - if the button stops
+// navigating, re-diff a working build (compare stock vs the last known-good patched
+// smali for this method) and update this one constant.
+private const val NAVIGATE_METHOD_NAME = "R"
+
 /**
  * Resolves the bottom bar's show/hide method (`X0(ZZ)V` in the sample build) purely
  * structurally, app-wide: takes exactly two booleans, returns void, reads a ViewGroup
@@ -110,14 +117,22 @@ val disableBottomBarAndAddMeTabPatch = bytecodePatch(
             // v0-v4 are all live/used elsewhere in this method by the time control
             // reaches this point from different branches, so ask for a register that's
             // verified free right here rather than guessing one.
-            val register = method.getFreeRegisterProvider(insertionIndex, 1, emptyList())
-                .getFreeRegister()
+            val registers = method.getFreeRegisterProvider(insertionIndex, 2, emptyList())
+            val activityRegister = registers.getFreeRegister()
+            val stringRegister = registers.getFreeRegister()
 
+            // Confirmed against a manually verified working build: the toolbar item's
+            // click must invoke this zero-arg method on the delegate (p0) itself - not
+            // forward a click to the (now-hidden) bottom-nav view, which has no
+            // listener of its own. The method name is obfuscated and will need
+            // re-checking against a fresh smali diff on future app versions if this
+            // patch stops navigating.
             method.addInstructions(
                 insertionIndex,
                 """
-                    iget-object v$register, p0, $activityFieldSmali
-                    invoke-static {p1, v$register}, Lapp/ftl/extension/mxplayerad/MeTabToolbarPatch;->wireMeTabMenuItem(Landroid/view/Menu;Landroid/app/Activity;)V
+                    iget-object v$activityRegister, p0, $activityFieldSmali
+                    const-string v$stringRegister, "$NAVIGATE_METHOD_NAME"
+                    invoke-static {p1, v$activityRegister, p0, v$stringRegister}, Lapp/ftl/extension/mxplayerad/MeTabToolbarPatch;->wireMeTabMenuItem(Landroid/view/Menu;Landroid/app/Activity;Ljava/lang/Object;Ljava/lang/String;)V
                 """.trimIndent(),
             )
         }
