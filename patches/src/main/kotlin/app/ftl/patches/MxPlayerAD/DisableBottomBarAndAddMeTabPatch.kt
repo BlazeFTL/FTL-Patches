@@ -9,26 +9,31 @@ import app.morphe.patcher.methodCall
 import app.morphe.patcher.opcode
 import app.morphe.patcher.extensions.InstructionExtensions.addInstruction
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
-import app.morphe.patcher.extensions.InstructionExtensions.instructions
-import app.ftl.util.getFreeRegisterProvider
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
-import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
-import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
 
-// Root cause of the "Me icon does nothing" regression: the previous version of this patch
-// invoked the navigate method (`R()V` in the sample build) through reflection
-// (`javaClass.getMethod(name).invoke(delegate)`) from the mxplayerad extension. A manual
-// smali diff against a confirmed-working build (compare stock vs. patched) shows the real
-// fix never goes through reflection at all - it directly `invoke-virtual`s the method from
-// a compiled OnClickListener. This version does the same: it resolves the method
-// structurally (see NavigateToMeFingerprint below) and adds a direct invoke-virtual call,
-// by giving the Menu-owning delegate class itself a real OnClickListener implementation.
+// Two things were wrong with the "Me icon does nothing" regression, both now fixed:
+//
+// 1. The navigate call (`R()V` in the sample build) was invoked through reflection
+//    (`javaClass.getMethod(name).invoke(delegate)`) from the mxplayerad extension. Now
+//    resolved structurally (see NavigateToMeFingerprint) and called with a direct
+//    invoke-virtual from a real OnClickListener implementation added onto the delegate
+//    class itself - matches what a manual smali diff against a confirmed-working build
+//    actually does.
+// 2. The action view was found via `Resources.getIdentifier("me_toolbar_action", "id",
+//    pkg)` - a runtime name-based lookup against the entry this same patch's resourcePatch
+//    adds. That's still nothing when clicked even with fix #1 applied: the icon renders
+//    fine (its action-layout reference is compiled directly into the binary menu XML, no
+//    runtime resolution involved), but getIdentifier's *name* lookup for the freshly-added
+//    id isn't resolving, so the listener never actually gets attached. Replaced with a
+//    plain-string android:tag on the action view's root (see ME_TOOLBAR_ACTION_TAG in
+//    AddMeTabMenuResourcePatch.kt) that the extension matches at runtime - no resource ID
+//    resolution of any kind.
 
 /**
  * Resolves the bottom bar's show/hide method (`X0(ZZ)V` in the sample build) purely
@@ -155,37 +160,16 @@ val disableBottomBarAndAddMeTabPatch = bytecodePatch(
 
         MjMenuPrepareFingerprint.let { fingerprint ->
             val method = fingerprint.method
-
-            // The field typed ActivityWelcomeMX (real, manifest-declared class, so this
-            // type string is stable) is read earlier in this same method - grab its
-            // current defining class + name instead of pinning either, since both are
-            // obfuscated and reshuffle every build.
-            val activityField = method.instructions
-                .filterIsInstance<ReferenceInstruction>()
-                .first { it.opcode == Opcode.IGET_OBJECT &&
-                    (it.reference as? FieldReference)?.type == ACTIVITY_WELCOME_MX_CLASS
-                }
-                .reference as FieldReference
-            val activityFieldSmali =
-                "${activityField.definingClass}->${activityField.name}:${activityField.type}"
-
             val insertionIndex = fingerprint.instructionMatches[1].index
 
-            // v0-v4 are all live/used elsewhere in this method by the time control
-            // reaches this point from different branches, so ask for a register that's
-            // verified free right here rather than guessing one.
-            val activityRegister = method
-                .getFreeRegisterProvider(insertionIndex, 1, emptyList())
-                .getFreeRegister()
-
             // p0 now implements View.OnClickListener (added above), so it's passed
-            // straight through as the listener - the extension only has to resolve
-            // the id and wire it up, it never has to call back into app code itself.
+            // straight through as the listener. The extension matches the action view
+            // by its android:tag, so nothing else - no Activity, no resource id, no
+            // spare register - needs to be threaded through here at all.
             method.addInstructions(
                 insertionIndex,
                 """
-                    iget-object v$activityRegister, p0, $activityFieldSmali
-                    invoke-static {p1, v$activityRegister, p0}, Lapp/ftl/extension/mxplayerad/MeTabToolbarPatch;->wireMeTabMenuItem(Landroid/view/Menu;Landroid/app/Activity;Landroid/view/View${'$'}OnClickListener;)V
+                    invoke-static {p1, p0}, Lapp/ftl/extension/mxplayerad/MeTabToolbarPatch;->wireMeTabMenuItem(Landroid/view/Menu;Landroid/view/View${'$'}OnClickListener;)V
                 """.trimIndent(),
             )
         }
