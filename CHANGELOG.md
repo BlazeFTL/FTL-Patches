@@ -1,3 +1,10 @@
+## [1.44.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/compare/v1.44.0-dev.1...v1.44.0-dev.2) (2026-09-06)
+
+### ✨ New Features
+
+* Try To Patch Newer Mx Ad Builds ([b954e13](https://github.com/BlazeFTL/FTL-Patches/commit/b954e13c2272d4636ea7139b3483c741235756a8))
+* Up ([c5fca16](https://github.com/BlazeFTL/FTL-Patches/commit/c5fca168469aba4b53a3d654ecf371978d279586))
+
 ## [1.44.0-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0...v1.44.0-dev.1) (2026-09-06)
 
 ### ✨ New Features
