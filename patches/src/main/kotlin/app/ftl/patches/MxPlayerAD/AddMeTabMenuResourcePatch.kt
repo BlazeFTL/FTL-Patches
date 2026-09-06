@@ -38,31 +38,16 @@ internal val addMeTabMenuResourcePatch = resourcePatch(
             writeText(ME_TOOLBAR_ACTION_LAYOUT)
         }
 
-        OPTIONS_MENU_FILES.forEach { path ->
-            document(path).use { document ->
-                val root = document.documentElement
-
-                // Make sure the app: namespace is actually declared on the root,
-                // regardless of whether the decompiled file already carried it -
-                // a bare setAttribute("app:...", ...) below has no namespace
-                // binding of its own, so a later strict re-parse can throw
-                // "Undefined Prefix: app" if this declaration isn't textually
-                // present.
-                if (root.getAttribute("xmlns:app").isEmpty()) {
-                    root.setAttribute("xmlns:app", "http://schemas.android.com/apk/res-auto")
-                }
-
-                val item = document.createElement("item")
-                item.setAttribute("android:id", "@+id/me_toolbar_action")
-                item.setAttribute("android:visible", "true")
-                item.setAttribute("android:menuCategory", "container")
-                item.setAttribute("android:orderInCategory", "5")
-                item.setAttribute("android:title", "@string/tab_me")
-                item.setAttribute("app:actionLayout", "@layout/me_toolbar_action")
-                item.setAttribute("app:showAsAction", "always")
-
-                root.appendChild(item)
-            }
-        }
-    }
-}
+        // Pin these to fixed IDs instead of letting aapt2 auto-assign them.
+        // Auto-assigned IDs for newly added resources are appended after all
+        // native ones by count, so they silently shift whenever the base
+        // APK's own native id/menu resource count changes between versions -
+        // exactly the failure mode this caused (see DisableBottomBarAndAddMeTabPatch).
+        document("res/values/public.xml").use { document ->
+            val root = document.documentElement
+            listOf(
+                "iv_me_toolbar" to IV_ME_TOOLBAR_ID,
+                "me_toolbar_action" to ME_TOOLBAR_ACTION_ID,
+            ).forEach { (name, id) ->
+                val entry = document.createElement("public")
+                entry.setAttribute("type",
