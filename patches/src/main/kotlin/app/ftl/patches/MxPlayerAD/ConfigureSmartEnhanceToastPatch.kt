@@ -1,6 +1,7 @@
 package app.ftl.patches.mxplayerad
 
 import app.morphe.patcher.Fingerprint
+import app.morphe.patcher.InstructionLocation
 import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.InstructionLocation.MatchAfterWithin
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
@@ -9,10 +10,22 @@ import app.morphe.patcher.literal
 import app.morphe.patcher.opcode
 import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.OpcodesFilter
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
+
+// invoke-virtual vs. invoke-virtual/range (and invoke-static vs. .../range) is
+// picked by the compiler purely from register pressure in the method, not by
+// the source code - the same call can compile either way across builds/splits
+// of the same app version. Matching both forms avoids a spurious fingerprint
+// failure over a build detail that carries no semantic difference.
+private class AnyInvokeVirtualFilter(location: InstructionLocation = InstructionLocation.MatchAfterAnywhere()) :
+    OpcodesFilter(listOf(Opcode.INVOKE_VIRTUAL, Opcode.INVOKE_VIRTUAL_RANGE), location)
+
+private class AnyInvokeStaticFilter(location: InstructionLocation = InstructionLocation.MatchAfterAnywhere()) :
+    OpcodesFilter(listOf(Opcode.INVOKE_STATIC, Opcode.INVOKE_STATIC_RANGE), location)
 
 // ActivityScreen is the app's own manifest-declared Activity - real, stable,
 // safe to pin. Everything else here is opcode/literal shape only:
@@ -42,17 +55,17 @@ import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 internal object SmartEnhanceToggleFingerprint : Fingerprint(
     definingClass = "Lcom/mxtech/videoplayer/ActivityScreen;",
     filters = listOf(
-        opcode(Opcode.INVOKE_VIRTUAL_RANGE),
+        AnyInvokeVirtualFilter(),
         opcode(Opcode.SGET_BOOLEAN, location = MatchAfterImmediately()),
         literal(-1, location = MatchAfterImmediately()),
         opcode(Opcode.IF_EQZ, location = MatchAfterImmediately()),
         opcode(Opcode.IGET_OBJECT, location = MatchAfterImmediately()),
-        opcode(Opcode.INVOKE_VIRTUAL, location = MatchAfterImmediately()),
-        opcode(Opcode.INVOKE_VIRTUAL, location = MatchAfterImmediately()), // e8(I)V - insertion point follows
+        AnyInvokeVirtualFilter(location = MatchAfterImmediately()),
+        AnyInvokeVirtualFilter(location = MatchAfterImmediately()), // e8(I)V - insertion point follows
         opcode(Opcode.IGET_OBJECT, location = MatchAfterWithin(250)),     // disable branch starts
-        opcode(Opcode.INVOKE_VIRTUAL, location = MatchAfterImmediately()),
+        AnyInvokeVirtualFilter(location = MatchAfterImmediately()),
         opcode(Opcode.SGET, location = MatchAfterImmediately()),          // smart_enhance_disabled id
-        opcode(Opcode.INVOKE_STATIC, location = MatchAfterImmediately()), // disable toast call
+        AnyInvokeStaticFilter(location = MatchAfterImmediately()),        // disable toast call
         opcode(Opcode.RETURN_VOID, location = MatchAfterImmediately()),
     ),
 )
