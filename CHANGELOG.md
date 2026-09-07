@@ -1,3 +1,9 @@
+## [1.44.0-dev.3](https://github.com/BlazeFTL/FTL-Patches/compare/v1.44.0-dev.2...v1.44.0-dev.3) (2026-09-07)
+
+### ✨ New Features
+
+* Mx Patches ([c1d20bb](https://github.com/BlazeFTL/FTL-Patches/commit/c1d20bb30860f41305330e6e376f8a3dcf437110))
+
 ## [1.44.0-dev.2](https://github.com/BlazeFTL/FTL-Patches/compare/v1.44.0-dev.1...v1.44.0-dev.2) (2026-09-06)
 
 ### ✨ New Features
