@@ -4,6 +4,7 @@ import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.removeInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.string
@@ -58,11 +59,21 @@ val disableSmartEnhancePopupPatch = bytecodePatch(
         val toggleMethod =
             "${toggleMethodRef.definingClass}->${toggleMethodRef.name}($toggleParams)${toggleMethodRef.returnType}"
 
-        method.removeInstructions(caseStart, caseEnd - caseStart + 1)
+        // caseStart is the packed-switch case's own label target (":pswitch_281"
+        // in the original dump). removeInstructions() there would delete the
+        // labeled instruction outright, and dexlib2 re-homes the orphaned label
+        // onto whatever instruction next occupies that slot once every edit below
+        // is done - which, since this case sits right before the method's
+        // packed-switch-data table, ends up being the data table itself. That
+        // makes the switch jump straight into the raw jump table instead of into
+        // this case's code (VerifyError: "encountered data table in instruction
+        // stream"). replaceInstruction() on just this first slot keeps the label
+        // anchored to real code; only the rest of the old body is removed/added.
+        method.replaceInstruction(caseStart, "iget-object p1, p0, $outerField")
+        method.removeInstructions(caseStart + 1, caseEnd - caseStart)
         method.addInstructions(
-            caseStart,
+            caseStart + 1,
             """
-                iget-object p1, p0, $outerField
                 check-cast p1, ${toggleMethodRef.definingClass}
                 invoke-virtual {p1}, $toggleMethod
                 return-void
