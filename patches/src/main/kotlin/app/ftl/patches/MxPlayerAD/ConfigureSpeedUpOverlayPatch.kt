@@ -7,10 +7,12 @@ import app.morphe.patcher.methodCall
 import app.morphe.patcher.opcode
 import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.resourcePatch
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
+import org.w3c.dom.Element
 
 internal object SpeedUpOverlayFingerprint : Fingerprint(
     filters = listOf(
@@ -23,6 +25,26 @@ internal object SpeedUpOverlayFingerprint : Fingerprint(
     ),
 )
 
+internal val fixSpeedUpTipStringPatch = resourcePatch(
+    name = "Fix SpeedUp tip string",
+    description = "Shortens the SpeedUp long-press tip from \"%1\$s Speed Playing\" to \"%1\$s\".",
+) {
+    compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
+
+    execute {
+        document("res/values/strings.xml").use { document ->
+            val strings = document.getElementsByTagName("string")
+            for (i in 0 until strings.length) {
+                val element = strings.item(i) as Element
+                if (element.getAttribute("name") == "speed_ff_2x_tip") {
+                    element.textContent = "%1\$s"
+                    break
+                }
+            }
+        }
+    }
+}
+
 val configureSpeedUpOverlayPatch = bytecodePatch(
     name = "Configure SpeedUp overlay",
     description =
@@ -32,6 +54,7 @@ val configureSpeedUpOverlayPatch = bytecodePatch(
     default = true,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
+    dependsOn(fixSpeedUpTipStringPatch)
 
     val noUi by booleanOption(
         key = "noUi",
