@@ -139,10 +139,13 @@ val cleanSidebarShortcutsPatch = bytecodePatch(
             )
         }
 
-        // Read Add to Playlist's start index before either edit below - a
-        // replaceInstruction() never changes instruction count, so this index
-        // stays valid regardless of which of the two edits happens, or their order.
+        // Read Add to Playlist's start index, and Favourite's ORIGINAL
+        // (unmodified) target, before either edit below runs - if hideFavourite
+        // rewrites Favourite's slot first, re-reading its target afterwards for
+        // hideAddToPlaylist would pick up the just-written goto instead of the
+        // original :cond_12, producing a goto that targets itself.
         val addToPlaylistStart = AddToPlaylistFingerprint.instructionMatches[0].index
+        val originalFavouriteTarget = FavouriteFingerprint.target(1)
 
         if (hideFavourite == true) {
             val m = FavouriteFingerprint
@@ -154,11 +157,9 @@ val cleanSidebarShortcutsPatch = bytecodePatch(
         }
 
         if (hideAddToPlaylist == true) {
-            val m = FavouriteFingerprint
-            val cond12Target = m.target(1)
             AddToPlaylistFingerprint.method.replaceInstruction(
                 addToPlaylistStart,
-                BuilderInstruction20t(Opcode.GOTO_16, cond12Target),
+                BuilderInstruction20t(Opcode.GOTO_16, originalFavouriteTarget),
             )
         }
 
