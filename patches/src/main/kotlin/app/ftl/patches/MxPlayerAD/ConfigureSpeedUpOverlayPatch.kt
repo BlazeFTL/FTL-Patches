@@ -7,15 +7,19 @@ import app.morphe.patcher.methodCall
 import app.morphe.patcher.opcode
 import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.resourcePatch
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
+import org.w3c.dom.Element
 
-// Anchored on the release/instant tail of SpeedViewManager.a(Z)V:
-//   iget-object d, setVisibility, iget-object e, setVisibility,
-//   iput-boolean c, return-void
-// Class/method are fully obfuscated, so we pin on the SDK call + opcode shape.
+// No definingClass/name: the enclosing class and method are both fully
+// obfuscated (3-char class, single-letter method) with nothing real to pin.
+// Anchored purely on the real Android SDK call (setVisibility) and opcode
+// shape of the method's tail:
+//   iget-object, setVisibility(I)V, iget-object, setVisibility(I)V,
+//   iput-boolean, return-void
 internal object SpeedUpOverlayFingerprint : Fingerprint(
     filters = listOf(
         opcode(Opcode.IGET_OBJECT),
@@ -27,15 +31,40 @@ internal object SpeedUpOverlayFingerprint : Fingerprint(
     ),
 )
 
+// Trims the overlay text: "%1$s Speed Playing" -> "%1$s".
+// Kept as a separate resource patch and pulled in via dependOn, so it always
+// runs together with the bytecode patch (resource editing isn't available
+// from a bytecodePatch execute block).
+private val speedUpTipStringPatch = resourcePatch(
+    name = "SpeedUp overlay string",
+    description = "Trims the long-press SpeedUp overlay text from \"%1\$s Speed Playing\" to just \"%1\$s\".",
+) {
+    compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
+
+    execute {
+        document("res/values/strings.xml").use { document ->
+            val strings = document.getElementsByTagName("string")
+            for (i in 0 until strings.length) {
+                val element = strings.item(i) as? Element ?: continue
+                if (element.getAttribute("name") == "speed_ff_2x_tip") {
+                    element.textContent = "%1\$s"
+                }
+            }
+        }
+    }
+}
+
 val configureSpeedUpOverlayPatch = bytecodePatch(
     name = "Configure SpeedUp overlay",
     description =
         "\"2x UI\": keeps the long-press SpeedUp overlay/animation, with the stock " +
-        "leftover-visible-view bug fixed. \"No UI\": the overlay never shows at all - the " +
-        "speed change itself still applies, since that's handled elsewhere.",
+        "leftover-visible-view bug fixed and the overlay text trimmed to just the speed. " +
+        "\"No UI\": the overlay never shows at all - the speed change itself still applies, " +
+        "since that's handled elsewhere.",
     default = true,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
+    dependOn(speedUpTipStringPatch)
 
     val noUi by booleanOption(
         key = "noUi",
@@ -57,10 +86,8 @@ val configureSpeedUpOverlayPatch = bytecodePatch(
 
         if (noUi == true) {
             // No UI: stub out the whole show/hide method. Force BOTH views
-            // (d = small chip, e = big overlay) INVISIBLE and return. Because
-            // this sits at the top and returns, the stock postDelayed(...)
-            // auto-show runnable is never scheduled - so nothing can pop the
-            // overlay back in a couple of seconds.
+            // (d = small chip, e = big overlay) INVISIBLE and return, so the
+            // stock postDelayed(...) auto-show runnable is never scheduled.
             method.addInstructions(
                 0,
                 """
@@ -79,13 +106,9 @@ val configureSpeedUpOverlayPatch = bytecodePatch(
             return@execute
         }
 
-        // 2x UI: fix the leftover-visible bug in the instant branch (cond_91).
-        // Stock cond_91 hides d (v3=4) AND shows e (v2=0) - same net result as
-        // the animated branch - leaving a stale big overlay on screen. Swap it:
-        // show the small chip (d -> 0 VISIBLE), hide the big overlay (e -> 4
-        // INVISIBLE). We set the visibility argument registers directly rather
-        // than rewrite the invoke operands, which is equivalent to swapping
-        // v2<->v3 on those two calls.
+        // 2x UI: swap the instant branch (cond_91) so the small chip (d) stays
+        // VISIBLE and the big overlay (e) is INVISIBLE - fixes the stock
+        // leftover-visible-view bug.
         val dSetVisibility = matches[1] // invoke-virtual {p1, v3}, setVisibility (view d)
         val eSetVisibility = matches[3] // invoke-virtual {p1, v2}, setVisibility (view e)
 
