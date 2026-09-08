@@ -1,3 +1,9 @@
+## [1.44.0-dev.15](https://github.com/BlazeFTL/FTL-Patches/compare/v1.44.0-dev.14...v1.44.0-dev.15) (2026-09-08)
+
+### 🐛 Bug Fixes
+
+* up ([af63003](https://github.com/BlazeFTL/FTL-Patches/commit/af6300380c749be49e0f01f046f4242226632785))
+
 ## [1.44.0-dev.14](https://github.com/BlazeFTL/FTL-Patches/compare/v1.44.0-dev.13...v1.44.0-dev.14) (2026-09-08)
 
 ### 🐛 Bug Fixes
