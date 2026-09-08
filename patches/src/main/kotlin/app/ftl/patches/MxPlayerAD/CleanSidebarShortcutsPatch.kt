@@ -20,8 +20,9 @@ import org.w3c.dom.Element
 
 private const val MENU_MORE_LAYOUT = "res/layout/menu_more.xml"
 
-val hideVideoDisplayPatch = resourcePatch(
-    name = "Hide Video Display",
+// name = null - cleanSidebarShortcutsPatch pulls this in via dependsOn as a configurable option.
+internal val hideVideoDisplayPatch = resourcePatch(
+    name = null,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
 
@@ -106,13 +107,12 @@ internal object PlayingQueueFingerprint : Fingerprint(
 )
 
 val cleanSidebarShortcutsPatch = bytecodePatch(
-    name = "Clean sidebar shortcuts",
-    description = "Independently hide Video Display, Bookmark, Favourite, Add to Playlist, Tutorial, and/or " +
-        "Playing Queue from the player's shortcut sidebar.",
+    name = "Sidebar & Player Defaults",
+    description = "Cleans the player sidebar and More menu; sets default shortcuts and subtitle view.",
     default = true,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
-    dependsOn(hideVideoDisplayPatch)
+    dependsOn(hideVideoDisplayPatch, cleanSidebarMorePatch, defaultShortcutsPatch, openSubtitleSettingsByDefaultPatch)
 
     val hideBookmark by booleanOption(key = "hideBookmark", default = true, title = "Hide Bookmark")
     val hideFavourite by booleanOption(key = "hideFavourite", default = true, title = "Hide Favourite")
