@@ -1,3 +1,10 @@
+## [1.44.0-dev.8](https://github.com/BlazeFTL/FTL-Patches/compare/v1.44.0-dev.7...v1.44.0-dev.8) (2026-09-08)
+
+### ✨ New Features
+
+* Add Mx Patch Clean SideBar Top ([99deb96](https://github.com/BlazeFTL/FTL-Patches/commit/99deb96981d0c87c00955d558253ee1728a65267))
+* up ([7021c1e](https://github.com/BlazeFTL/FTL-Patches/commit/7021c1e123b4b1b7fc8afd6cc9c7be7c525d7703))
+
 ## [1.44.0-dev.7](https://github.com/BlazeFTL/FTL-Patches/compare/v1.44.0-dev.6...v1.44.0-dev.7) (2026-09-08)
 
 ### ✨ New Features
