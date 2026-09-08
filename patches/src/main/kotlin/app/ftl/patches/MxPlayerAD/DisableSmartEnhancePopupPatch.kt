@@ -6,6 +6,7 @@ import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.removeInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.methodCall
+import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.string
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
@@ -31,15 +32,23 @@ internal object SmartEnhanceMenuClickFingerprint : Fingerprint(
     ),
 )
 
-val disableSmartEnhancePopupPatch = bytecodePatch(
-    name = "Disable Smart Enhance popup",
-    description = "Skips the \"Smart Enhance\" intro dialog on the player menu - tapping the " +
-        "menu item toggles Smart Enhance directly instead of showing the popup first.",
-    default = false,
+// name = null - configureSmartEnhanceToastPatch pulls this in via dependsOn as a configurable option.
+internal val disableSmartEnhancePopupPatch = bytecodePatch(
+    name = null,
+    description = "Skips the \"Smart Enhance\" intro dialog on the player menu.",
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
 
+    val skipPopup by booleanOption(
+        key = "skipPopup",
+        default = false,
+        title = "Skip intro popup",
+        description = "Tapping the menu item toggles Smart Enhance directly instead of showing the popup first.",
+    )
+
     execute {
+        if (skipPopup != true) return@execute
+
         val method = SmartEnhanceMenuClickFingerprint.method
         val matches = SmartEnhanceMenuClickFingerprint.instructionMatches
 
