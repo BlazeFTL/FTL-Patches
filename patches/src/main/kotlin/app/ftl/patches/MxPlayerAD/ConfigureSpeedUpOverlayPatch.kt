@@ -55,7 +55,7 @@ val configureSpeedUpOverlayPatch = bytecodePatch(
         val firstField = "${firstFieldRef.definingClass}->${firstFieldRef.name}:${firstFieldRef.type}"
         val secondField = "${secondFieldRef.definingClass}->${secondFieldRef.name}:${secondFieldRef.type}"
 
-        if (noUi) {
+        if (noUi == true) {
             // No UI: stub out the whole show/hide method. Force BOTH views
             // (d = small chip, e = big overlay) INVISIBLE and return. Because
             // this sits at the top and returns, the stock postDelayed(...)
