@@ -9,9 +9,9 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.44.0-dev.12](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.44.0-dev.12)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;63 patches total
+> **[v1.44.0-dev.13](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.44.0-dev.13)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;64 patches total
 <details>
-<summary>📦 MX Player&nbsp;&nbsp;•&nbsp;&nbsp;10 patches</summary>
+<summary>📦 MX Player&nbsp;&nbsp;•&nbsp;&nbsp;11 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -30,6 +30,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Default Shortcuts](#default-shortcuts) | Changes which player long-press/gesture shortcuts are enabled out of the box, for installs that have never customized them (Settings > Player > Customize Shortcuts still works normally and always wins once touched). Default keeps screen rotation, playback speed, background play, loop, customize items, screenshot, mirror mode and vertical flip; drops mute, shuffle, equalizer, sleep timer, repeat A-B, night mode and audio effect. | • Default shortcuts bitmask (hex) |
 | [Disable Bottom Bar And Add Me Tab To Top](#disable-bottom-bar-and-add-me-tab-to-top) | Hides the bottom navigation bar and adds a Me tab button to the toolbar. |  |
 | [Disable Smart Enhance popup](#disable-smart-enhance-popup) | Skips the "Smart Enhance" intro dialog on the player menu - tapping the menu item toggles Smart Enhance directly instead of showing the popup first. |  |
+| [Fix SpeedUp tip string](#fix-speedup-tip-string) | Shortens the SpeedUp long-press tip from "%1$s Speed Playing" to "%1$s". |  |
 | [Open subtitle settings by default](#open-subtitle-settings-by-default) | Expands the Sync/Speed/Panel/Customization settings block in the subtitle menu by default instead of it being collapsed. |  |
 
 </details>
