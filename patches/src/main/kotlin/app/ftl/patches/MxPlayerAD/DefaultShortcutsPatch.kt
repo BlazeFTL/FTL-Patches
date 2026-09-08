@@ -5,6 +5,7 @@ import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.InstructionLocation.MatchAfterWithin
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.opcode
+import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.intOption
 import app.morphe.patcher.string
@@ -39,17 +40,20 @@ private object DefaultShortcutsFingerprint : Fingerprint(
     ),
 )
 
-val defaultShortcutsPatch = bytecodePatch(
-    name = "Default Shortcuts",
-    description = "Changes which player long-press/gesture shortcuts are enabled out of the box, " +
-        "for installs that have never customized them (Settings > Player > Customize Shortcuts still " +
-        "works normally and always wins once touched). Default keeps screen rotation, playback speed, " +
-        "background play, loop, customize items, screenshot, mirror mode and vertical flip; drops mute, " +
-        "shuffle, equalizer, sleep timer, repeat A-B, night mode and audio effect.",
-    default = false,
+// name = null - cleanSidebarShortcutsPatch pulls this in via dependsOn as a configurable option.
+internal val defaultShortcutsPatch = bytecodePatch(
+    name = null,
+    description = "Changes which shortcuts are enabled by default for installs that never " +
+        "customized them.",
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
 
+    val enableDefaultShortcuts by booleanOption(
+        key = "enableDefaultShortcuts",
+        default = false,
+        title = "Change default shortcuts",
+        description = "Settings > Player > Customize Shortcuts still works and always wins once touched.",
+    )
     val defaultShortcutsMask by intOption(
         key = "defaultShortcutsMask",
         default = 0x780F,
@@ -63,6 +67,8 @@ val defaultShortcutsPatch = bytecodePatch(
     )
 
     execute {
+        if (enableDefaultShortcuts != true) return@execute
+
         val method = DefaultShortcutsFingerprint.method
         val matches = DefaultShortcutsFingerprint.instructionMatches
 
