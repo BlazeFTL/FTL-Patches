@@ -66,13 +66,12 @@ internal object SmartEnhanceToggleFingerprint : Fingerprint(
 )
 
 val configureSmartEnhanceToastPatch = bytecodePatch(
-    name = "Configure Smart Enhance toast",
-    description = "Always skips the Smart Enhance popup animation and always drops the " +
-        "disable-side toast. \"Show toast\" on: fires a toast when Smart Enhance is enabled. " +
-        "Off: enabling is silent too.",
+    name = "Configure Smart Enhance",
+    description = "Configures the Smart Enhance intro popup and enable/disable toast.",
     default = true,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
+    dependsOn(disableSmartEnhancePopupPatch)
 
     val showToast by booleanOption(
         key = "showToast",
