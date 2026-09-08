@@ -8,6 +8,7 @@ import app.morphe.patcher.OpcodesFilter
 import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.fieldAccess
 import app.morphe.patcher.opcode
+import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.bytecodePatch
 import com.android.tools.smali.dexlib2.Opcode
@@ -34,6 +35,7 @@ private class AnyInvokeVirtualFilter(location: InstructionLocation = Instruction
 // reuse an existing branch's already-resolved target where possible, so nothing
 // here needs to fabricate label wiring by hand.
 
+context(patchContext: BytecodePatchContext)
 private fun Fingerprint.target(matchIndex: Int) =
     instructionMatches[matchIndex].getInstruction<BuilderOffsetInstruction>().target
 
