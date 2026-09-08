@@ -7,7 +7,6 @@ import app.morphe.patcher.methodCall
 import app.morphe.patcher.opcode
 import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.bytecodePatch
-import app.morphe.patcher.patch.resourcePatch
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
@@ -31,29 +30,6 @@ internal object SpeedUpOverlayFingerprint : Fingerprint(
     ),
 )
 
-// Trims the overlay text: "%1$s Speed Playing" -> "%1$s".
-// Kept as a separate resource patch and pulled in via dependOn, so it always
-// runs together with the bytecode patch (resource editing isn't available
-// from a bytecodePatch execute block).
-private val speedUpTipStringPatch = resourcePatch(
-    name = "SpeedUp overlay string",
-    description = "Trims the long-press SpeedUp overlay text from \"%1\$s Speed Playing\" to just \"%1\$s\".",
-) {
-    compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
-
-    execute {
-        document("res/values/strings.xml").use { document ->
-            val strings = document.getElementsByTagName("string")
-            for (i in 0 until strings.length) {
-                val element = strings.item(i) as? Element ?: continue
-                if (element.getAttribute("name") == "speed_ff_2x_tip") {
-                    element.textContent = "%1\$s"
-                }
-            }
-        }
-    }
-}
-
 val configureSpeedUpOverlayPatch = bytecodePatch(
     name = "Configure SpeedUp overlay",
     description =
@@ -64,7 +40,6 @@ val configureSpeedUpOverlayPatch = bytecodePatch(
     default = true,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
-    dependOn(speedUpTipStringPatch)
 
     val noUi by booleanOption(
         key = "noUi",
@@ -74,6 +49,18 @@ val configureSpeedUpOverlayPatch = bytecodePatch(
     )
 
     execute {
+        // --- Resource half: trim "%1$s Speed Playing" -> "%1$s" ---
+        document("res/values/strings.xml").use { document ->
+            val strings = document.getElementsByTagName("string")
+            for (i in 0 until strings.length) {
+                val element = strings.item(i) as? Element ?: continue
+                if (element.getAttribute("name") == "speed_ff_2x_tip") {
+                    element.textContent = "%1\$s"
+                }
+            }
+        }
+
+        // --- Bytecode half: unchanged, already verified on device ---
         val method = SpeedUpOverlayFingerprint.method
         val matches = SpeedUpOverlayFingerprint.instructionMatches
 
