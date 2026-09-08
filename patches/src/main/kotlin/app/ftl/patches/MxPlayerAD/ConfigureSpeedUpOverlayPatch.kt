@@ -25,8 +25,9 @@ internal object SpeedUpOverlayFingerprint : Fingerprint(
     ),
 )
 
+// name = null - configureSpeedUpOverlayPatch pulls this in via dependsOn as part of the same toggle.
 internal val fixSpeedUpTipStringPatch = resourcePatch(
-    name = "Fix SpeedUp tip string",
+    name = null,
     description = "Shortens the SpeedUp long-press tip from \"%1\$s Speed Playing\" to \"%1\$s\".",
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
