@@ -1,9 +1,23 @@
 package app.ftl.patches.mxplayerad
 
+import app.morphe.patcher.Fingerprint
+import app.morphe.patcher.InstructionLocation
+import app.morphe.patcher.extensions.InstructionExtensions.addInstruction
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
+import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.extensions.InstructionExtensions.removeInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.replaceInstructions
+import app.morphe.patcher.fieldAccess
+import app.morphe.patcher.methodCall
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.resourcePatch
+import app.morphe.patcher.util.smali.ExternalLabel
+import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction21c
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction22c
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 import org.w3c.dom.Element
 
 // name = null keeps this out of the top-level patch list - cleanMeTabPatch pulls it
@@ -15,11 +29,11 @@ internal val cleanMeTabTilesPatch = bytecodePatch(
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
 
-    // Resource edit (XML, not bytecode) - can't run inside this patch's own execute
-    // block, so it rides along as a dependency instead. Enabling this patch now also
-    // strips the same MX Share / Private Folder entry points from the per-file "more"
-    // sheet and the multi-select toolbar.
-    dependsOn(cleanMeTabMenusPatch)
+    // Resource + action-mode edits can't run inside this patch's own execute block
+    // (different context types), so they ride along as dependencies instead. Enabling
+    // this one toggle now also strips Add to Playlist / MX Share / Private Folder from
+    // the per-file "more" sheet, the multi-select overflow menu, and its split toolbar.
+    dependsOn(cleanMeTabMenusPatch, cleanMeTabActionModeMenuPatch)
 
     execute {
         val matches = LocalMeTilesFingerprint.stringMatches
@@ -49,8 +63,7 @@ internal val cleanMeTabTilesPatch = bytecodePatch(
     }
 }
 
-// name = null - only reached via cleanMeTabTilesPatch's dependsOn above, never listed
-// on its own.
+// name = null - only reached via cleanMeTabTilesPatch's dependsOn above.
 internal val cleanMeTabMenusPatch = resourcePatch(
     name = null,
     description = "Removes Add to Playlist, File Transfer, and Private Folder from the " +
@@ -93,4 +106,94 @@ private fun org.w3c.dom.Document.byId(id: String): Element {
         if (element.getAttribute("android:id") == "@id/$id") return element
     }
     throw NoSuchElementException("no element with id @id/$id")
+}
+
+// MediaListFragment.G3(Ljg;Landroid/view/Menu;)Z inflates list_action_mode.xml, then
+// conditionally strips items - same idea as cleanMeTabMenusPatch, but "Add to Playlist"
+// isn't declared in that XML, and the split action-mode toolbar (G0 = its Add to
+// Playlist button) is a *second* view inflated from a different layout, built entirely
+// in this method. Both need a bytecode edit instead of a resource one.
+internal val MediaListActionModeFingerprint = Fingerprint(
+    definingClass = "Lcom/mxtech/videoplayer/list/MediaListFragment;",
+    returnType = "Z",
+    // First param (Ljg;) is obfuscated, second is the real Menu passed to inflate.
+    parameters = listOf("L", "Landroid/view/Menu;"),
+    filters = listOf(
+        // Edit 1 lands right after this - the only menu inflate call in the method.
+        methodCall(smali = "Landroid/view/MenuInflater;->inflate(ILandroid/view/Menu;)V"),
+        // Existing "Add to Playlist" id lookup (still used below to bind the G0
+        // button). Reused for edit 1 instead of hardcoding the obfuscated R$id class
+        // it lives in - that class renames every build, the field name doesn't.
+        fieldAccess(name = "add_2_playlist", type = "I", opcode = Opcode.SGET),
+        // The View field assigned right after is G0 - name looks minifier-generated
+        // (A0..G0 run sequentially in this method), so it's matched by shape (type +
+        // opcode, right after the id lookup above), never by name, and its reference
+        // is reused the same way for edit 2.
+        fieldAccess(
+            type = "Landroid/view/View;",
+            opcode = Opcode.IPUT_OBJECT,
+            location = InstructionLocation.MatchAfterWithin(4),
+        ),
+        // Unique, unobfuscated end-of-method anchor - sits immediately after the block
+        // edit 2 replaces.
+        methodCall(smali = "Landroid/view/ViewGroup;->addView(Landroid/view/View;)V"),
+    ),
+)
+
+internal val cleanMeTabActionModeMenuPatch = bytecodePatch(
+    name = null,
+    description = "Removes Add to Playlist from the multi-select overflow menu and " +
+        "hides its button in the split action-mode toolbar.",
+) {
+    compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
+
+    execute {
+        val matches = MediaListActionModeFingerprint.instructionMatches
+        val method = MediaListActionModeFingerprint.method
+
+        val inflateIndex = matches[0].index
+        val addToPlaylistIdRef = (matches[1].instruction as ReferenceInstruction).reference
+        val g0Instruction = matches[2].instruction
+        val g0FieldRef = (g0Instruction as ReferenceInstruction).reference
+        val thisRegister = (g0Instruction as TwoRegisterInstruction).registerB
+        val addViewIndex = matches[3].index
+        // Parameter registers are always the method's last N slots; this method has
+        // 3 (this, p1, p2), all single-width, so p1 = registerCount - 2. p1 is dead
+        // right after inflate() - the next original instruction overwrites it - and
+        // the reference build confirms it's safe scratch here.
+        val p1Register = method.implementation!!.registerCount - 2
+
+        // Edit 2 first (higher index) so edit 1's insertion below doesn't shift it.
+        // Stock: a flag check that, when false, makes the split toolbar's Add to
+        // Playlist button (G0) visible and clickable. Mod: unconditionally GONE, no
+        // click listener. The :cond_14d label stays bound to the addView call itself,
+        // so capturing that instruction first is all label-safety needs.
+        val cond14d = method.getInstruction(addViewIndex)
+        method.removeInstructions(addViewIndex - 6, 6)
+        method.addInstruction(
+            addViewIndex - 6,
+            BuilderInstruction22c(Opcode.IGET_OBJECT, 0, thisRegister, g0FieldRef),
+        )
+        method.addInstructionsWithLabels(
+            addViewIndex - 5,
+            """
+                if-eqz v0, :cond_14d
+                const/16 v1, 0x8
+                invoke-virtual {v0, v1}, Landroid/view/View;->setVisibility(I)V
+            """.trimIndent(),
+            ExternalLabel("cond_14d", cond14d),
+        )
+
+        // Edit 1: drop "Add to Playlist" from the overflow menu right after inflate,
+        // same as the reference build - reusing the id lookup found above instead of
+        // a fresh hardcoded one.
+        method.addInstruction(
+            inflateIndex + 1,
+            BuilderInstruction21c(Opcode.SGET, p1Register, addToPlaylistIdRef),
+        )
+        method.addInstructions(
+            inflateIndex + 2,
+            "invoke-interface {p2, v$p1Register}, Landroid/view/Menu;->removeItem(I)V",
+        )
+    }
 }
