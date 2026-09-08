@@ -13,6 +13,7 @@ import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.bytecodePatch
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.BuilderOffsetInstruction
+import com.android.tools.smali.dexlib2.builder.Label
 import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction20t
 
 // invoke-virtual vs. invoke-virtual/range is a register-pressure-driven
@@ -36,8 +37,15 @@ private class AnyInvokeVirtualFilter(location: InstructionLocation = Instruction
 // here needs to fabricate label wiring by hand.
 
 context(patchContext: BytecodePatchContext)
-private fun Fingerprint.target(matchIndex: Int) =
-    instructionMatches[matchIndex].getInstruction<BuilderOffsetInstruction>().target
+private fun Fingerprint.target(matchIndex: Int): Label {
+    // instructionMatches[].instruction is captured at match time, before the
+    // method has been converted to its mutable Builder* representation - it's
+    // still the original immutable DexBackedInstruction there. Re-read the
+    // same index through implementation!!.instructions, which forces (and
+    // returns) the mutable Builder* form that actually has a resolvable target.
+    val index = instructionMatches[matchIndex].index
+    return (method.implementation!!.instructions[index] as BuilderOffsetInstruction).target
+}
 
 // Bookmark: `iget-boolean v4, Lbrc;->d:Z` / `if-eqz v4, :cond_e`, right before
 // this item's own construction.
@@ -116,11 +124,11 @@ val cleanSidebarShortcutsPatch = bytecodePatch(
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
 
-    val hideBookmark by booleanOption(key = "hideBookmark", default = false, title = "Hide Bookmark")
-    val hideFavourite by booleanOption(key = "hideFavourite", default = false, title = "Hide Favourite")
-    val hideAddToPlaylist by booleanOption(key = "hideAddToPlaylist", default = false, title = "Hide Add to Playlist")
-    val hideTutorial by booleanOption(key = "hideTutorial", default = false, title = "Hide Tutorial")
-    val hidePlayingQueue by booleanOption(key = "hidePlayingQueue", default = false, title = "Hide Playing Queue")
+    val hideBookmark by booleanOption(key = "hideBookmark", default = true, title = "Hide Bookmark")
+    val hideFavourite by booleanOption(key = "hideFavourite", default = true, title = "Hide Favourite")
+    val hideAddToPlaylist by booleanOption(key = "hideAddToPlaylist", default = true, title = "Hide Add to Playlist")
+    val hideTutorial by booleanOption(key = "hideTutorial", default = true, title = "Hide Tutorial")
+    val hidePlayingQueue by booleanOption(key = "hidePlayingQueue", default = true, title = "Hide Playing Queue")
 
     execute {
         if (hideBookmark == true) {
