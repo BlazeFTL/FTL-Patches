@@ -11,44 +11,55 @@ import app.morphe.patcher.opcode
 import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.resourcePatch
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.BuilderOffsetInstruction
 import com.android.tools.smali.dexlib2.builder.Label
 import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction20t
+import org.w3c.dom.Element
 
-// invoke-virtual vs. invoke-virtual/range is a register-pressure-driven
-// compiler choice, not a semantic one - see the ActivityScreen fingerprint
-// fix earlier in this package for the full explanation. Matching both forms
-// avoids the same class of spurious failure here.
+private const val MENU_MORE_LAYOUT = "res/layout/menu_more.xml"
+
+val hideVideoDisplayPatch = resourcePatch(
+    name = "Hide Video Display",
+) {
+    compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
+
+    val hideVideoDisplay by booleanOption(key = "hideVideoDisplay", default = true, title = "Hide Video Display")
+
+    execute {
+        if (hideVideoDisplay != true) return@execute
+
+        document(MENU_MORE_LAYOUT).use { document ->
+            fun collapse(id: String, vararg marginAttrs: String) {
+                val nodes = document.getElementsByTagName("*")
+                for (i in 0 until nodes.length) {
+                    val node = nodes.item(i) as? Element ?: continue
+                    val nodeId = node.getAttribute("android:id")
+                    if (nodeId != "@id/$id" && nodeId != "@+id/$id") continue
+
+                    node.setAttribute("android:visibility", "gone")
+                    node.setAttribute("android:layout_width", "0dp")
+                    node.setAttribute("android:layout_height", "0dp")
+                    marginAttrs.forEach { node.setAttribute("android:$it", "0dp") }
+                }
+            }
+
+            collapse("tv_video_display", "layout_marginLeft", "layout_marginTop")
+            collapse("sw_video_display", "layout_marginRight")
+        }
+    }
+}
+
 private class AnyInvokeVirtualFilter(location: InstructionLocation = InstructionLocation.MatchAfterAnywhere()) :
     OpcodesFilter(listOf(Opcode.INVOKE_VIRTUAL, Opcode.INVOKE_VIRTUAL_RANGE), location)
 
-// All five items below live in the same class's menu-building method. That
-// class/method pair is fully obfuscated and will rename every build, so
-// nothing about it is pinned - each fingerprint anchors purely on the real,
-// never-obfuscated resource entry names (icon/string R-fields) sitting right
-// next to each item's own construction code.
-//
-// Every edit is a single in-place instruction swap (replaceInstruction), not
-// a remove+add - swapping a branch/label-bearing slot's content in place
-// keeps whatever label targets it, unlike remove+add which re-homes the
-// label elsewhere (the exact bug that broke the ql patch earlier). New gotos
-// reuse an existing branch's already-resolved target where possible, so nothing
-// here needs to fabricate label wiring by hand.
-
 context(patchContext: BytecodePatchContext)
 private fun Fingerprint.target(matchIndex: Int): Label {
-    // instructionMatches[].instruction is captured at match time, before the
-    // method has been converted to its mutable Builder* representation - it's
-    // still the original immutable DexBackedInstruction there. Re-read the
-    // same index through implementation!!.instructions, which forces (and
-    // returns) the mutable Builder* form that actually has a resolvable target.
     val index = instructionMatches[matchIndex].index
     return (method.implementation!!.instructions[index] as BuilderOffsetInstruction).target
 }
 
-// Bookmark: `iget-boolean v4, Lbrc;->d:Z` / `if-eqz v4, :cond_e`, right before
-// this item's own construction.
 internal object BookmarkFingerprint : Fingerprint(
     filters = listOf(
         opcode(Opcode.IGET_BOOLEAN),
@@ -58,13 +69,6 @@ internal object BookmarkFingerprint : Fingerprint(
     ),
 )
 
-// Favourite: `iget-boolean v4, Lbrc;->g:Z` / `if-eqz v4, :cond_12`. In stock,
-// :cond_12's target also happens to sit right after Add to Playlist's own
-// block (the two are unconditionally back to back), which is why hiding
-// Favourite via its own unmodified target would take Add to Playlist with
-// it. To keep them independent, Favourite's own edit instead points at
-// wherever Add to Playlist's block starts (see below), narrowing its skip to
-// just itself.
 internal object FavouriteFingerprint : Fingerprint(
     filters = listOf(
         opcode(Opcode.IGET_BOOLEAN),
@@ -74,10 +78,6 @@ internal object FavouriteFingerprint : Fingerprint(
     ),
 )
 
-// Add to Playlist: unconditional in stock - no existing gate to widen, so
-// hiding it means inserting a brand new jump at its own construction's start.
-// That start is plain fallthrough (nothing branches directly into it), so
-// swapping its first instruction carries none of the label risk above.
 internal object AddToPlaylistFingerprint : Fingerprint(
     filters = listOf(
         opcode(Opcode.NEW_INSTANCE),
@@ -85,10 +85,6 @@ internal object AddToPlaylistFingerprint : Fingerprint(
     ),
 )
 
-// Tutorial: `sget-boolean v4, Ljb5;->g:Z` / `if-nez v4, :cond_15`. The same
-// Ljb5;->g:Z flag also gates two unrelated items (Chapter, Cut) elsewhere in
-// this method, so the icon-name anchor is what keeps this fingerprint on
-// only the Tutorial occurrence.
 internal object TutorialFingerprint : Fingerprint(
     filters = listOf(
         opcode(Opcode.SGET_BOOLEAN),
@@ -98,13 +94,6 @@ internal object TutorialFingerprint : Fingerprint(
     ),
 )
 
-// Playing Queue: unconditional, driven by a reorder-position value rather
-// than a boolean flag, so like Add to Playlist there's no existing gate to
-// widen. Its block-start instruction IS a real branch target though (reached
-// both by fallthrough and by an explicit goto from the previous item), so it
-// needs the in-place swap treatment. The new goto reuses the target of this
-// item's own second-placement "goto" a few instructions later, which already
-// points exactly at the next item's (Aspect Ratio's) start.
 internal object PlayingQueueFingerprint : Fingerprint(
     filters = listOf(
         opcode(Opcode.NEW_INSTANCE),
@@ -118,11 +107,12 @@ internal object PlayingQueueFingerprint : Fingerprint(
 
 val cleanSidebarShortcutsPatch = bytecodePatch(
     name = "Clean sidebar shortcuts",
-    description = "Independently hide Bookmark, Favourite, Add to Playlist, Tutorial, and/or " +
+    description = "Independently hide Video Display, Bookmark, Favourite, Add to Playlist, Tutorial, and/or " +
         "Playing Queue from the player's shortcut sidebar.",
     default = true,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
+    dependsOn(hideVideoDisplayPatch)
 
     val hideBookmark by booleanOption(key = "hideBookmark", default = true, title = "Hide Bookmark")
     val hideFavourite by booleanOption(key = "hideFavourite", default = true, title = "Hide Favourite")
@@ -139,11 +129,6 @@ val cleanSidebarShortcutsPatch = bytecodePatch(
             )
         }
 
-        // Read Add to Playlist's start index, and Favourite's ORIGINAL
-        // (unmodified) target, before either edit below runs - if hideFavourite
-        // rewrites Favourite's slot first, re-reading its target afterwards for
-        // hideAddToPlaylist would pick up the just-written goto instead of the
-        // original :cond_12, producing a goto that targets itself.
         val addToPlaylistStart = AddToPlaylistFingerprint.instructionMatches[0].index
         val originalFavouriteTarget = FavouriteFingerprint.target(1)
 
