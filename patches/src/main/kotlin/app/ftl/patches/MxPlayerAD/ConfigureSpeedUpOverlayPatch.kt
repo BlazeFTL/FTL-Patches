@@ -12,18 +12,10 @@ import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 
-// No definingClass/name: the enclosing class and method are both fully
-// obfuscated (3-char class, single-letter method) with nothing real to pin.
-// Anchored purely on the real Android SDK call (setVisibility) and opcode
-// shape of the method's tail:
-//   iget-object, setVisibility(I)V, iget-object, setVisibility(I)V,
-//   iput-boolean, return-void
-// - the two consecutive iget-object+setVisibility pairs immediately
-// followed by iput-boolean+return-void (the method's end) is a distinctive
-// enough shape to be unique in the app. This is the release/deactivate
-// branch of the long-press SpeedUp overlay; the entrance/activate branch
-// (the scale-up animation) comes earlier in the same method and isn't
-// otherwise touched by the "2x UI" option - only "no UI" bypasses it.
+// Anchored on the release/instant tail of SpeedViewManager.a(Z)V:
+//   iget-object d, setVisibility, iget-object e, setVisibility,
+//   iput-boolean c, return-void
+// Class/method are fully obfuscated, so we pin on the SDK call + opcode shape.
 internal object SpeedUpOverlayFingerprint : Fingerprint(
     filters = listOf(
         opcode(Opcode.IGET_OBJECT),
@@ -37,7 +29,8 @@ internal object SpeedUpOverlayFingerprint : Fingerprint(
 
 val configureSpeedUpOverlayPatch = bytecodePatch(
     name = "Configure SpeedUp overlay",
-    description = "\"2x UI\": keeps the long-press SpeedUp overlay/animation, with the stock " +
+    description =
+        "\"2x UI\": keeps the long-press SpeedUp overlay/animation, with the stock " +
         "leftover-visible-view bug fixed. \"No UI\": the overlay never shows at all - the " +
         "speed change itself still applies, since that's handled elsewhere.",
     default = true,
@@ -55,47 +48,52 @@ val configureSpeedUpOverlayPatch = bytecodePatch(
         val method = SpeedUpOverlayFingerprint.method
         val matches = SpeedUpOverlayFingerprint.instructionMatches
 
-        // Both view fields, read off the same fingerprint match used below for
-        // the 2x-UI branch - not hardcoded, since "d"/"e" are obfuscated and
-        // reshuffle every build same as everything else on this class.
+        // Both view fields, read off the fingerprint match (d/e are obfuscated
+        // and reshuffle every build, so never hardcode them).
         val firstFieldRef = matches[0].getInstruction<ReferenceInstruction>().reference as FieldReference
         val secondFieldRef = matches[2].getInstruction<ReferenceInstruction>().reference as FieldReference
         val firstField = "${firstFieldRef.definingClass}->${firstFieldRef.name}:${firstFieldRef.type}"
         val secondField = "${secondFieldRef.definingClass}->${secondFieldRef.name}:${secondFieldRef.type}"
 
-        if (noUi == true) {
-            // A bare return-void here was wrong: it only skips whatever THIS
-            // specific call would have done, it doesn't guarantee the views
-            // are actually hidden - something else can still leave/set them
-            // visible, which is why the overlay was showing up ~2-3s late
-            // instead of never. Force both views INVISIBLE unconditionally
-            // (regardless of p1/caller), null-checked since either can be
-            // null depending on which layout variant got inflated.
+        if (noUi) {
+            // No UI: stub out the whole show/hide method. Force BOTH views
+            // (d = small chip, e = big overlay) INVISIBLE and return. Because
+            // this sits at the top and returns, the stock postDelayed(...)
+            // auto-show runnable is never scheduled - so nothing can pop the
+            // overlay back in a couple of seconds.
             method.addInstructions(
                 0,
                 """
-                    const/4 v0, 0x4
-                    iget-object v1, p0, $firstField
-                    if-eqz v1, :skip_first
-                    invoke-virtual {v1, v0}, Landroid/view/View;->setVisibility(I)V
-                    :skip_first
-                    iget-object v1, p0, $secondField
-                    if-eqz v1, :skip_second
-                    invoke-virtual {v1, v0}, Landroid/view/View;->setVisibility(I)V
-                    :skip_second
-                    return-void
+                const/4 v0, 0x4
+                iget-object v1, p0, $firstField
+                if-eqz v1, :cond_a
+                invoke-virtual {v1, v0}, Landroid/view/View;->setVisibility(I)V
+                :cond_a
+                iget-object v1, p0, $secondField
+                if-eqz v1, :cond_14
+                invoke-virtual {v1, v0}, Landroid/view/View;->setVisibility(I)V
+                :cond_14
+                return-void
                 """.trimIndent(),
             )
             return@execute
         }
 
-        // Second setVisibility call in the release branch - force its
-        // argument register to View.INVISIBLE (4) right before the call,
-        // whatever it held before (stock leaves it View.VISIBLE, a bug).
-        // Verified correct against a real build compare - unchanged.
-        val secondCall = matches[3]
-        val paramReg = secondCall.getInstruction<FiveRegisterInstruction>().registerD
+        // 2x UI: fix the leftover-visible bug in the instant branch (cond_91).
+        // Stock cond_91 hides d (v3=4) AND shows e (v2=0) - same net result as
+        // the animated branch - leaving a stale big overlay on screen. Swap it:
+        // show the small chip (d -> 0 VISIBLE), hide the big overlay (e -> 4
+        // INVISIBLE). We set the visibility argument registers directly rather
+        // than rewrite the invoke operands, which is equivalent to swapping
+        // v2<->v3 on those two calls.
+        val dSetVisibility = matches[1] // invoke-virtual {p1, v3}, setVisibility (view d)
+        val eSetVisibility = matches[3] // invoke-virtual {p1, v2}, setVisibility (view e)
 
-        method.addInstructions(secondCall.index, "const/4 v$paramReg, 0x4")
+        val dVisReg = dSetVisibility.getInstruction<FiveRegisterInstruction>().registerD
+        val eVisReg = eSetVisibility.getInstruction<FiveRegisterInstruction>().registerD
+
+        // Insert the higher index first so the lower index stays valid.
+        method.addInstructions(eSetVisibility.index, "const/4 v$eVisReg, 0x4") // e -> INVISIBLE
+        method.addInstructions(dSetVisibility.index, "const/4 v$dVisReg, 0x0") // d -> VISIBLE
     }
 }
