@@ -9,6 +9,8 @@ import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.bytecodePatch
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 
 // No definingClass/name: the enclosing class and method are both fully
 // obfuscated (3-char class, single-letter method) with nothing real to pin.
@@ -51,18 +53,47 @@ val configureSpeedUpOverlayPatch = bytecodePatch(
 
     execute {
         val method = SpeedUpOverlayFingerprint.method
+        val matches = SpeedUpOverlayFingerprint.instructionMatches
+
+        // Both view fields, read off the same fingerprint match used below for
+        // the 2x-UI branch - not hardcoded, since "d"/"e" are obfuscated and
+        // reshuffle every build same as everything else on this class.
+        val firstFieldRef = matches[0].getInstruction<ReferenceInstruction>().reference as FieldReference
+        val secondFieldRef = matches[2].getInstruction<ReferenceInstruction>().reference as FieldReference
+        val firstField = "${firstFieldRef.definingClass}->${firstFieldRef.name}:${firstFieldRef.type}"
+        val secondField = "${secondFieldRef.definingClass}->${secondFieldRef.name}:${secondFieldRef.type}"
 
         if (noUi == true) {
-            // Skip the whole method: no measuring, no scale animation, no
-            // visibility changes, no auto-hide Handler scheduling.
-            method.addInstructions(0, "return-void")
+            // A bare return-void here was wrong: it only skips whatever THIS
+            // specific call would have done, it doesn't guarantee the views
+            // are actually hidden - something else can still leave/set them
+            // visible, which is why the overlay was showing up ~2-3s late
+            // instead of never. Force both views INVISIBLE unconditionally
+            // (regardless of p1/caller), null-checked since either can be
+            // null depending on which layout variant got inflated.
+            method.addInstructions(
+                0,
+                """
+                    const/4 v0, 0x4
+                    iget-object v1, p0, $firstField
+                    if-eqz v1, :skip_first
+                    invoke-virtual {v1, v0}, Landroid/view/View;->setVisibility(I)V
+                    :skip_first
+                    iget-object v1, p0, $secondField
+                    if-eqz v1, :skip_second
+                    invoke-virtual {v1, v0}, Landroid/view/View;->setVisibility(I)V
+                    :skip_second
+                    return-void
+                """.trimIndent(),
+            )
             return@execute
         }
 
         // Second setVisibility call in the release branch - force its
         // argument register to View.INVISIBLE (4) right before the call,
         // whatever it held before (stock leaves it View.VISIBLE, a bug).
-        val secondCall = SpeedUpOverlayFingerprint.instructionMatches[3]
+        // Verified correct against a real build compare - unchanged.
+        val secondCall = matches[3]
         val paramReg = secondCall.getInstruction<FiveRegisterInstruction>().registerD
 
         method.addInstructions(secondCall.index, "const/4 v$paramReg, 0x4")
