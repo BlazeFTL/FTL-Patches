@@ -59,18 +59,21 @@ val disableSmartEnhancePopupPatch = bytecodePatch(
         val toggleMethod =
             "${toggleMethodRef.definingClass}->${toggleMethodRef.name}($toggleParams)${toggleMethodRef.returnType}"
 
-        // caseStart is the packed-switch case's own label target (":pswitch_281"
-        // in the original dump). removeInstructions() there would delete the
-        // labeled instruction outright, and dexlib2 re-homes the orphaned label
-        // onto whatever instruction next occupies that slot once every edit below
-        // is done - which, since this case sits right before the method's
-        // packed-switch-data table, ends up being the data table itself. That
-        // makes the switch jump straight into the raw jump table instead of into
-        // this case's code (VerifyError: "encountered data table in instruction
-        // stream"). replaceInstruction() on just this first slot keeps the label
-        // anchored to real code; only the rest of the old body is removed/added.
-        method.replaceInstruction(caseStart, "iget-object p1, p0, $outerField")
+        // caseStart is the packed-switch's case-0 ENTRY POINT (the instruction the
+        // switch table's :pswitch label physically points at). Removing it outright
+        // (as a plain removeInstructions over the whole range used to do) strands
+        // that label: dexlib2 walks it forward past every instruction removed at
+        // that same index, so it ends up bound to whatever survives right after the
+        // deleted range - here, the packed-switch-payload block itself, right past
+        // this method's return-void. Tapping this menu item then jumps into that
+        // data table instead of real code: instant class-verification failure for
+        // the WHOLE onClick class (it's a shared multi-purpose listener used all
+        // over the app, so the crash surfaces anywhere else that reuses it, not
+        // just here). Fix: replaceInstruction() the case's first instruction
+        // in-place so the label rides along with it, then remove/insert everything
+        // else around that untouched first slot.
         method.removeInstructions(caseStart + 1, caseEnd - caseStart)
+        method.replaceInstruction(caseStart, "iget-object p1, p0, $outerField")
         method.addInstructions(
             caseStart + 1,
             """
