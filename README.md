@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.44.0-dev.15](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.44.0-dev.15)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;65 patches total
+> **[v1.44.0-dev.16](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.44.0-dev.16)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;65 patches total
 <details>
 <summary>📦 MX Player&nbsp;&nbsp;•&nbsp;&nbsp;12 patches</summary>
 <br>
