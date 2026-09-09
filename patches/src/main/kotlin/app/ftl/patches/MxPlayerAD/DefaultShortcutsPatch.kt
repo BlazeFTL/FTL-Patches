@@ -40,7 +40,26 @@ private object DefaultShortcutsFingerprint : Fingerprint(
     ),
 )
 
-// name = null - cleanSidebarShortcutsPatch pulls this in via dependsOn as a configurable option.
+// Unregistered here - cleanSidebarShortcutsPatch registers both, so they're configured from there.
+internal val enableDefaultShortcutsOption = booleanOption(
+    key = "enableDefaultShortcuts",
+    default = false,
+    title = "Change default shortcuts",
+    description = "Settings > Player > Customize Shortcuts still works and always wins once touched.",
+)
+internal val defaultShortcutsMaskOption = intOption(
+    key = "defaultShortcutsMask",
+    default = 0x780F,
+    title = "Default shortcuts bitmask (hex)",
+    description = "Bit sum of enabled shortcuts, decimal or 0x-prefixed hex. Bits: 0x1 rotation, " +
+        "0x2 speed, 0x4 background play, 0x8 loop, 0x10 mute, 0x20 shuffle, 0x40 equalizer, " +
+        "0x100 sleep timer, 0x200 repeat A-B, 0x400 night mode, 0x800 customise items, " +
+        "0x1000 screenshot, 0x2000 mirror mode, 0x4000 vertical flip, 0x8000 audio effect. " +
+        "Default 0x780F.",
+    validator = { it != null && it in 0..0xFFFF },
+)
+
+// name = null - only reached via cleanSidebarShortcutsPatch's dependsOn below.
 internal val defaultShortcutsPatch = bytecodePatch(
     name = null,
     description = "Changes which shortcuts are enabled by default for installs that never " +
@@ -48,26 +67,8 @@ internal val defaultShortcutsPatch = bytecodePatch(
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
 
-    val enableDefaultShortcuts by booleanOption(
-        key = "enableDefaultShortcuts",
-        default = false,
-        title = "Change default shortcuts",
-        description = "Settings > Player > Customize Shortcuts still works and always wins once touched.",
-    )
-    val defaultShortcutsMask by intOption(
-        key = "defaultShortcutsMask",
-        default = 0x780F,
-        title = "Default shortcuts bitmask (hex)",
-        description = "Bit sum of enabled shortcuts, decimal or 0x-prefixed hex. Bits: 0x1 rotation, " +
-            "0x2 speed, 0x4 background play, 0x8 loop, 0x10 mute, 0x20 shuffle, 0x40 equalizer, " +
-            "0x100 sleep timer, 0x200 repeat A-B, 0x400 night mode, 0x800 customise items, " +
-            "0x1000 screenshot, 0x2000 mirror mode, 0x4000 vertical flip, 0x8000 audio effect. " +
-            "Default 0x780F.",
-        validator = { it != null && it in 0..0xFFFF },
-    )
-
     execute {
-        if (enableDefaultShortcuts != true) return@execute
+        if (enableDefaultShortcutsOption.value != true) return@execute
 
         val method = DefaultShortcutsFingerprint.method
         val matches = DefaultShortcutsFingerprint.instructionMatches
@@ -81,7 +82,7 @@ internal val defaultShortcutsPatch = bytecodePatch(
         // correctly after the insertion below shifts every later index forward.
         val ifEqzInstruction = method.implementation!!.instructions[ifEqzIndex]
 
-        val maskHex = "0x%x".format(defaultShortcutsMask ?: 0x780F)
+        val maskHex = "0x%x".format(defaultShortcutsMaskOption.value ?: 0x780F)
 
         // Inserted immediately before the original if-eqz, which is left completely untouched:
         // when the key exists (v_check != 0, the "customized before" case) this new check falls
