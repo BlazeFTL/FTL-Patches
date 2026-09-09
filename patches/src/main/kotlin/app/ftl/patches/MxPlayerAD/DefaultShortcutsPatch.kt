@@ -43,7 +43,7 @@ private object DefaultShortcutsFingerprint : Fingerprint(
 // Unregistered here - cleanSidebarShortcutsPatch registers both, so they're configured from there.
 internal val enableDefaultShortcutsOption = booleanOption(
     key = "enableDefaultShortcuts",
-    default = false,
+    default = true,
     title = "Change default shortcuts",
     description = "Settings > Player > Customize Shortcuts still works and always wins once touched.",
 )
