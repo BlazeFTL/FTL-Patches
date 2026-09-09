@@ -32,22 +32,23 @@ internal object SmartEnhanceMenuClickFingerprint : Fingerprint(
     ),
 )
 
-// name = null - configureSmartEnhanceToastPatch pulls this in via dependsOn as a configurable option.
+// Unregistered here - configureSmartEnhanceToastPatch registers it, so it's configured from there.
+internal val skipPopupOption = booleanOption(
+    key = "skipPopup",
+    default = false,
+    title = "Skip intro popup",
+    description = "Tapping the menu item toggles Smart Enhance directly instead of showing the popup first.",
+)
+
+// name = null - only reached via configureSmartEnhanceToastPatch's dependsOn below.
 internal val disableSmartEnhancePopupPatch = bytecodePatch(
     name = null,
     description = "Skips the \"Smart Enhance\" intro dialog on the player menu.",
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
 
-    val skipPopup by booleanOption(
-        key = "skipPopup",
-        default = false,
-        title = "Skip intro popup",
-        description = "Tapping the menu item toggles Smart Enhance directly instead of showing the popup first.",
-    )
-
     execute {
-        if (skipPopup != true) return@execute
+        if (skipPopupOption.value != true) return@execute
 
         val method = SmartEnhanceMenuClickFingerprint.method
         val matches = SmartEnhanceMenuClickFingerprint.instructionMatches
