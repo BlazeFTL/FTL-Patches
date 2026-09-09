@@ -20,16 +20,17 @@ import org.w3c.dom.Element
 
 private const val MENU_MORE_LAYOUT = "res/layout/menu_more.xml"
 
-// name = null - cleanSidebarShortcutsPatch pulls this in via dependsOn as a configurable option.
+// Unregistered here - cleanSidebarShortcutsPatch registers it, so it's configured from there.
+internal val hideVideoDisplayOption = booleanOption(key = "hideVideoDisplay", default = true, title = "Hide Video Display")
+
+// name = null - only reached via cleanSidebarShortcutsPatch's dependsOn below.
 internal val hideVideoDisplayPatch = resourcePatch(
     name = null,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
 
-    val hideVideoDisplay by booleanOption(key = "hideVideoDisplay", default = true, title = "Hide Video Display")
-
     execute {
-        if (hideVideoDisplay != true) return@execute
+        if (hideVideoDisplayOption.value != true) return@execute
 
         document(MENU_MORE_LAYOUT).use { document ->
             fun collapse(id: String, vararg marginAttrs: String) {
@@ -113,6 +114,12 @@ val cleanSidebarShortcutsPatch = bytecodePatch(
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
     dependsOn(hideVideoDisplayPatch, cleanSidebarMorePatch, defaultShortcutsPatch, openSubtitleSettingsByDefaultPatch)
+
+    hideVideoDisplayOption()
+    hideMoreMenuHelpOption()
+    enableDefaultShortcutsOption()
+    defaultShortcutsMaskOption()
+    openSubtitleSettingsOption()
 
     val hideBookmark by booleanOption(key = "hideBookmark", default = true, title = "Hide Bookmark")
     val hideFavourite by booleanOption(key = "hideFavourite", default = true, title = "Hide Favourite")
