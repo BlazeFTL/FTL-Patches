@@ -1,8 +1,8 @@
 package app.ftl.patches.apkcleanup
 
+import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.resourcePatch
 import app.morphe.patcher.patch.stringOption
-import app.morphe.patcher.patch.stringsOption
 import java.io.File
 import java.util.logging.Logger
 
@@ -195,26 +195,41 @@ val drawableCleanPatch = resourcePatch(
             "this and always keep their highest-quality copy.",
     )
 
-    val stripUiModes by stringsOption(
-        key = "stripUiModes",
-        default = emptyList(),
-        values = mapOf(
-            "None (keep everything)" to emptyList(),
-            "Smartwatch only" to listOf("watch"),
-            "Android TV only" to listOf("television"),
-            "Smartwatch + Android TV" to listOf("watch", "television"),
-            "All non-phone form factors (watch, TV, car, appliance, VR)" to KNOWN_UI_MODES.toList(),
-        ),
-        title = "Remove device-specific resources",
-        description = "Entirely removes resources qualified for the selected device categories " +
-            "-- not just duplicate copies, all of them -- regardless of density. Off by default " +
-            "since it changes what device types the app supports.",
+    val stripSmartwatch by booleanOption(
+        key = "stripSmartwatch",
+        default = false,
+        title = "Remove smartwatch (Wear OS) resources",
+        description = "Entirely removes resources qualified for smartwatches -- not just " +
+            "duplicate copies, all of them -- regardless of density. Off by default since it " +
+            "changes what device types the app supports.",
+    )
+
+    val stripAndroidTv by booleanOption(
+        key = "stripAndroidTv",
+        default = false,
+        title = "Remove Android TV resources",
+        description = "Entirely removes resources qualified for Android TV -- not just " +
+            "duplicate copies, all of them -- regardless of density. Off by default since it " +
+            "changes what device types the app supports.",
+    )
+
+    val stripOtherFormFactors by booleanOption(
+        key = "stripOtherFormFactors",
+        default = false,
+        title = "Remove other device-specific resources (car, desk dock, VR headset)",
+        description = "Entirely removes resources qualified for car head units, desk docks, or " +
+            "VR headsets -- not just duplicate copies, all of them -- regardless of density. " +
+            "Off by default since it changes what device types the app supports.",
     )
 
     execute {
         val resDir = get("res", false)
 
-        val stripSet = stripUiModes.orEmpty().filter { it in KNOWN_UI_MODES }.toSet()
+        val stripSet = buildSet {
+            if (stripSmartwatch == true) add("watch")
+            if (stripAndroidTv == true) add("television")
+            if (stripOtherFormFactors == true) addAll(setOf("car", "desk", "appliance", "vrheadset"))
+        }
         if (stripSet.isNotEmpty()) {
             val strippedDirs = stripUiModeDirs(resDir, stripSet)
             logger.info("Removed $strippedDirs device-specific resource director(y/ies) for: $stripSet")
