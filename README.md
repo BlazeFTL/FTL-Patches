@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.44.0-dev.19](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.44.0-dev.19)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;58 patches total
+> **[v1.44.0-dev.20](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.44.0-dev.20)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;58 patches total
 <details>
 <summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;5 patches</summary>
 <br>
@@ -57,7 +57,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
-| [Clean Me Tab](#clean-me-tab) | Removes promo rows and unused tiles from the Me tab. | • Add Network Stream tile |
+| [Clean Me Tab](#clean-me-tab) | Removes promo rows and unused tiles from the Me tab. Optional Network Stream tile. | • Add Network Stream tile |
 | [Configure Smart Enhance](#configure-smart-enhance) | Configures the Smart Enhance intro popup and enable/disable toast. | • Skip intro popup<br>• Show toast on enable |
 | [Configure SpeedUp overlay](#configure-speedup-overlay) | "2x UI": keeps the long-press SpeedUp overlay/animation, with the stock leftover-visible-view bug fixed. "No UI": the overlay never shows at all - the speed change itself still applies, since that's handled elsewhere. | • No UI |
 | [Disable Bottom Bar And Add Me Tab To Top](#disable-bottom-bar-and-add-me-tab-to-top) | Hides the bottom navigation bar and adds a Me tab button to the toolbar. |  |

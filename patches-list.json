@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.44.0-dev.19",
+  "version": "1.44.0-dev.20",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -199,7 +199,7 @@
     },
     {
       "name": "Clean Me Tab",
-      "description": "Removes promo rows and unused tiles from the Me tab.",
+      "description": "Removes promo rows and unused tiles from the Me tab. Optional Network Stream tile.",
       "default": false,
       "dependencies": [
         "ResourcePatch",
@@ -368,7 +368,7 @@
           "description": "Tapping the menu item toggles Smart Enhance directly instead of showing the popup first.",
           "required": false,
           "type": "kotlin.Boolean",
-          "default": false,
+          "default": true,
           "values": null
         },
         {
@@ -1240,7 +1240,7 @@
           "description": "Settings > Player > Customize Shortcuts still works and always wins once touched.",
           "required": false,
           "type": "kotlin.Boolean",
-          "default": false,
+          "default": true,
           "values": null
         },
         {
