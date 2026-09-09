@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-09-09T08:03:56",
-  "description": "## [1.44.0-dev.23](https://github.com/BlazeFTL/FTL-Patches/compare/v1.44.0-dev.22...v1.44.0-dev.23) (2026-09-09)\n\n### ✨ New Features\n\n* Add Boost Splash Mx Player Ad ([5809e49](https://github.com/BlazeFTL/FTL-Patches/commit/5809e490f8ed34c7d0f56017f6bb878583c1039b))",
-  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.44.0-dev.23/patches-1.44.0-dev.23.mpp",
+  "created_at": "2026-09-09T09:14:53",
+  "description": "## [1.44.0-dev.24](https://github.com/BlazeFTL/FTL-Patches/compare/v1.44.0-dev.23...v1.44.0-dev.24) (2026-09-09)\n\n### 🐛 Bug Fixes\n\n* Make Drawable Clean Patch More Aggressive ([6cc2621](https://github.com/BlazeFTL/FTL-Patches/commit/6cc2621c0a365269524483468f478f037db35bb2))",
+  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.44.0-dev.24/patches-1.44.0-dev.24.mpp",
   "signature_download_url": "",
-  "version": "1.44.0-dev.23"
+  "version": "1.44.0-dev.24"
 }

@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.44.0-dev.23",
+  "version": "1.44.0-dev.24",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -1077,7 +1077,7 @@
     },
     {
       "name": "Remove Duplicate Graphics",
-      "description": "Keeps images for only one screen density (like xhdpi) and removes copies for all other densities. Android will automatically scale the kept images, making the app significantly smaller.",
+      "description": "Keeps only one screen-density copy of every duplicated resource (drawables, layouts, and any other resource type shipped at multiple densities) and removes the rest, letting Android scale the kept copy. Mipmaps (the launcher icon) always keep their highest-quality copy instead of following the target density, since that's the one resource users actually see blown up on their home screen. Optionally strips device-specific resources (smartwatch, Android TV, etc.) entirely.",
       "default": false,
       "dependencies": [],
       "compatiblePackages": null,
@@ -1085,7 +1085,7 @@
         {
           "key": "targetDensity",
           "title": "Target density",
-          "description": "Density bucket to keep; duplicates are stripped from every other bucket.",
+          "description": "Density bucket to prefer for drawables and other non-mipmap resources; duplicates are stripped from every other bucket. If a particular resource was never shipped at this density, the next higher density available for it is kept instead, falling back to a lower one only if nothing higher exists either. Mipmaps ignore this and always keep their highest-quality copy.",
           "required": false,
           "type": "kotlin.String",
           "default": "xhdpi",
@@ -1096,6 +1096,35 @@
             "xhdpi": "xhdpi",
             "xxhdpi": "xxhdpi",
             "xxxhdpi": "xxxhdpi"
+          }
+        },
+        {
+          "key": "stripUiModes",
+          "title": "Remove device-specific resources",
+          "description": "Entirely removes resources qualified for the selected device categories -- not just duplicate copies, all of them -- regardless of density. Off by default since it changes what device types the app supports.",
+          "required": false,
+          "type": "kotlin.collections.List<kotlin.String>",
+          "default": [],
+          "values": {
+            "None (keep everything)": [],
+            "Smartwatch only": [
+              "watch"
+            ],
+            "Android TV only": [
+              "television"
+            ],
+            "Smartwatch + Android TV": [
+              "watch",
+              "television"
+            ],
+            "All non-phone form factors (watch, TV, car, appliance, VR)": [
+              "car",
+              "desk",
+              "television",
+              "appliance",
+              "watch",
+              "vrheadset"
+            ]
           }
         }
       ]

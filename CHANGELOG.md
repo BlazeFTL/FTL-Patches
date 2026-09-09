@@ -1,3 +1,9 @@
+## [1.44.0-dev.24](https://github.com/BlazeFTL/FTL-Patches/compare/v1.44.0-dev.23...v1.44.0-dev.24) (2026-09-09)
+
+### 🐛 Bug Fixes
+
+* Make Drawable Clean Patch More Aggressive ([6cc2621](https://github.com/BlazeFTL/FTL-Patches/commit/6cc2621c0a365269524483468f478f037db35bb2))
+
 ## [1.44.0-dev.23](https://github.com/BlazeFTL/FTL-Patches/compare/v1.44.0-dev.22...v1.44.0-dev.23) (2026-09-09)
 
 ### ✨ New Features
