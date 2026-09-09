@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.44.0-dev.21",
+  "version": "1.44.0-dev.22",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -1277,51 +1277,6 @@
       ],
       "options": [
         {
-          "key": "hideVideoDisplay",
-          "title": "Hide Video Display",
-          "description": null,
-          "required": false,
-          "type": "kotlin.Boolean",
-          "default": true,
-          "values": null
-        },
-        {
-          "key": "hideMoreMenuHelp",
-          "title": "Hide More menu Help section",
-          "description": "Hides What's New, Features, FAQ, Check for Update, Bug Report, and About.",
-          "required": false,
-          "type": "kotlin.Boolean",
-          "default": true,
-          "values": null
-        },
-        {
-          "key": "enableDefaultShortcuts",
-          "title": "Change default shortcuts",
-          "description": "Settings > Player > Customize Shortcuts still works and always wins once touched.",
-          "required": false,
-          "type": "kotlin.Boolean",
-          "default": true,
-          "values": null
-        },
-        {
-          "key": "defaultShortcutsMask",
-          "title": "Default shortcuts bitmask (hex)",
-          "description": "Bit sum of enabled shortcuts, decimal or 0x-prefixed hex. Bits: 0x1 rotation, 0x2 speed, 0x4 background play, 0x8 loop, 0x10 mute, 0x20 shuffle, 0x40 equalizer, 0x100 sleep timer, 0x200 repeat A-B, 0x400 night mode, 0x800 customise items, 0x1000 screenshot, 0x2000 mirror mode, 0x4000 vertical flip, 0x8000 audio effect. Default 0x780F.",
-          "required": false,
-          "type": "kotlin.Int",
-          "default": 30735,
-          "values": null
-        },
-        {
-          "key": "openSubtitleSettings",
-          "title": "Open subtitle settings by default",
-          "description": "Expands Sync/Speed/Panel/Customization in the subtitle menu instead of collapsed.",
-          "required": false,
-          "type": "kotlin.Boolean",
-          "default": true,
-          "values": null
-        },
-        {
           "key": "hideBookmark",
           "title": "Hide Bookmark",
           "description": null,
@@ -1361,6 +1316,51 @@
           "key": "hidePlayingQueue",
           "title": "Hide Playing Queue",
           "description": null,
+          "required": false,
+          "type": "kotlin.Boolean",
+          "default": true,
+          "values": null
+        },
+        {
+          "key": "hideVideoDisplay",
+          "title": "Hide Video Display",
+          "description": null,
+          "required": false,
+          "type": "kotlin.Boolean",
+          "default": true,
+          "values": null
+        },
+        {
+          "key": "hideMoreMenuHelp",
+          "title": "Hide More menu Help section",
+          "description": "Hides What's New, Features, FAQ, Check for Update, Bug Report, and About.",
+          "required": false,
+          "type": "kotlin.Boolean",
+          "default": true,
+          "values": null
+        },
+        {
+          "key": "enableDefaultShortcuts",
+          "title": "Change default shortcuts",
+          "description": "Settings > Player > Customize Shortcuts still works and always wins once touched.",
+          "required": false,
+          "type": "kotlin.Boolean",
+          "default": true,
+          "values": null
+        },
+        {
+          "key": "defaultShortcutsMask",
+          "title": "Default shortcuts bitmask (hex)",
+          "description": "Bit sum of enabled shortcuts, decimal or 0x-prefixed hex. Bits: 0x1 rotation, 0x2 speed, 0x4 background play, 0x8 loop, 0x10 mute, 0x20 shuffle, 0x40 equalizer, 0x100 sleep timer, 0x200 repeat A-B, 0x400 night mode, 0x800 customise items, 0x1000 screenshot, 0x2000 mirror mode, 0x4000 vertical flip, 0x8000 audio effect. Default 0x780F.",
+          "required": false,
+          "type": "kotlin.Int",
+          "default": 30735,
+          "values": null
+        },
+        {
+          "key": "openSubtitleSettings",
+          "title": "Open subtitle settings by default",
+          "description": "Expands Sync/Speed/Panel/Customization in the subtitle menu instead of collapsed.",
           "required": false,
           "type": "kotlin.Boolean",
           "default": true,
