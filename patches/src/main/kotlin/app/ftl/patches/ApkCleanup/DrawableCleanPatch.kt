@@ -210,7 +210,7 @@ val drawableCleanPatch = resourcePatch(
         // so there's no legitimate "unset" state -- required = true. This also closes the door
         // on the option ever silently resolving to null instead of its default.
         required = true,
-    )
+    ) { it == null || it in DENSITIES }
 
     val stripSmartwatch by booleanOption(
         key = "stripSmartwatch",
