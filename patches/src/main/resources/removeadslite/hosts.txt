@@ -322,5 +322,3 @@ telemetry.sdk.inmobi.com
 unif-id.ssp.inmobi.com
 video-player.aps.amazon-adsystem.com
 www.fyber.com
-www.google.com
-xml.org
