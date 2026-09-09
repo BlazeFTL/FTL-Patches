@@ -4,7 +4,17 @@ import app.morphe.patcher.extensions.InstructionExtensions.replaceInstructions
 import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.bytecodePatch
 
-// name = null - cleanMeTabPatch pulls this in via dependsOn as a configurable option.
+// Unregistered here - cleanMeTabPatch registers it, so it's configured from there.
+internal val addNetworkStreamOption = booleanOption(
+    key = "addNetworkStream",
+    default = true,
+    title = "Add Network Stream tile",
+    description = "WARNING: MX Player has an integrity check, and some mods add their own on " +
+        "top. Use a Play Store build, patch with signing off, then strip signature " +
+        "verification (MT Manager Enhanced or a modded build) - or the app may refuse to start.",
+)
+
+// name = null - only reached via cleanMeTabPatch's dependsOn below.
 internal val addNetworkStreamTilePatch = bytecodePatch(
     name = null,
     description = "Adds a Network Stream tile to the Me tab.",
@@ -13,17 +23,8 @@ internal val addNetworkStreamTilePatch = bytecodePatch(
 
     dependsOn(resolveNetworkStreamResourcesPatch)
 
-    val addNetworkStream by booleanOption(
-        key = "addNetworkStream",
-        default = true,
-        title = "Add Network Stream tile",
-        description = "WARNING: MX Player has an integrity check, and some mods add their own on " +
-            "top. Use a Play Store build, patch with signing off, then strip signature " +
-            "verification (MT Manager Enhanced or a modded build) - or the app may refuse to start.",
-    )
-
     execute {
-        if (addNetworkStream != true) return@execute
+        if (addNetworkStreamOption.value != true) return@execute
 
         val videoPlaylistsIndex = LocalMeTilesFingerprint.stringMatches[2].index
         val method = LocalMeTilesFingerprint.method
