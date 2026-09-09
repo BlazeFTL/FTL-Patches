@@ -21,7 +21,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TOML=$(curl -sH "Authorization: Bearer $GH_TOKEN" \
-            "https://api.github.com/repos/MorpheApp/morphe-patches-template/contents/gradle/libs.versions.toml" \
+            "https://api.github.com/repos/MorpheApp/morphe-manager/contents/gradle/libs.versions.toml?ref=dev" \
             | jq -r '.content' | base64 -d)
           SETTINGS=$(curl -sH "Authorization: Bearer $GH_TOKEN" \
             "https://api.github.com/repos/MorpheApp/morphe-patches-template/contents/settings.gradle.kts" \
@@ -49,7 +49,7 @@ jobs:
           commit-message: "chore: sync morphe-patcher ${{ steps.upstream.outputs.patcher_ver }} / plugin ${{ steps.upstream.outputs.plugin_ver }}"
           title: "chore: sync Morphe patcher/plugin version"
           body: |
-            Auto-synced from MorpheApp/morphe-patches-template.
+            Auto-synced from MorpheApp/morphe-manager (patcher) and MorpheApp/morphe-patches-template (plugin).
 
             - morphe-patcher: `${{ steps.upstream.outputs.patcher_ver }}`
             - app.morphe.patches: `${{ steps.upstream.outputs.plugin_ver }}`
