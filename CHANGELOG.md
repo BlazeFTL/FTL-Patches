@@ -1,3 +1,9 @@
+## [1.44.0-dev.26](https://github.com/BlazeFTL/FTL-Patches/compare/v1.44.0-dev.25...v1.44.0-dev.26) (2026-09-09)
+
+### ✨ New Features
+
+* Add Mx RecycleBin Remove Patch ([508bbfb](https://github.com/BlazeFTL/FTL-Patches/commit/508bbfbbe9afe9d6f4f8399dc61d84a83fdab924))
+
 ## [1.44.0-dev.25](https://github.com/BlazeFTL/FTL-Patches/compare/v1.44.0-dev.24...v1.44.0-dev.25) (2026-09-09)
 
 ### 🐛 Bug Fixes
