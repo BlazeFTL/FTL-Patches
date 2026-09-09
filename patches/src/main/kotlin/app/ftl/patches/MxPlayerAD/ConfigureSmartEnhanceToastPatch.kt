@@ -73,6 +73,7 @@ val configureSmartEnhanceToastPatch = bytecodePatch(
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
     dependsOn(disableSmartEnhancePopupPatch)
 
+    skipPopupOption()
     val showToast by booleanOption(
         key = "showToast",
         default = true,
