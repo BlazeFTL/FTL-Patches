@@ -8,6 +8,7 @@ internal val COMPATIBILITY_MX_PLAYER_AD = Compatibility(
     name = "MX Player",
     targets = listOf(
         AppTarget(version = "3.1.4", versionCode = 2001003524),
+        AppTarget(version = "3.2.1", versionCode = 2001003531),
     ),
 )
 
