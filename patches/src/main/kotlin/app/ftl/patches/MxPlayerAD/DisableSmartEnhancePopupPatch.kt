@@ -36,8 +36,8 @@ internal object SmartEnhanceMenuClickFingerprint : Fingerprint(
 internal val skipPopupOption = booleanOption(
     key = "skipPopup",
     default = true,
-    title = "Skip intro popup",
-    description = "Tapping the menu item toggles Smart Enhance directly instead of showing the popup first.",
+    title = "Skip intro popup and animation",
+    description = "Tapping the menu item toggles Smart Enhance directly instead of showing the popup first and animation.",
 )
 
 // name = null - only reached via configureSmartEnhanceToastPatch's dependsOn below.
