@@ -9,9 +9,7 @@ internal val addNetworkStreamOption = booleanOption(
     key = "addNetworkStream",
     default = true,
     title = "Add Network Stream tile",
-    description = "WARNING: MX Player has an integrity check, and some mods add their own on " +
-        "top. Use a Play Store build, patch with signing off, then strip signature " +
-        "verification (MT Manager Enhanced or a modded build) - or the app may refuse to start.",
+    description = "Add back network stream to me tab",
 )
 
 // name = null - only reached via cleanMeTabPatch's dependsOn below.
