@@ -115,17 +115,17 @@ val cleanSidebarShortcutsPatch = bytecodePatch(
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
     dependsOn(hideVideoDisplayPatch, cleanSidebarMorePatch, defaultShortcutsPatch, openSubtitleSettingsByDefaultPatch)
 
-    hideVideoDisplayOption()
-    hideMoreMenuHelpOption()
-    enableDefaultShortcutsOption()
-    defaultShortcutsMaskOption()
-    openSubtitleSettingsOption()
-
     val hideBookmark by booleanOption(key = "hideBookmark", default = true, title = "Hide Bookmark")
     val hideFavourite by booleanOption(key = "hideFavourite", default = true, title = "Hide Favourite")
     val hideAddToPlaylist by booleanOption(key = "hideAddToPlaylist", default = true, title = "Hide Add to Playlist")
     val hideTutorial by booleanOption(key = "hideTutorial", default = true, title = "Hide Tutorial")
     val hidePlayingQueue by booleanOption(key = "hidePlayingQueue", default = true, title = "Hide Playing Queue")
+
+    hideVideoDisplayOption()
+    hideMoreMenuHelpOption()
+    enableDefaultShortcutsOption()
+    defaultShortcutsMaskOption()
+    openSubtitleSettingsOption()
 
     execute {
         if (hideBookmark == true) {
