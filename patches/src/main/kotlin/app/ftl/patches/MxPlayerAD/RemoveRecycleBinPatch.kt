@@ -45,19 +45,6 @@ private object RecycleBinTileFingerprint : Fingerprint(
     ),
 )
 
-/**
- * Resolves the delete-confirmation dialog class (`a` in the sample build - single-letter,
- * obfuscated, reshuffles every build, never pinned) purely by the real string
- * `"deleteFilePopShown"`, a delete-flow analytics key logged once inside a real
- * zero-arg void method on that class. Assumption: unique app-wide, like the other
- * single-string method fingerprints in this package.
- */
-private object DeleteFileDialogFingerprint : Fingerprint(
-    returnType = "V",
-    parameters = emptyList(),
-    strings = listOf("deleteFilePopShown"),
-)
-
 val removeRecycleBinPatch = bytecodePatch(
     name = "Remove Recycle Bin",
     description = "Disables the Recycle Bin and removes it from the Me tab; deleted files are removed permanently.",
@@ -91,7 +78,16 @@ val removeRecycleBinPatch = bytecodePatch(
         // this specific build's obfuscated/renamed identifiers (matches the validated
         // compare build, versionCode 2001003531) - re-check against a fresh compare
         // zip if this patch ever needs to target a different build.
-        val dialogClass = DeleteFileDialogFingerprint.classDef
+        // Real class name is obfuscated ("a" in the sample build, reshuffles every
+        // build) and its only real strings turned out non-unique/wrong-method, so this
+        // resolves it by the Kotlin source file name instead - R8 keeps original
+        // source-file attributes even when it renames the class/members, and combined
+        // with the real androidx superclass it uniquely picks this class out from its
+        // sibling nested classes (a$a/a$b/a$c) that share the same source file.
+        val dialogClass = mutableClassDefBy { classDef ->
+            classDef.sourceFile == "MediaDeleteConfirmDialog.kt" &&
+                classDef.superclass == "Landroidx/appcompat/app/d;"
+        }
 
         val onClickListenerType = "Landroid/content/DialogInterface\$OnClickListener;"
         if (onClickListenerType !in dialogClass.interfaces) {
