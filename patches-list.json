@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.44.0-dev.22",
+  "version": "1.44.0-dev.23",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -147,6 +147,49 @@
       ]
     },
     {
+      "name": "Boost Splash Screen Time",
+      "description": "Disables MX Player's welcome/splash ad so playback starts immediately.",
+      "default": true,
+      "dependencies": [],
+      "compatiblePackages": [
+        {
+          "packageName": "com.mxtech.videoplayer.ad",
+          "name": "MX Player",
+          "description": null,
+          "apkFileType": null,
+          "appIconColor": null,
+          "signatures": null,
+          "targets": [
+            {
+              "version": "3.1.4",
+              "versionCodes": {
+                "ARM64_V8A": 2001003524,
+                "ARMEABI_V7A": 2001003524,
+                "X86_64": 2001003524,
+                "X86": 2001003524
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            },
+            {
+              "version": "3.2.1",
+              "versionCodes": {
+                "ARM64_V8A": 2001003531,
+                "ARMEABI_V7A": 2001003531,
+                "X86_64": 2001003531,
+                "X86": 2001003531
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
       "name": "Change Cleaner & Media Tab Defaults",
       "description": "Changes first-run defaults: hides the Image, Video, Audio and Cleaner tabs, and shows hidden files by default. Only affects users who have never changed the setting themselves - the preference override still takes priority.",
       "default": true,
@@ -199,7 +242,7 @@
     },
     {
       "name": "Clean Me Tab",
-      "description": "WARNING: MX Player has an integrity check, and some mods add their own on top. Use a Play Store build, patch with signing off, then strip signature verification (MT Manager Enhanced or a modded build) - or the app may refuse to start.Removes promo rows and unused tiles from the Me tab. Optional Add Network Stream tile.",
+      "description": "WARNING: MX Player has an integrity check, and some mods add their own on top. Use a Play Store build, Use URV Manager, patch with signing off, then use MT Manager Enhanced Signature Kill or the app may refuse to start.Removes promo rows and unused tiles from the Me tab. Optional Add Network Stream tile.",
       "default": false,
       "dependencies": [
         "ResourcePatch",

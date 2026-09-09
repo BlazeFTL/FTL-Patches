@@ -1,3 +1,9 @@
+## [1.44.0-dev.23](https://github.com/BlazeFTL/FTL-Patches/compare/v1.44.0-dev.22...v1.44.0-dev.23) (2026-09-09)
+
+### ✨ New Features
+
+* Add Boost Splash Mx Player Ad ([5809e49](https://github.com/BlazeFTL/FTL-Patches/commit/5809e490f8ed34c7d0f56017f6bb878583c1039b))
+
 ## [1.44.0-dev.22](https://github.com/BlazeFTL/FTL-Patches/compare/v1.44.0-dev.21...v1.44.0-dev.22) (2026-09-09)
 
 ### 🐛 Bug Fixes
