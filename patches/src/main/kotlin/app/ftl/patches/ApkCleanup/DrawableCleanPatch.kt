@@ -106,34 +106,40 @@ private fun dedupeByOrder(resDir: File, prefix: String, order: List<String>): De
     val keptByDensity = mutableMapOf<String, Int>()
 
     groupedDensityDirs(resDir, prefix).forEach { (groupKey, densityMap) ->
-        // Every relative file path that exists anywhere in this qualifier group, across every
-        // density directory that was found for it.
-        val allPaths = densityMap.values.flatMap { dir ->
-            dir.walkTopDown().filter { it.isFile }.map { it.relativeTo(dir).path }
-        }.toSet()
+        try {
+            // Every relative file path that exists anywhere in this qualifier group, across
+            // every density directory that was found for it.
+            val allPaths = densityMap.values.flatMap { dir ->
+                dir.walkTopDown().filter { it.isFile }.map { it.relativeTo(dir).path }
+            }.toSet()
 
-        allPaths.forEach { relativePath ->
-            // The first density (by preference) that actually carries this file is the one kept;
-            // the same file is then removed from every other density that also has it.
-            val keepDensity = order.firstOrNull { density ->
-                densityMap[density]?.resolve(relativePath)?.isFile == true
-            } ?: return@forEach
+            allPaths.forEach { relativePath ->
+                // The first density (by preference) that actually carries this file is the one
+                // kept; the same file is then removed from every other density that also has it.
+                val keepDensity = order.firstOrNull { density ->
+                    densityMap[density]?.resolve(relativePath)?.isFile == true
+                } ?: return@forEach
 
-            keptByDensity.merge(keepDensity, 1, Int::plus)
+                keptByDensity.merge(keepDensity, 1, Int::plus)
 
-            var removedForThisFile = 0
-            densityMap.forEach { (density, dir) ->
-                if (density == keepDensity) return@forEach
-                val file = dir.resolve(relativePath)
-                if (file.isFile && file.delete()) removedForThisFile++
+                var removedForThisFile = 0
+                densityMap.forEach { (density, dir) ->
+                    if (density == keepDensity) return@forEach
+                    val file = dir.resolve(relativePath)
+                    if (file.isFile && file.delete()) removedForThisFile++
+                }
+                if (removedForThisFile > 0) {
+                    removed += removedForThisFile
+                    logger.fine(
+                        "$groupKey/$relativePath: kept $keepDensity, removed from " +
+                            densityMap.keys.filter { it != keepDensity }.joinToString(", "),
+                    )
+                }
             }
-            if (removedForThisFile > 0) {
-                removed += removedForThisFile
-                logger.fine(
-                    "$groupKey/$relativePath: kept $keepDensity, removed from " +
-                        densityMap.keys.filter { it != keepDensity }.joinToString(", "),
-                )
-            }
+        } catch (e: Exception) {
+            // One bad file/group (locked file, unexpected symlink, whatever) shouldn't take the
+            // rest of this resource type down with it -- log it and keep going.
+            logger.warning("Skipped group \"$groupKey\" ($prefix) due to an error: $e")
         }
     }
 
