@@ -65,53 +65,54 @@ val langCleanPatch = resourcePatch(
     )
 
     execute {
-    val keepSet: Set<Pair<String, String?>> = (keepLanguages ?: emptyList()).map { raw ->
-        val parts = raw.split("-")
-        val lang = parts[0].lowercase()
-        val region = parts.getOrNull(1)
-            ?.takeIf { it.length == 3 && it.startsWith("r", ignoreCase = true) }
-            ?.drop(1)?.lowercase()
-        lang to region
-    }.toSet()
+        val keepSet: Set<Pair<String, String?>> = (keepLanguages ?: emptyList()).map { raw ->
+            val parts = raw.split("-")
+            val lang = parts[0].lowercase()
+            val region = parts.getOrNull(1)
+                ?.takeIf { it.length == 3 && it.startsWith("r", ignoreCase = true) }
+                ?.drop(1)?.lowercase()
+            lang to region
+        }.toSet()
 
-    val dirFiles = mutableMapOf<String, MutableList<String>>()
+        val dirFiles = mutableMapOf<String, MutableList<String>>()
 
-    for (entry in listApkEntries()) {
-        if (entry.endsWith("/")) continue
-        val parts = entry.split("/")
-        val resIdx = parts.indexOf("res")
-        if (resIdx == -1 || parts.size < resIdx + 3) continue
-        val dirPath = parts.subList(0, resIdx + 2).joinToString("/")
-        dirFiles.getOrPut(dirPath) { mutableListOf() }.add(entry)
-    }
-
-    var removedDirs = 0
-    var removedFiles = 0
-    var keptDirs = 0
-
-    dirFiles.forEach { (dirPath, files) ->
-        val dirName = dirPath.substringAfterLast("/")
-        val qualifiers = extractLanguageQualifiers(dirName)
-
-        if (qualifiers.isEmpty()) {
-            keptDirs++
-            return@forEach
+        for (entry in listApkEntries()) {
+            if (entry.endsWith("/")) continue
+            val parts = entry.split("/")
+            val resIdx = parts.indexOf("res")
+            if (resIdx == -1 || parts.size < resIdx + 3) continue
+            val dirPath = parts.subList(0, resIdx + 2).joinToString("/")
+            dirFiles.getOrPut(dirPath) { mutableListOf() }.add(entry)
         }
 
-        val shouldKeep = qualifiers.any { q -> (q.lang to q.region) in keepSet }
+        var removedDirs = 0
+        var removedFiles = 0
+        var keptDirs = 0
 
-        if (shouldKeep) {
-            keptDirs++
-        } else {
-            files.forEach(::delete)
-            removedFiles += files.size
-            removedDirs++
-            val label = qualifiers.joinToString { q ->
-                if (q.region != null) "${q.lang}-r${q.region.uppercase()}" else q.lang
+        dirFiles.forEach { (dirPath, files) ->
+            val dirName = dirPath.substringAfterLast("/")
+            val qualifiers = extractLanguageQualifiers(dirName)
+
+            if (qualifiers.isEmpty()) {
+                keptDirs++
+                return@forEach
             }
-            logger.fine("Removed $dirPath (${files.size} files) — languages: $label")
-        }
-    }
 
-    logger.info("Language cleanup: kept $keptDirs dirs, removed $removedDirs dirs, $removedFiles files")
+            val shouldKeep = qualifiers.any { q -> (q.lang to q.region) in keepSet }
+
+            if (shouldKeep) {
+                keptDirs++
+            } else {
+                files.forEach(::delete)
+                removedFiles += files.size
+                removedDirs++
+                val label = qualifiers.joinToString { q ->
+                    if (q.region != null) "${q.lang}-r${q.region.uppercase()}" else q.lang
+                }
+                logger.fine("Removed $dirPath (${files.size} files) — languages: $label")
+            }
+        }
+
+        logger.info("Language cleanup: kept $keptDirs dirs, removed $removedDirs dirs, $removedFiles files")
     }
+}
