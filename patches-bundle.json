@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-09-09T20:58:06",
-  "description": "## [1.44.0-dev.30](https://github.com/BlazeFTL/FTL-Patches/compare/v1.44.0-dev.29...v1.44.0-dev.30) (2026-09-09)\n\n### 🐛 Bug Fixes\n\n* up ([1a76a34](https://github.com/BlazeFTL/FTL-Patches/commit/1a76a349e7e8fb12ded176c49481fe9f858eeb79))",
-  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.44.0-dev.30/patches-1.44.0-dev.30.mpp",
+  "created_at": "2026-09-10T03:37:13",
+  "description": "## [1.44.0-dev.31](https://github.com/BlazeFTL/FTL-Patches/compare/v1.44.0-dev.30...v1.44.0-dev.31) (2026-09-10)\n\n### 🐛 Bug Fixes\n\n* up ([f409056](https://github.com/BlazeFTL/FTL-Patches/commit/f409056c44ec7689fffd5c9c751fede98d336cc5))",
+  "download_url": "https://github.com/BlazeFTL/FTL-Patches/releases/download/v1.44.0-dev.31/patches-1.44.0-dev.31.mpp",
   "signature_download_url": "",
-  "version": "1.44.0-dev.30"
+  "version": "1.44.0-dev.31"
 }
