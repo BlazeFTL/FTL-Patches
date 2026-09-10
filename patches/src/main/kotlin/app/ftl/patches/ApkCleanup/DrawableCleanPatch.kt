@@ -117,11 +117,26 @@ private fun densityPreferenceOrder(preferred: String): List<String> {
 private val HIGHEST_QUALITY_ORDER = DENSITIES.asReversed()
 
 /**
+ * Strips a relative file path down to an extension-agnostic key: same directory, same base name,
+ * extension dropped. This lets e.g. "icon.png" in one density directory and "icon.webp" in
+ * another be recognized as the same logical resource. Files with no extension are left as-is.
+ */
+private fun extensionAgnosticKey(relativePath: String): String {
+    val slash = relativePath.lastIndexOf('/')
+    val parent = if (slash >= 0) relativePath.substring(0, slash + 1) else ""
+    val name = if (slash >= 0) relativePath.substring(slash + 1) else relativePath
+    val dot = name.lastIndexOf('.')
+    val base = if (dot > 0) name.substring(0, dot) else name
+    return parent + base
+}
+
+/**
  * Deduplicates every density-qualified resource group found under [resDir] for the given type
- * [prefix], keeping -- per file -- whichever density comes first in [order]. Matching is by exact
- * relative file path within the qualifier group -- same type, same non-density qualifiers, same
- * file name -- which is precisely how Android itself identifies "the same resource at a different
- * density", so it holds regardless of the file's extension.
+ * [prefix], keeping -- per file -- whichever density comes first in [order]. Matching is by
+ * extension-agnostic relative path within the qualifier group -- same type, same non-density
+ * qualifiers, same directory, same base file name regardless of extension -- so e.g. a PNG copy
+ * at one density and a WebP copy of the same asset at another density are recognized as
+ * duplicates of each other, not kept side by side.
  *
  * @return the number of duplicate files removed, and a count of how many resources ended up
  *   kept at each density (for logging/verification).
@@ -132,27 +147,32 @@ private fun dedupeByOrder(resDir: File, prefix: String, order: List<String>): De
 
     groupedDensityDirs(resDir, prefix).forEach { (groupKey, densityMap) ->
         try {
-            // Every relative file path that exists anywhere in this qualifier group, across
-            // every density directory that was found for it.
-            val allPaths = densityMap.values.flatMap { dir ->
-                dir.walkTopDown().filter { it.isFile }.map { it.relativeTo(dir).path }
-            }.toSet()
+            // Per density: extension-agnostic key -> the actual file on disk (with its real
+            // extension), so lookups below can match by key but still delete/resolve the real
+            // file. If two files in the same directory collide on the same stripped key (e.g.
+            // "icon.png" and "icon.webp" both present at the same density), the later one wins
+            // and the other is left alone -- that's a same-density conflict, not this pass's job.
+            val filesByDensity: Map<String, Map<String, File>> = densityMap.mapValues { (_, dir) ->
+                dir.walkTopDown()
+                    .filter { it.isFile }
+                    .associateBy { file -> extensionAgnosticKey(file.relativeTo(dir).path) }
+            }
 
-            allPaths.forEach { relativePath ->
-                // The first density (by preference) that actually carries this file is the one
-                // kept; the same file is then removed from every other density that also has it.
-                val keepDensity = order.firstOrNull { density ->
-                    densityMap[density]?.resolve(relativePath)?.isFile == true
-                }
+            val allKeys = filesByDensity.values.flatMap { it.keys }.toSet()
+
+            allKeys.forEach { key ->
+                // The first density (by preference) that actually carries this resource is the
+                // one kept; the same resource is then removed from every other density that also
+                // has it, regardless of what extension each copy used.
+                val keepDensity = order.firstOrNull { density -> filesByDensity[density]?.containsKey(key) == true }
                 if (keepDensity == null) {
-                    // Structurally this shouldn't happen: relativePath came from walking one of
-                    // these exact directories, so resolve() against that same directory should
-                    // always find it. If it doesn't, something (path encoding, a symlink, a case
-                    // mismatch) is making walkTopDown() and resolve() disagree -- worth surfacing
-                    // instead of silently leaving every copy of the file untouched.
+                    // Structurally this shouldn't happen: key came from walking one of these exact
+                    // directories, so it should always be found there. If it isn't, something
+                    // (path encoding, a symlink, a case mismatch) is making the two passes
+                    // disagree -- worth surfacing instead of silently leaving every copy untouched.
                     logger.warning(
-                        "$groupKey/$relativePath: listed under one of ${densityMap.keys} but " +
-                            "resolve() found it in none of them -- left untouched.",
+                        "$groupKey/$key: listed under one of ${densityMap.keys} but found in " +
+                            "none of them -- left untouched.",
                     )
                     return@forEach
                 }
@@ -160,15 +180,15 @@ private fun dedupeByOrder(resDir: File, prefix: String, order: List<String>): De
                 keptByDensity.merge(keepDensity, 1, Int::plus)
 
                 var removedForThisFile = 0
-                densityMap.forEach { (density, dir) ->
+                filesByDensity.forEach { (density, files) ->
                     if (density == keepDensity) return@forEach
-                    val file = dir.resolve(relativePath)
+                    val file = files[key] ?: return@forEach
                     if (file.isFile && file.delete()) removedForThisFile++
                 }
                 if (removedForThisFile > 0) {
                     removed += removedForThisFile
                     logger.fine(
-                        "$groupKey/$relativePath: kept $keepDensity, removed from " +
+                        "$groupKey/$key: kept $keepDensity, removed from " +
                             densityMap.keys.filter { it != keepDensity }.joinToString(", "),
                     )
                 }
