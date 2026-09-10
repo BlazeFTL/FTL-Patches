@@ -87,9 +87,10 @@ private fun groupedDensityDirs(resDir: File, prefix: String): Map<String, Mutabl
         bucket[density] = dir
     }
 
-    if (skipped > 0) {
-        logger.fine("$prefix: ${matchedDirs.size} director(y/ies) scanned, $skipped not density-qualified.")
-    }
+    logger.info(
+        "$prefix: ${matchedDirs.size} director(y/ies) scanned, ${groups.size} group(s) formed, " +
+            "$skipped not density-qualified.",
+    )
     return groups
 }
 
