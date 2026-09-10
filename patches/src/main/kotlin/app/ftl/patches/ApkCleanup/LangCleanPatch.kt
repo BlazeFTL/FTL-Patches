@@ -6,25 +6,10 @@ import java.util.logging.Logger
 
 private val logger = Logger.getLogger("LangCleanPatch")
 
-// Rare 2-3 letter segments that are Android qualifiers, NOT language codes.
-private val KNOWN_NON_LANGUAGE_SEGMENTS = setOf(
-    "car",      // uiMode=car
-    "any",      // part of anydpi
-)
+private val KNOWN_NON_LANGUAGE_SEGMENTS = setOf("car", "any")
 
 private data class LangQualifier(val lang: String, val region: String?)
 
-/**
- * Extracts (language, region) pairs from an Android resource directory name.
- *
- * Android resource dirs can have language qualifiers on ANY type:
- *   values-en, drawable-ru-hdpi, mipmap-fr, raw-es, xml-de, layout-ja,
- *   values-zh-rCN, values-b+sr+Latn, etc.
- *
- * Language codes are ISO 639-1 (2-letter) or ISO 639-2 (3-letter).
- * A region suffix (-rXX) directly after a language is captured with it.
- * BCP 47 tags (b+<lang>+<script>+<region>) are parsed.
- */
 private fun extractLanguageQualifiers(dirName: String): List<LangQualifier> {
     val segments = dirName.split("-")
     if (segments.size < 2) return emptyList()
@@ -36,7 +21,6 @@ private fun extractLanguageQualifiers(dirName: String): List<LangQualifier> {
     while (i < rest.size) {
         val seg = rest[i]
 
-        // BCP 47 tag: values-b+sr+Latn or values-b+en+US → segment is "b+sr+Latn"
         if (seg.startsWith("b+")) {
             val parts = seg.split("+")
             if (parts.size >= 2) {
@@ -50,7 +34,6 @@ private fun extractLanguageQualifiers(dirName: String): List<LangQualifier> {
             continue
         }
 
-        // Language code: 2-3 lowercase letters, not a known non-language qualifier
         if (seg.length in 2..3 && seg.all { it.isLowerCase() } && seg !in KNOWN_NON_LANGUAGE_SEGMENTS) {
             val next = rest.getOrNull(i + 1)
             val isRegion = next != null && next.startsWith("r") && next.length == 3 &&
@@ -69,7 +52,7 @@ private fun extractLanguageQualifiers(dirName: String): List<LangQualifier> {
 
 val langCleanPatch = resourcePatch(
     name = "Remove Languages",
-    description = "Removes translations for languages you don\'t use. Only keeps the languages you pick. ",
+    description = "Removes translations for languages you don't use. Only keeps the languages you pick. ",
     default = false,
 ) {
     val keepLanguages by stringsOption(
@@ -82,13 +65,6 @@ val langCleanPatch = resourcePatch(
     )
 
     execute {
-        val resDir = get("res")
-
-        if (!resDir.isDirectory) {
-            logger.warning("Language cleanup: res/ directory not found")
-            return@execute
-        }
-
         val keepSet: Set<Pair<String, String?>> = (keepLanguages ?: emptyList()).map { raw ->
             val parts = raw.split("-")
             val lang = parts[0].lowercase()
@@ -98,31 +74,41 @@ val langCleanPatch = resourcePatch(
             lang to region
         }.toSet()
 
+        // Full archive scan — catches every "res" tree, including ones
+        // under separate resource packages (e.g. .tr, .drive) that
+        // File.listFiles() on the staged working dir never sees.
+        val resDirs = mutableSetOf<String>()
+        for (entry in listApkEntries()) {
+            if (entry.endsWith("/")) continue
+            val parts = entry.split("/")
+            val resIdx = parts.indexOf("res")
+            if (resIdx == -1 || parts.size < resIdx + 3) continue
+            resDirs.add(parts.subList(0, resIdx + 2).joinToString("/"))
+        }
+
         var removedDirs = 0
         var keptDirs = 0
 
-        resDir.listFiles { file -> file.isDirectory }?.forEach { dir ->
-            val qualifiers = extractLanguageQualifiers(dir.name)
+        resDirs.forEach { dirPath ->
+            val dirName = dirPath.substringAfterLast("/")
+            val qualifiers = extractLanguageQualifiers(dirName)
 
-            // No language qualifier → base resource, always keep
             if (qualifiers.isEmpty()) {
                 keptDirs++
                 return@forEach
             }
 
-            // Keep only if this exact (lang, region) combo is explicitly listed
             val shouldKeep = qualifiers.any { q -> (q.lang to q.region) in keepSet }
 
             if (shouldKeep) {
                 keptDirs++
             } else {
-                val size = dir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
-                dir.deleteRecursively()
+                delete("$dirPath/")
                 removedDirs++
                 val label = qualifiers.joinToString { q ->
                     if (q.region != null) "${q.lang}-r${q.region.uppercase()}" else q.lang
                 }
-                logger.fine("Removed ${dir.name} (${size / 1024}KB) — languages: $label")
+                logger.fine("Removed $dirPath — languages: $label")
             }
         }
 
