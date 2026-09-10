@@ -192,25 +192,14 @@ val drawableCleanPatch = resourcePatch(
     val targetDensity by stringOption(
         key = "targetDensity",
         default = DEFAULT_DENSITY,
-        values = mapOf(
-            "Low (ldpi)" to "ldpi",
-            "Medium (mdpi)" to "mdpi",
-            "High (hdpi)" to "hdpi",
-            "Extra-high (xhdpi)" to "xhdpi",
-            "Extra-extra-high (xxhdpi)" to "xxhdpi",
-            "Extra-extra-extra-high (xxxhdpi)" to "xxxhdpi",
-        ),
+        values = DENSITIES.associateWith { it },
         title = "Target density",
         description = "Density bucket to prefer for drawables and other non-mipmap resources; " +
             "duplicates are stripped from every other bucket. If a particular resource was never " +
             "shipped at this density, the next higher density available for it is kept instead, " +
             "falling back to a lower one only if nothing higher exists either. Mipmaps ignore " +
             "this and always keep their highest-quality copy.",
-        // Always has a usable value (there's a default, and every entry in `values` is valid),
-        // so there's no legitimate "unset" state -- required = true. This also closes the door
-        // on the option ever silently resolving to null instead of its default.
-        required = true,
-    ) { it == null || it in DENSITIES }
+    )
 
     val stripSmartwatch by booleanOption(
         key = "stripSmartwatch",
@@ -252,15 +241,7 @@ val drawableCleanPatch = resourcePatch(
             logger.info("Removed $strippedDirs device-specific resource director(y/ies) for: $stripSet")
         }
 
-        val preferred = try {
-            targetDensity?.takeIf { it in DENSITIES }
-        } catch (e: Exception) {
-            // required = true means a genuinely missing value throws instead of reading as null;
-            // catch it so a manager-app quirk still degrades to the documented default instead of
-            // taking the whole patch down.
-            logger.warning("targetDensity option raised reading it ($e); falling back to default.")
-            null
-        } ?: DEFAULT_DENSITY.also {
+        val preferred = targetDensity?.takeIf { it in DENSITIES } ?: DEFAULT_DENSITY.also {
             logger.warning("targetDensity option was unset or invalid; using \"$it\".")
         }
         logger.info("Deduplicating resources, preferring density \"$preferred\" (mipmaps keep highest quality).")
