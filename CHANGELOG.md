@@ -1,3 +1,9 @@
+## [1.44.0-dev.40](https://github.com/BlazeFTL/FTL-Patches/compare/v1.44.0-dev.39...v1.44.0-dev.40) (2026-09-10)
+
+### 🐛 Bug Fixes
+
+* Up Lang Clean ([ae43848](https://github.com/BlazeFTL/FTL-Patches/commit/ae43848900527195deeb0686a581f0fada319e25))
+
 ## [1.44.0-dev.39](https://github.com/BlazeFTL/FTL-Patches/compare/v1.44.0-dev.38...v1.44.0-dev.39) (2026-09-10)
 
 ### 🐛 Bug Fixes
