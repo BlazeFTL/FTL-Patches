@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.44.0-dev.36",
+  "version": "1.44.0-dev.37",
   "patches": [
     {
       "name": "APK Junk Cleanup",
@@ -1085,7 +1085,7 @@
         {
           "key": "targetDensity",
           "title": "Target density",
-          "description": "Density bucket to prefer for images and other graphics; duplicates are stripped from every other bucket. If a particular resource was never shipped at this density, the next higher density available for it is kept instead, falling back to a lower one only if nothing higher exists either. Launcher icons ignore this setting and always keep their highest-quality copy.",
+          "description": "Density bucket to prefer for drawables and other non-mipmap resources; duplicates are stripped from every other bucket. If a particular resource was never shipped at this density, the next higher density available for it is kept instead, falling back to a lower one only if nothing higher exists either. Mipmaps ignore this and always keep their highest-quality copy.",
           "required": false,
           "type": "kotlin.String",
           "default": "xhdpi",
