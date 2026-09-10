@@ -1,8 +1,8 @@
 package app.ftl.patches.apkcleanup
 
 import app.morphe.patcher.patch.booleanOption
+import app.morphe.patcher.patch.option
 import app.morphe.patcher.patch.resourcePatch
-import app.morphe.patcher.patch.stringOption
 import java.io.File
 import java.util.logging.Logger
 
@@ -189,7 +189,7 @@ val drawableCleanPatch = resourcePatch(
         "device-specific resources (smartwatch, Android TV, etc.) entirely.",
     default = false,
 ) {
-    val targetDensity by stringOption(
+    val targetDensity by option(
         key = "targetDensity",
         default = DEFAULT_DENSITY,
         values = DENSITIES.associateWith { it },
