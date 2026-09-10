@@ -118,7 +118,19 @@ private fun dedupeByOrder(resDir: File, prefix: String, order: List<String>): De
                 // kept; the same file is then removed from every other density that also has it.
                 val keepDensity = order.firstOrNull { density ->
                     densityMap[density]?.resolve(relativePath)?.isFile == true
-                } ?: return@forEach
+                }
+                if (keepDensity == null) {
+                    // Structurally this shouldn't happen: relativePath came from walking one of
+                    // these exact directories, so resolve() against that same directory should
+                    // always find it. If it doesn't, something (path encoding, a symlink, a case
+                    // mismatch) is making walkTopDown() and resolve() disagree -- worth surfacing
+                    // instead of silently leaving every copy of the file untouched.
+                    logger.warning(
+                        "$groupKey/$relativePath: listed under one of ${densityMap.keys} but " +
+                            "resolve() found it in none of them -- left untouched.",
+                    )
+                    return@forEach
+                }
 
                 keptByDensity.merge(keepDensity, 1, Int::plus)
 
@@ -194,11 +206,11 @@ val drawableCleanPatch = resourcePatch(
         default = DEFAULT_DENSITY,
         values = DENSITIES.associateWith { it },
         title = "Target density",
-        description = "Density bucket to prefer for images and other graphics; duplicates are " +
-            "stripped from every other bucket. If a particular resource was never shipped at " +
-            "this density, the next higher density available for it is kept instead, falling " +
-            "back to a lower one only if nothing higher exists either. Launcher icons ignore " +
-            "this setting and always keep their highest-quality copy.",
+        description = "Density bucket to prefer for drawables and other non-mipmap resources; " +
+            "duplicates are stripped from every other bucket. If a particular resource was never " +
+            "shipped at this density, the next higher density available for it is kept instead, " +
+            "falling back to a lower one only if nothing higher exists either. Mipmaps ignore " +
+            "this and always keep their highest-quality copy.",
     )
 
     val stripSmartwatch by booleanOption(
