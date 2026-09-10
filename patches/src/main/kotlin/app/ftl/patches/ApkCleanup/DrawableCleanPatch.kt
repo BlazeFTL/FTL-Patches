@@ -1,5 +1,6 @@
 package app.ftl.patches.apkcleanup
 
+import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.resourcePatch
 import app.morphe.patcher.patch.stringOption
 import java.io.File
@@ -9,6 +10,9 @@ private val DENSITIES = listOf("ldpi", "mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhd
 
 /** Default/target-fallback density: prefer xhdpi, falling upward (xxhdpi, xxxhdpi) before downward. */
 private const val DEFAULT_DENSITY = "xhdpi"
+
+/** Android's uiMode qualifier values -- device categories, not densities. */
+private val KNOWN_UI_MODES = setOf("car", "desk", "television", "appliance", "watch", "vrheadset")
 
 private val logger = Logger.getLogger("Remove Duplicate Graphics")
 
@@ -151,6 +155,29 @@ private data class DedupeStats(val removedFiles: Int, val keptByDensity: Map<Str
     )
 }
 
+/**
+ * Deletes every resource directory (of any type) whose qualifiers include one of [uiModes] --
+ * e.g. "watch" (Wear OS) or "television" (Android TV). Unlike the density dedup above, this
+ * isn't about trimming a redundant copy of something that's also available elsewhere -- it drops
+ * resources for a whole device category the app doesn't need to support, wholesale, regardless
+ * of density.
+ */
+private fun stripUiModeDirs(resDir: File, uiModes: Set<String>): Int {
+    if (uiModes.isEmpty()) return 0
+    var removedDirs = 0
+    resDir.listFiles { f -> f.isDirectory }?.forEach { dir ->
+        val qualifiers = dir.name.split("-").drop(1)
+        if (qualifiers.none { it in uiModes }) return@forEach
+
+        val fileCount = dir.walkTopDown().count { it.isFile }
+        if (dir.deleteRecursively()) {
+            removedDirs++
+            logger.fine("Removed ${dir.name}/ ($fileCount file(s)) -- matched uiMode qualifier.")
+        }
+    }
+    return removedDirs
+}
+
 // DrawableCleanPatch.kt
 val drawableCleanPatch = resourcePatch(
     name = "Remove Duplicate Graphics",
@@ -158,28 +185,61 @@ val drawableCleanPatch = resourcePatch(
         "layouts, and any other resource type shipped at multiple densities) and removes the " +
         "rest, letting Android scale the kept copy. Mipmaps (the launcher icon) always keep " +
         "their highest-quality copy instead of following the target density, since that's the " +
-        "one resource users actually see blown up on their home screen.",
+        "one resource users actually see blown up on their home screen. Optionally strips " +
+        "device-specific resources (smartwatch, Android TV, etc.) entirely.",
     default = false,
 ) {
-    // IMPORTANT: the option description below must NOT contain the words "drawable",
-    // "mipmap", or "folder" (any casing). Morphe Manager heuristically treats any
-    // string option with presets whose description mentions those words as a
-    // *path* option, and renders it as a path field with a folder-picker button,
-    // a clear (X) button and an "Instructions" expander instead of a plain dropdown.
     val targetDensity by stringOption(
         key = "targetDensity",
         default = DEFAULT_DENSITY,
         values = DENSITIES.associateWith { it },
         title = "Target density",
-        description = "Density bucket to keep; duplicates are stripped from every other " +
-            "bucket. If a particular resource was never shipped at this density, the next " +
-            "higher density available for it is kept instead, falling back to a lower one " +
-            "only if nothing higher exists either. Launcher icons ignore this setting and " +
-            "always keep their sharpest copy.",
+        description = "Density bucket to prefer for images and other graphics; duplicates are " +
+            "stripped from every other bucket. If a particular resource was never shipped at " +
+            "this density, the next higher density available for it is kept instead, falling " +
+            "back to a lower one only if nothing higher exists either. Launcher icons ignore " +
+            "this setting and always keep their highest-quality copy.",
+    )
+
+    val stripSmartwatch by booleanOption(
+        key = "stripSmartwatch",
+        default = false,
+        title = "Remove smartwatch (Wear OS) resources",
+        description = "Entirely removes resources qualified for smartwatches -- not just " +
+            "duplicate copies, all of them -- regardless of density. Off by default since it " +
+            "changes what device types the app supports.",
+    )
+
+    val stripAndroidTv by booleanOption(
+        key = "stripAndroidTv",
+        default = false,
+        title = "Remove Android TV resources",
+        description = "Entirely removes resources qualified for Android TV -- not just " +
+            "duplicate copies, all of them -- regardless of density. Off by default since it " +
+            "changes what device types the app supports.",
+    )
+
+    val stripOtherFormFactors by booleanOption(
+        key = "stripOtherFormFactors",
+        default = false,
+        title = "Remove other device-specific resources (car, desk dock, VR headset)",
+        description = "Entirely removes resources qualified for car head units, desk docks, or " +
+            "VR headsets -- not just duplicate copies, all of them -- regardless of density. " +
+            "Off by default since it changes what device types the app supports.",
     )
 
     execute {
         val resDir = get("res", false)
+
+        val stripSet = buildSet {
+            if (stripSmartwatch == true) add("watch")
+            if (stripAndroidTv == true) add("television")
+            if (stripOtherFormFactors == true) addAll(setOf("car", "desk", "appliance", "vrheadset"))
+        }
+        if (stripSet.isNotEmpty()) {
+            val strippedDirs = stripUiModeDirs(resDir, stripSet)
+            logger.info("Removed $strippedDirs device-specific resource director(y/ies) for: $stripSet")
+        }
 
         val preferred = targetDensity?.takeIf { it in DENSITIES } ?: DEFAULT_DENSITY.also {
             logger.warning("targetDensity option was unset or invalid; using \"$it\".")
