@@ -74,45 +74,49 @@ val langCleanPatch = resourcePatch(
             lang to region
         }.toSet()
 
-        val dirFiles = mutableMapOf<String, MutableList<String>>()
-
-        for (entry in listApkEntries()) {
-            if (entry.endsWith("/")) continue
-            val parts = entry.split("/")
-            val resIdx = parts.indexOf("res")
-            if (resIdx == -1 || parts.size < resIdx + 3) continue
-            val dirPath = parts.subList(0, resIdx + 2).joinToString("/")
-            dirFiles.getOrPut(dirPath) { mutableListOf() }.add(entry)
+        // Base package decodes to "res". Additional ARSC packages (e.g. feature
+        // modules like .tr, .drive) decode to "package_1/res", "package_2/res", etc.
+        // Probe dynamically - no hardcoded package count or names.
+        val resRoots = mutableListOf("res")
+        var pkgIndex = 1
+        while (true) {
+            val candidate = "package_$pkgIndex/res"
+            if (!get(candidate).isDirectory) break
+            resRoots.add(candidate)
+            pkgIndex++
         }
 
         var removedDirs = 0
-        var removedFiles = 0
         var keptDirs = 0
 
-        dirFiles.forEach { (dirPath, files) ->
-            val dirName = dirPath.substringAfterLast("/")
-            val qualifiers = extractLanguageQualifiers(dirName)
+        for (resRoot in resRoots) {
+            val resDir = get(resRoot)
+            if (!resDir.isDirectory) continue
 
-            if (qualifiers.isEmpty()) {
-                keptDirs++
-                return@forEach
-            }
+            resDir.listFiles { file -> file.isDirectory }?.forEach { dir ->
+                val qualifiers = extractLanguageQualifiers(dir.name)
 
-            val shouldKeep = qualifiers.any { q -> (q.lang to q.region) in keepSet }
-
-            if (shouldKeep) {
-                keptDirs++
-            } else {
-                files.forEach(::delete)
-                removedFiles += files.size
-                removedDirs++
-                val label = qualifiers.joinToString { q ->
-                    if (q.region != null) "${q.lang}-r${q.region.uppercase()}" else q.lang
+                if (qualifiers.isEmpty()) {
+                    keptDirs++
+                    return@forEach
                 }
-                logger.fine("Removed $dirPath (${files.size} files) — languages: $label")
+
+                val shouldKeep = qualifiers.any { q -> (q.lang to q.region) in keepSet }
+
+                if (shouldKeep) {
+                    keptDirs++
+                } else {
+                    val size = dir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+                    dir.deleteRecursively()
+                    removedDirs++
+                    val label = qualifiers.joinToString { q ->
+                        if (q.region != null) "${q.lang}-r${q.region.uppercase()}" else q.lang
+                    }
+                    logger.fine("Removed $resRoot/${dir.name} (${size / 1024}KB) — languages: $label")
+                }
             }
         }
 
-        logger.info("Language cleanup: kept $keptDirs dirs, removed $removedDirs dirs, $removedFiles files")
+        logger.info("Language cleanup: kept $keptDirs dirs, removed $removedDirs dirs, scanned ${resRoots.size} package(s)")
     }
 }
