@@ -60,11 +60,35 @@ private fun discoverTypePrefixes(resDir: File): Set<String> =
 
 private fun groupedDensityDirs(resDir: File, prefix: String): Map<String, MutableMap<String, File>> {
     val groups = mutableMapOf<String, MutableMap<String, File>>()
-    resDir.listFiles { f -> f.isDirectory && f.name.split("-").first() == prefix }?.forEach { dir ->
+    val matchedDirs = resDir.listFiles { f -> f.isDirectory && f.name.split("-").first() == prefix }
+        ?: emptyArray()
+    var skipped = 0
+
+    matchedDirs.forEach { dir ->
         val qualifiers = dir.name.split("-").drop(1) // drop the resource-type prefix token
-        val (density, remaining) = extractDensity(qualifiers) ?: return@forEach
+        val parsed = extractDensity(qualifiers)
+        if (parsed == null) {
+            skipped++
+            logger.fine("$prefix: \"${dir.name}\" has no recognized density qualifier -- not grouped.")
+            return@forEach
+        }
+        val (density, remaining) = parsed
         val groupKey = (listOf(prefix) + remaining).joinToString("-")
-        groups.getOrPut(groupKey) { mutableMapOf() }[density] = dir
+        val bucket = groups.getOrPut(groupKey) { mutableMapOf() }
+        val previous = bucket[density]
+        if (previous != null && previous != dir) {
+            // Two differently-named directories both normalized to the same (groupKey, density)
+            // pair -- one is about to silently shadow the other's files in this dedup pass.
+            logger.warning(
+                "$groupKey/$density: both \"${previous.name}\" and \"${dir.name}\" map here; " +
+                    "\"${dir.name}\" wins, files unique to \"${previous.name}\" will be missed.",
+            )
+        }
+        bucket[density] = dir
+    }
+
+    if (skipped > 0) {
+        logger.fine("$prefix: ${matchedDirs.size} director(y/ies) scanned, $skipped not density-qualified.")
     }
     return groups
 }
