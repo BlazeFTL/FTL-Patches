@@ -161,16 +161,21 @@ val drawableCleanPatch = resourcePatch(
         "one resource users actually see blown up on their home screen.",
     default = false,
 ) {
+    // IMPORTANT: the option description below must NOT contain the words "drawable",
+    // "mipmap", or "folder" (any casing). Morphe Manager heuristically treats any
+    // string option with presets whose description mentions those words as a
+    // *path* option, and renders it as a path field with a folder-picker button,
+    // a clear (X) button and an "Instructions" expander instead of a plain dropdown.
     val targetDensity by stringOption(
         key = "targetDensity",
         default = DEFAULT_DENSITY,
         values = DENSITIES.associateWith { it },
         title = "Target density",
-        description = "Density bucket to prefer for drawables and other non-mipmap resources; " +
-            "duplicates are stripped from every other bucket. If a particular resource was never " +
-            "shipped at this density, the next higher density available for it is kept instead, " +
-            "falling back to a lower one only if nothing higher exists either. Mipmaps ignore " +
-            "this and always keep their highest-quality copy.",
+        description = "Density bucket to keep; duplicates are stripped from every other " +
+            "bucket. If a particular resource was never shipped at this density, the next " +
+            "higher density available for it is kept instead, falling back to a lower one " +
+            "only if nothing higher exists either. Launcher icons ignore this setting and " +
+            "always keep their sharpest copy.",
     )
 
     execute {
