@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.44.0-dev.42](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.44.0-dev.42)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;60 patches total
+> **[v1.44.0-dev.43](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.44.0-dev.43)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;60 patches total
 <details>
 <summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;5 patches</summary>
 <br>
@@ -277,7 +277,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Remove Analytics New](#remove-analytics-new) | Corrupts analytics network URLs and split-scheme string obfuscation inside the code, and strips matching manifest components. |  |
 | [Remove Debug Info](#remove-debug-info) | Removes debug information (line numbers, variable names, source file references) from every class in the .dex files to reduce overall APK size. |  |
 | [Remove Duplicate Graphics](#remove-duplicate-graphics) | Keeps only one screen-density copy of every duplicated resource (drawables, layouts, and any other resource type shipped at multiple densities) and removes the rest, letting Android scale the kept copy. Mipmaps (the launcher icon) always keep their highest-quality copy instead of following the target density, since that's the one resource users actually see blown up on their home screen. Optionally strips device-specific resources (smartwatch, Android TV, etc.) entirely. | • Target density<br>• Remove smartwatch (Wear OS) resources<br>• Remove Android TV resources<br>• Remove other device-specific resources (car, desk dock, VR headset) |
-| [Remove Languages](#remove-languages) | Removes translations for languages you don't use. Only keeps the languages you pick.  | • Languages to keep |
+| [Remove Languages](#remove-languages) | Removes translations for languages you don't use, in EVERY resource package of resources.arsc.  | • Languages to keep |
 | [Skip Splash Screen - Expert Only](#skip-splash-screen-expert-only) | EXPERT USERS ONLY. Manually Configure It To Point At Real Splash And Main Activity As Many Apps Use Other Names. Check the log to know what the patch is doing. Ensure App Doesnt Ask For Permissions In Splash Screen. | • Splash activity name<br>• Real main activity name |
 | [Spoof App Signature](#spoof-app-signature) | Makes the app think its signing certificate is unchanged after Morphe re-signs it, useful when an app crashes or shows a tamper warning because it checks its own certificate. Does not bypass Play Integrity / SafetyNet hardware attestation. Apply with Original app certificate patch. | • Package name override (optional) |
 
