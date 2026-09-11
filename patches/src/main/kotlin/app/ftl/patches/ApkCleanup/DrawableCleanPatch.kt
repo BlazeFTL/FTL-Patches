@@ -35,7 +35,7 @@ private fun typeDirs(resDir: File, typePrefix: String): List<File> =
     resDir.listFiles { f -> f.isDirectory && f.name.startsWith(typePrefix) }?.toList() ?: emptyList()
 
 private fun densityDirs(dirs: List<File>, density: String): List<File> {
-    val suffix = "-${density}dpi"
+    val suffix = "-$density"
     return dirs.filter { it.name.contains(suffix) }
 }
 
