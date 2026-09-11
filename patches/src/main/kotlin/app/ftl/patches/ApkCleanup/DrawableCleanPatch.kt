@@ -51,6 +51,7 @@ private fun densityDirs(dirs: List<File>, density: String): List<File> {
 private fun dedupeType(resDir: File, typePrefix: String, extensions: Set<String>, order: List<String>): Int {
     var removed = 0
     val allDirs = typeDirs(resDir, typePrefix)
+    logger.info("[$typePrefix] all matched dirs (${allDirs.size}): ${allDirs.map { it.name }.sorted()}")
 
     for (density in order) {
         val refDirs = densityDirs(allDirs, density)
@@ -59,15 +60,27 @@ private fun dedupeType(resDir: File, typePrefix: String, extensions: Set<String>
         val refNames = refDirs.flatMap { dir ->
             dir.walkTopDown().filter { it.isFile && it.extension.lowercase() in extensions }.map { it.name }
         }.toSet()
+        logger.info(
+            "[$typePrefix] density=$density refDirs=${refDirs.map { it.name }} refNameCount=${refNames.size}",
+        )
         if (refNames.isEmpty()) continue
 
         val victimDirs = allDirs.filter { it !in refDirs }
+        var deletedThisStep = 0
         for (dir in victimDirs) {
             dir.walkTopDown()
                 .filter { it.isFile && it.name in refNames }
                 .toList()
-                .forEach { if (it.delete()) removed++ }
+                .forEach {
+                    if (it.delete()) {
+                        removed++
+                        deletedThisStep++
+                    } else {
+                        logger.warning("[$typePrefix] FAILED to delete ${it.path}")
+                    }
+                }
         }
+        logger.info("[$typePrefix] density=$density deleted=$deletedThisStep")
     }
 
     return removed
