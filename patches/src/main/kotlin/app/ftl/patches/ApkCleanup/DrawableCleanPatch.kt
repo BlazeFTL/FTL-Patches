@@ -48,9 +48,18 @@ private fun densityDirs(dirs: List<File>, density: String): List<File> {
  * against directories outside that density's set. Matching is exact filename (extension
  * included); a "icon.png" is never treated as a duplicate of an "icon.webp".
  */
+private val TRACE_FILENAMES = setOf("add_24_px.webp", "arrow.webp", "checkmark.webp")
+
 private fun dedupeType(resDir: File, typePrefix: String, extensions: Set<String>, order: List<String>): Int {
     var removed = 0
     val allDirs = typeDirs(resDir, typePrefix)
+
+    if (typePrefix == "drawable") {
+        for (name in TRACE_FILENAMES) {
+            val hitDirs = allDirs.filter { dir -> dir.listFiles { f -> f.isFile && f.name == name }?.isNotEmpty() == true }
+            logger.info("[trace] $name initially present in: ${hitDirs.map { it.name }}")
+        }
+    }
 
     for (density in order) {
         val refDirs = densityDirs(allDirs, density)
@@ -59,20 +68,31 @@ private fun dedupeType(resDir: File, typePrefix: String, extensions: Set<String>
         val refNames = refDirs.flatMap { dir ->
             dir.walkTopDown().filter { it.isFile && it.extension.lowercase() in extensions }.map { it.name }
         }.toSet()
+
+        if (typePrefix == "drawable") {
+            for (name in TRACE_FILENAMES) {
+                logger.info(
+                    "[trace] density=$density refDirs=${refDirs.map { it.name }} " +
+                        "$name in refNames=${name in refNames}",
+                )
+            }
+        }
+
         if (refNames.isEmpty()) continue
 
         val victimDirs = allDirs.filter { it !in refDirs }
         for (dir in victimDirs) {
-            dir.walkTopDown()
-                .filter { it.isFile && it.name in refNames }
-                .toList()
-                .forEach {
-                    if (it.delete()) {
-                        removed++
-                    } else {
-                        logger.warning("[$typePrefix] FAILED to delete ${it.path}")
-                    }
+            val matched = dir.walkTopDown().filter { it.isFile && it.name in refNames }.toList()
+            matched.forEach {
+                val traced = typePrefix == "drawable" && it.name in TRACE_FILENAMES
+                val ok = it.delete()
+                if (ok) {
+                    removed++
+                    if (traced) logger.info("[trace] density=$density deleted ${it.path}")
+                } else {
+                    logger.warning("[$typePrefix] FAILED to delete ${it.path}")
                 }
+            }
         }
     }
 
