@@ -597,11 +597,7 @@ val pngOptimizerPatch = resourcePatch(
     name = "Png Optimizer",
     description = "Quantizes PNG images to a 64-color palette (matching pngquant) and re-picks " +
         "the optimal per-row filter before recompressing at maximum zlib compression (matching " +
-        "optipng), stripping hidden metadata along the way. Nine-patch (.9.png) files are only " +
-        "quantized, never re-filtered, mirroring how these are handled upstream. Quantization " +
-        "is skipped for images it can't safely decode (16-bit depth, interlaced, or " +
-        "already-indexed); those still get the filter/recompression pass. A file is only " +
-        "rewritten when the result is actually smaller.",
+        "optipng), stripping hidden metadata along the way.",
     default = false,
 ) {
     execute {
