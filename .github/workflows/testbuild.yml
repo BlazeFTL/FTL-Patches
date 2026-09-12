@@ -8,8 +8,6 @@ on:
         type: boolean
         default: false
   push:
-    branches-ignore:
-      - test-builds
 
 permissions:
   contents: write
@@ -101,21 +99,6 @@ jobs:
         with:
           path: ${{ steps.stage.outputs.path }}
           archive: false
-
-      - name: Publish raw .mpp to test-builds branch
-        if: steps.mode.outputs.release != 'true'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git checkout --orphan test-builds-tmp
-          git rm -rf . > /dev/null 2>&1 || true
-          cp "${{ steps.stage.outputs.path }}" ./patches-test.mpp
-          git add patches-test.mpp
-          git commit -m "Test build $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          git push origin test-builds-tmp:test-builds --force
 
       - name: Create GitHub Release
         if: steps.mode.outputs.release == 'true'
