@@ -85,7 +85,7 @@ private fun ResourcePatchContext.dedupeType(typePrefix: String, extensions: Set<
             val names = live[dp] ?: continue
             val toRemove = names.filter { it in refNames }
             for (name in toRemove) {
-                delete("res/$dp/$name")
+                get("res/$dp/$name", false).delete()
                 names.remove(name)
                 removed++
             }
@@ -104,7 +104,7 @@ private fun ResourcePatchContext.stripUiModeDirs(uiModes: Set<String>): Int {
         val qualifiers = dirPart.split("-").drop(1)
         if (qualifiers.none { it in uiModes }) continue
 
-        entries.forEach { delete(it) }
+        entries.forEach { get(it, false).delete() }
         removedFiles += entries.size
         logger.fine("Removed $dirPart/ (${entries.size} file(s)) -- matched uiMode qualifier.")
     }
