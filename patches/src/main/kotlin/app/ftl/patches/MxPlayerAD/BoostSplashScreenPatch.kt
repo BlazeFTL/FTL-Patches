@@ -59,7 +59,10 @@ private object WelcomeAdEnabledCheckFingerprint : Fingerprint(
 
 val boostSplashScreenPatch = bytecodePatch(
     name = "Boost Splash Screen Time",
-    description = "Disables MX Player's welcome/splash ad so playback starts immediately.",
+    description = "WARNING: MX PLAYER HAS AN INTEGRITY CHECK, and some mods add their own on " +
+        "top. Use a Play Store build, Use URV Manager, patch with signing off, then use " +
+        "MT Manager Enhanced Signature Kill or the app may refuse to start." +
+        "Disables MX Player's welcome/splash ad so playback starts immediately.",
     default = true,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
