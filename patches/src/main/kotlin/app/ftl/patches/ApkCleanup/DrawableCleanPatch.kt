@@ -94,12 +94,7 @@ private fun stripUiModeDirs(resDir: File, uiModes: Set<String>): Int {
 val drawableCleanPatch = resourcePatch(
     name = "Remove Duplicate Graphics",
     description = "Keeps only one screen-density copy of every duplicated drawable/mipmap file, " +
-        "in every resource package of resources.arsc, and removes the rest, letting Android's " +
-        "density fallback scale the kept copy. For each file, densities are tried starting at " +
-        "the target density, then downward through every lower density, then wrapping around " +
-        "to try whatever's left at the top -- so a duplicate is normally kept at the smallest " +
-        "available copy at or below the target density, only falling back to a higher-density " +
-        "copy if no lower one exists. Mipmaps follow this same order. Optionally strips " +
+        "Mipmaps follow this same order. Optionally strips " +
         "device-specific resources (smartwatch, Android TV, etc.) entirely.",
     default = false,
 ) {
