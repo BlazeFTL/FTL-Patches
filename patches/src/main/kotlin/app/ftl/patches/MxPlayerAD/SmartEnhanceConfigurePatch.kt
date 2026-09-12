@@ -29,6 +29,10 @@ import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 //   ... (everything between is the animation/analytics block we leave dead) ...
 //   [disable branch tail]
 //   sget    ...->smart_enhance_disabled:I  (R-class field NAME - never obfuscated)
+//   [optional const/4 register reload]   <- present on 3.2.2, absent on 3.1.4/3.2.1;
+//                                          the boolean arg register gets clobbered by
+//                                          the dead middle block and sometimes has to
+//                                          be re-materialized right before the call.
 //   invoke-static ...->c(Landroid/content/Context;IZ)V  (toast helper, obfuscated)
 //   return-void                          (method's real end - array-data payloads
 //                                          from the dead middle block follow after
@@ -60,7 +64,11 @@ internal object SmartEnhanceToggleFingerprint : Fingerprint(
             opcode = Opcode.SGET,
             location = MatchAfterWithin(300),
         ),
-        opcode(Opcode.INVOKE_STATIC, location = MatchAfterImmediately()), // disable toast call
+        // 3.1.4/3.2.1: invoke-static immediately follows the sget above (gap 0).
+        // 3.2.2: an extra "const/4 v2, 0x0" reload lands in between (gap 1),
+        // re-materializing the boolean arg after the dead middle block clobbers it.
+        // MatchAfterWithin(1) accepts either, so both builds still match.
+        opcode(Opcode.INVOKE_STATIC, location = MatchAfterWithin(1)), // disable toast call
         opcode(Opcode.RETURN_VOID, location = MatchAfterImmediately()),
     ),
 )
@@ -96,8 +104,14 @@ val configureSmartEnhanceToastPatch = bytecodePatch(
         // only the sibling field differs (enabled vs disabled).
         val enabledIdField = "${disabledIdRef.definingClass}->smart_enhance_enabled:${disabledIdRef.type}"
 
-        // Disable-branch toast is always dropped (matches the reference build).
-        method.removeInstructions(matches[7].index, 2)
+        // Disable-branch toast is always dropped. Span from the field read
+        // through the toast call inclusive - on 3.2.2 a const/4 reload sits
+        // between them (see fingerprint filter 9 above), so this can be 2 or
+        // 3 instructions depending on build; a hardcoded count would either
+        // leave the reload behind or, worse, delete the toast call while
+        // leaving its now-undefined register operands referenced nowhere,
+        // which the verifier would reject at install time.
+        method.removeInstructions(matches[7].index, matches[8].index - matches[7].index + 1)
 
         method.addInstructions(
             insertIndex,
