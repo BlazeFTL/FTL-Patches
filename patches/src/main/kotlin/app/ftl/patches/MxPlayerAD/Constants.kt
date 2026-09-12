@@ -8,7 +8,12 @@ internal val COMPATIBILITY_MX_PLAYER_AD = Compatibility(
     name = "MX Player",
     targets = listOf(
         AppTarget(version = "3.1.4", versionCode = 2001003524),
+        AppTarget(version = "3.2.1", versionCode = 2001003531),
+        AppTarget(version = "3.2.2", versionCode = 2001003532),
     ),
 )
 
 internal const val ACTIVITY_WELCOME_MX_CLASS = "Lcom/mxtech/videoplayer/ad/ActivityWelcomeMX;"
+
+internal const val IV_ME_TOOLBAR_ID = 0x7f0b7ffe
+internal const val ME_TOOLBAR_ACTION_ID = 0x7f0b7fff

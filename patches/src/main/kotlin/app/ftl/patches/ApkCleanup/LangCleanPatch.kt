@@ -2,6 +2,7 @@ package app.ftl.patches.apkcleanup
 
 import app.morphe.patcher.patch.resourcePatch
 import app.morphe.patcher.patch.stringsOption
+import java.io.File
 import java.util.logging.Logger
 
 private val logger = Logger.getLogger("LangCleanPatch")
@@ -14,17 +15,6 @@ private val KNOWN_NON_LANGUAGE_SEGMENTS = setOf(
 
 private data class LangQualifier(val lang: String, val region: String?)
 
-/**
- * Extracts (language, region) pairs from an Android resource directory name.
- *
- * Android resource dirs can have language qualifiers on ANY type:
- *   values-en, drawable-ru-hdpi, mipmap-fr, raw-es, xml-de, layout-ja,
- *   values-zh-rCN, values-b+sr+Latn, etc.
- *
- * Language codes are ISO 639-1 (2-letter) or ISO 639-2 (3-letter).
- * A region suffix (-rXX) directly after a language is captured with it.
- * BCP 47 tags (b+<lang>+<script>+<region>) are parsed.
- */
 private fun extractLanguageQualifiers(dirName: String): List<LangQualifier> {
     val segments = dirName.split("-")
     if (segments.size < 2) return emptyList()
@@ -36,7 +26,6 @@ private fun extractLanguageQualifiers(dirName: String): List<LangQualifier> {
     while (i < rest.size) {
         val seg = rest[i]
 
-        // BCP 47 tag: values-b+sr+Latn or values-b+en+US → segment is "b+sr+Latn"
         if (seg.startsWith("b+")) {
             val parts = seg.split("+")
             if (parts.size >= 2) {
@@ -50,7 +39,6 @@ private fun extractLanguageQualifiers(dirName: String): List<LangQualifier> {
             continue
         }
 
-        // Language code: 2-3 lowercase letters, not a known non-language qualifier
         if (seg.length in 2..3 && seg.all { it.isLowerCase() } && seg !in KNOWN_NON_LANGUAGE_SEGMENTS) {
             val next = rest.getOrNull(i + 1)
             val isRegion = next != null && next.startsWith("r") && next.length == 3 &&
@@ -67,9 +55,16 @@ private fun extractLanguageQualifiers(dirName: String): List<LangQualifier> {
     return result
 }
 
+/** ARSCLib writes one directory per ARSC package, tagged with package.json. */
+private fun packageNameOf(pkgDir: File): String {
+    val json = pkgDir.resolve("package.json").takeIf { it.isFile } ?: return pkgDir.name
+    return Regex("\"package_name\"\\s*:\\s*\"([^\"]+)\"")
+        .find(json.readText())?.groupValues?.get(1) ?: pkgDir.name
+}
+
 val langCleanPatch = resourcePatch(
     name = "Remove Languages",
-    description = "Removes translations for languages you don\'t use. Only keeps the languages you pick. ",
+    description = "Removes translations for languages you don't use, in EVERY resource package of resources.arsc. ",
     default = false,
 ) {
     val keepLanguages by stringsOption(
@@ -82,12 +77,15 @@ val langCleanPatch = resourcePatch(
     )
 
     execute {
-        val resDir = get("res")
-
-        if (!resDir.isDirectory) {
+        // get("res") is scoped to the MANIFEST package only. Morphe decodes each ARSC package
+        // (com.mxtech.videoplayer.ad, .ad.tr, .ad.drive, ...) into its own directory under
+        // <work>/resources/, each with its own res/. res -> packageDir -> resourcesRoot.
+        val mainRes = get("res")
+        if (!mainRes.isDirectory) {
             logger.warning("Language cleanup: res/ directory not found")
             return@execute
         }
+        val resourcesRoot = mainRes.parentFile.parentFile
 
         val keepSet: Set<Pair<String, String?>> = (keepLanguages ?: emptyList()).map { raw ->
             val parts = raw.split("-")
@@ -101,31 +99,36 @@ val langCleanPatch = resourcePatch(
         var removedDirs = 0
         var keptDirs = 0
 
-        resDir.listFiles { file -> file.isDirectory }?.forEach { dir ->
-            val qualifiers = extractLanguageQualifiers(dir.name)
+        resourcesRoot.listFiles { f -> f.isDirectory }.orEmpty().forEach { pkgDir ->
+            val resDir = pkgDir.resolve("res")
+            if (!resDir.isDirectory) return@forEach
+            val pkgName = packageNameOf(pkgDir)
 
-            // No language qualifier → base resource, always keep
-            if (qualifiers.isEmpty()) {
-                keptDirs++
-                return@forEach
-            }
+            resDir.listFiles { file -> file.isDirectory }.orEmpty().forEach { dir ->
+                val qualifiers = extractLanguageQualifiers(dir.name)
 
-            // Keep only if this exact (lang, region) combo is explicitly listed
-            val shouldKeep = qualifiers.any { q -> (q.lang to q.region) in keepSet }
-
-            if (shouldKeep) {
-                keptDirs++
-            } else {
-                val size = dir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
-                dir.deleteRecursively()
-                removedDirs++
-                val label = qualifiers.joinToString { q ->
-                    if (q.region != null) "${q.lang}-r${q.region.uppercase()}" else q.lang
+                // No language qualifier → base resource, always keep
+                if (qualifiers.isEmpty()) {
+                    keptDirs++
+                    return@forEach
                 }
-                logger.fine("Removed ${dir.name} (${size / 1024}KB) — languages: $label")
+
+                val shouldKeep = qualifiers.any { q -> (q.lang to q.region) in keepSet }
+
+                if (shouldKeep) {
+                    keptDirs++
+                } else {
+                    val size = dir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+                    dir.deleteRecursively()
+                    removedDirs++
+                    val label = qualifiers.joinToString { q ->
+                        if (q.region != null) "${q.lang}-r${q.region.uppercase()}" else q.lang
+                    }
+                    logger.fine("Removed $pkgName:${dir.name} (${size / 1024}KB) — languages: $label")
+                }
             }
         }
 
-        logger.info("Language cleanup: kept $keptDirs dirs, removed $removedDirs dirs")
+        logger.info("Language cleanup: kept $keptDirs dirs, removed $removedDirs dirs (all packages)")
     }
 }

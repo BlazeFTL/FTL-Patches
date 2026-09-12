@@ -9,24 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.0](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;56 patches total
-<details>
-<summary>📦 MX Player&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
-<br>
-
-**🎯 Supported versions:**
-
-| 3.1.4 |
-| :---: |
-
-| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
-|----------|----------------|-----------|
-| [Add Network Stream To Me Tab](#add-network-stream-to-me-tab) | WARNING MX PLAYER HAS INTEGRITY CHECK. Mod By Youarefinished Also Has Their Own Integrity Check. So Download From Play Store Use URV Manager With Signing Turned Off, Patch And Then Kill Signature Verification With MT Manager Enhanced (VIP Only) Or Modded Build. |  |
-| [Clean Me Tab](#clean-me-tab) | Removes promo rows and unused tiles from the Me tab: WhatsApp Status Saver, Legal/Help, the local-tiles pager, Local Network, Music Player, Cloud Drive, MX Share, and Private Folder. |  |
-| [Disable Bottom Bar And Add Me Tab To Top](#disable-bottom-bar-and-add-me-tab-to-top) | Hides the bottom navigation bar and adds a Me tab button to the toolbar. |  |
-
-</details>
-
+> **[v1.44.0-dev.54](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.44.0-dev.54)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;60 patches total
 <details>
 <summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;5 patches</summary>
 <br>
@@ -43,6 +26,27 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Disable downloader from download menu](#disable-downloader-from-download-menu) | Strips WebDownloadActivity's intent-filter data so it no longer offers itself as a handler in the system download/"complete action using" chooser. |  |
 | [Remove from default browser list](#remove-from-default-browser-list) | Removes the unscoped http/https <data> entries from MainActivity's first intent-filter carrying them so the app stops appearing as a candidate in the system's default browser / "open with" chooser. |  |
 | [Skip splash and language screens](#skip-splash-and-language-screens) | Jumps straight to the main activity from the splash screen, skipping the splash animation, the language-selection screen, and any ad/app-open dialog normally shown first. |  |
+
+</details>
+
+<details>
+<summary>📦 MX Player&nbsp;&nbsp;•&nbsp;&nbsp;7 patches</summary>
+<br>
+
+**🎯 Supported versions:**
+
+| 3.1.4 | 3.2.1 |
+| :---: | :---: |
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Boost Splash Screen Time](#boost-splash-screen-time) | Disables MX Player's welcome/splash ad so playback starts immediately. |  |
+| [Clean Me Tab](#clean-me-tab) | WARNING: MX Player has an integrity check, and some mods add their own on top. Use a Play Store build, Use URV Manager, patch with signing off, then use MT Manager Enhanced Signature Kill or the app may refuse to start.Removes promo rows and unused tiles from the Me tab. Optional Add Network Stream tile. | • Add Network Stream tile |
+| [Configure Smart Enhance](#configure-smart-enhance) | Configures the Smart Enhance intro popup and enable/disable toast. | • Skip intro popup and animation<br>• Show toast on enable |
+| [Configure SpeedUp overlay](#configure-speedup-overlay) | "2x UI": keeps the long-press SpeedUp overlay/animation, with the stock leftover-visible-view bug fixed. "No UI": the overlay never shows at all - the speed change itself still applies, since that's handled elsewhere. | • No UI |
+| [Disable Bottom Bar And Add Me Tab To Top](#disable-bottom-bar-and-add-me-tab-to-top) | Hides the bottom navigation bar and adds a Me tab button to the toolbar. |  |
+| [Remove Recycle Bin](#remove-recycle-bin) | Disables the Recycle Bin and removes it from the Me tab; deleted files are removed permanently. |  |
+| [Sidebar & Player Defaults](#sidebar-player-defaults) | Cleans the player sidebar and More menu; sets default shortcuts and subtitle view. | • Hide Bookmark<br>• Hide Favourite<br>• Hide Add to Playlist<br>• Hide Tutorial<br>• Hide Playing Queue<br>• Hide Video Display<br>• Hide More menu Help section<br>• Change default shortcuts<br>• Default shortcuts bitmask (hex)<br>• Open subtitle settings by default |
 
 </details>
 
@@ -265,15 +269,15 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Add Save Data](#add-save-data) | Unpacks bundled save-data zip(s) into the app's storage on first launch. | • 1. Select data/data zip<br>• 2. Select Android/data zip<br>• 3. Select Android/obb zip<br>• Add toast<br>• Toast message<br>• Show toast once |
 | [Add Toast](#add-toast) | Shows a custom toast message when the app starts. Works on any app. | • Toast message<br>• Show once |
 | [Change Display Size](#change-display-size) | Change any app's display size without touching your phone's system settings. Make it bigger if things look too small, or smaller to fit more on screen. You Need To Configure 100(No Change), 90(10% Smaller App Ui), 110(10% Bigger App Ui). | • Display scale |
-| [Png Optimizer](#png-optimizer) | Compresses PNG images without losing quality and strips hidden metadata (DPI, timestamps, text) to make the app smaller. Only rewrites files when the result is actually smaller. |  |
+| [Png Optimizer](#png-optimizer) | Quantizes PNG images to a 64-color palette (matching pngquant) and re-picks the optimal per-row filter before recompressing at maximum zlib compression (matching optipng), stripping hidden metadata along the way. |  |
 | [Remove Ads](#remove-ads) | Cleans Apps Code From Ads Junk. Works In Most Apps Where There Isn't Any Check For Ads Loaded Or Not. If There Is A Check You Will Be Stuck In SplashActivity Due To Custom Ads Load Checks But It Is Superior. |  |
 | [Remove Ads Lite (Adobo)](#remove-ads-lite-adobo) | Based On (Adobo's Block Ads+Mobile Ads) Use When Remove Ads Patch Caused Problem. It Is Weaker But Effective, No Need To Select A Host File Or Configure Anything. In Future It May Replace Remove Ads Patch If I Find No Problems. | • Redirection IP<br>• Additional hosts file (optional) |
 | [Remove Ads Ultra Lite](#remove-ads-ultra-lite) | Call finish on ad activities. Use Where Remove Ads And Remove Ads Lite (Adobo) Caused Problem. Its In Very Early Stage So Test And Provide FeedBack If You Still See Ads In Some App. |  |
 | [Remove Analytics](#remove-analytics) | Disables tracking and crash-reporting tools, corrupts analytics web links inside the code, and removes background tracking services. |  |
 | [Remove Analytics New](#remove-analytics-new) | Corrupts analytics network URLs and split-scheme string obfuscation inside the code, and strips matching manifest components. |  |
 | [Remove Debug Info](#remove-debug-info) | Removes debug information (line numbers, variable names, source file references) from every class in the .dex files to reduce overall APK size. |  |
-| [Remove Duplicate Graphics](#remove-duplicate-graphics) | Keeps images for only one screen density (like xhdpi) and removes copies for all other densities. Android will automatically scale the kept images, making the app significantly smaller. | • Target density |
-| [Remove Languages](#remove-languages) | Removes translations for languages you don't use. Only keeps the languages you pick.  | • Languages to keep |
+| [Remove Duplicate Graphics](#remove-duplicate-graphics) | Keeps only one screen-density copy of every duplicated drawable/mipmap file, Mipmaps follow this same order. Optionally strips device-specific resources (smartwatch, Android TV, etc.) entirely. | • Target density<br>• Remove smartwatch (Wear OS) resources<br>• Remove Android TV resources<br>• Remove other device-specific resources (car, desk dock, VR headset) |
+| [Remove Languages](#remove-languages) | Removes translations for languages you don't use, in EVERY resource package of resources.arsc.  | • Languages to keep |
 | [Skip Splash Screen - Expert Only](#skip-splash-screen-expert-only) | EXPERT USERS ONLY. Manually Configure It To Point At Real Splash And Main Activity As Many Apps Use Other Names. Check the log to know what the patch is doing. Ensure App Doesnt Ask For Permissions In Splash Screen. | • Splash activity name<br>• Real main activity name |
 | [Spoof App Signature](#spoof-app-signature) | Makes the app think its signing certificate is unchanged after Morphe re-signs it, useful when an app crashes or shows a tamper warning because it checks its own certificate. Does not bypass Play Integrity / SafetyNet hardware attestation. Apply with Original app certificate patch. | • Package name override (optional) |
 
