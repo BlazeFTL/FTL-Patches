@@ -62,6 +62,8 @@ private fun densityDirParts(dirParts: Set<String>, density: String): Set<String>
  * of the entry listing tracks deletions as they happen, since listApkEntries always reflects
  * the original input APK and never a patch's own prior deletions in the same run.
  */
+private val TRACE_FILENAMES = setOf("add_24_px.webp", "arrow.webp", "checkmark.webp")
+
 private fun ResourcePatchContext.dedupeType(typePrefix: String, extensions: Set<String>, order: List<String>): Int {
     var removed = 0
     val allEntries = entriesUnder(typePrefix)
@@ -85,9 +87,24 @@ private fun ResourcePatchContext.dedupeType(typePrefix: String, extensions: Set<
             val names = live[dp] ?: continue
             val toRemove = names.filter { it in refNames }
             for (name in toRemove) {
-                get("res/$dp/$name", false).delete()
-                names.remove(name)
-                removed++
+                val path = "res/$dp/$name"
+                val traced = typePrefix == "drawable" && name in TRACE_FILENAMES
+                val staged = get(path, false)
+                if (traced) {
+                    logger.info(
+                        "[trace] density=$density path=$path stagedPath=${staged.path} " +
+                            "existsBeforeDelete=${staged.exists()}",
+                    )
+                }
+                val ok = staged.delete()
+                if (traced) logger.info("[trace] density=$density path=$path delete()=$ok")
+
+                if (ok) {
+                    names.remove(name)
+                    removed++
+                } else {
+                    logger.warning("[$typePrefix] FAILED to delete $path")
+                }
             }
         }
     }
@@ -104,9 +121,9 @@ private fun ResourcePatchContext.stripUiModeDirs(uiModes: Set<String>): Int {
         val qualifiers = dirPart.split("-").drop(1)
         if (qualifiers.none { it in uiModes }) continue
 
-        entries.forEach { get(it, false).delete() }
-        removedFiles += entries.size
-        logger.fine("Removed $dirPart/ (${entries.size} file(s)) -- matched uiMode qualifier.")
+        val deleted = entries.count { get(it, false).delete() }
+        removedFiles += deleted
+        logger.fine("Removed $dirPart/ ($deleted/${entries.size} file(s)) -- matched uiMode qualifier.")
     }
     return removedFiles
 }
