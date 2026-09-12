@@ -180,6 +180,10 @@ val drawableCleanPatch = resourcePatch(
             }
             drawableTotal += dedupeType(resDir, "drawable", DRAWABLE_EXTENSIONS, order)
             mipmapTotal += dedupeType(resDir, "mipmap", MIPMAP_EXTENSIONS, order)
+
+            resDir.walkBottomUp()
+                .filter { it.isDirectory && it.listFiles()?.isEmpty() == true }
+                .forEach { it.delete() }
         }
 
         if (stripSet.isNotEmpty()) {
