@@ -53,7 +53,6 @@ jobs:
 
       - name: Determine next version
         id: ver
-        if: steps.mode.outputs.release == 'true'
         run: |
           last_tag=$(git for-each-ref refs/tags --sort=-creatordate --format='%(refname:short)' | head -n1)
           if [ -z "$last_tag" ]; then
@@ -84,11 +83,7 @@ jobs:
         run: |
           mkdir -p /tmp/out
           src="$(ls patches/build/libs/patches-*.mpp | head -n1)"
-          if [ "${{ steps.mode.outputs.release }}" = "true" ]; then
-            name="patches-${{ steps.ver.outputs.version }}.mpp"
-          else
-            name="patches.mpp"
-          fi
+          name="patches-${{ steps.ver.outputs.version }}.mpp"
           cp "$src" "/tmp/out/$name"
           echo "path=/tmp/out/$name" >> "$GITHUB_OUTPUT"
           echo "name=$name" >> "$GITHUB_OUTPUT"
