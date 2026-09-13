@@ -38,6 +38,25 @@ internal val addMeTabMenuResourcePatch = resourcePatch(
             writeText(ME_TOOLBAR_ACTION_LAYOUT)
         }
 
+        // Pin these to fixed IDs instead of letting aapt2 auto-assign them.
+        // Auto-assigned IDs for newly added resources are appended after all
+        // native ones by count, so they silently shift whenever the base
+        // APK's own native id/menu resource count changes between versions -
+        // exactly the failure mode this caused (see DisableBottomBarAndAddMeTabPatch).
+        document("res/values/public.xml").use { document ->
+            val root = document.documentElement
+            listOf(
+                "iv_me_toolbar" to IV_ME_TOOLBAR_ID,
+                "me_toolbar_action" to ME_TOOLBAR_ACTION_ID,
+            ).forEach { (name, id) ->
+                val entry = document.createElement("public")
+                entry.setAttribute("type", "id")
+                entry.setAttribute("name", name)
+                entry.setAttribute("id", "0x%08x".format(id))
+                root.appendChild(entry)
+            }
+        }
+
         OPTIONS_MENU_FILES.forEach { path ->
             document(path).use { document ->
                 val root = document.documentElement

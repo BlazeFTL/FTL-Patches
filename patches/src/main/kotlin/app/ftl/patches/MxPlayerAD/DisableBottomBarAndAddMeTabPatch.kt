@@ -165,15 +165,16 @@ val disableBottomBarAndAddMeTabPatch = bytecodePatch(
             // so every path through the method hits it unconditionally after M0 runs.
             val insertionIndex = fingerprint.instructionMatches[2].index
 
-            // Confirmed by manual smali diff against a working build (MX Player
-            // v3.1.4 / versionCode 24011893): find the item by its build-assigned
-            // numeric id, get its action view, wire it directly - no extension call.
-            // p0 already implements View.OnClickListener (added above), so it's
-            // passed straight through as its own listener.
+            // Finds the item by its pinned resource id (see AddMeTabMenuResourcePatch -
+            // ME_TOOLBAR_ACTION_ID is fixed via public.xml, not aapt2-auto-assigned,
+            // so it no longer shifts between builds), gets its action view, wires it
+            // directly - no extension call. p0 already implements
+            // View.OnClickListener (added above), so it's passed straight through as
+            // its own listener.
             method.addInstructions(
                 insertionIndex,
                 """
-                    const v4, 0x7f0b1d9a
+                    const v4, ${"0x%08x".format(ME_TOOLBAR_ACTION_ID)}
                     invoke-interface {p1, v4}, Landroid/view/Menu;->findItem(I)Landroid/view/MenuItem;
                     move-result-object v3
                     invoke-interface {v3}, Landroid/view/MenuItem;->getActionView()Landroid/view/View;

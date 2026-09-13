@@ -27,17 +27,11 @@ private val AD_URL_REGEX_2 = Regex(
     """((https|http|www|www.*)(:\/\/)?(www|www.*)?)?(api.*advertising.*com.*|adc3-launch\.adcolony\.com.*|audience_network(.dex)?|gamma.*advertising.*com.*|schemas\.applovin\.com\/android\/.*|\.applovin\.com\/privacy\/|\.facebook\.com\/adnw_logging\/|graph\.\%s|mediation\.fyber\.com\/mediate|\.googleapis\.com\/auth\/games(.*)?|firebaseappcheck.googleapis.com(.*)?|firebase-settings\.crashlytics\.com(.*)?|com.google.firebase.analytics.FirebaseAnalytics|firebaseinstallations.googleapis.com(.*)?|marketplace-android-.*\.hyprmx\.com|.*inmobi\.com.*|\/config\/secure\.cfg|(.*)?supersonicads\.com(.*)?|.*tapjoy.*\.com\/|.*unityads\.unity3d\.com(.*)?|.*sdk.mediation.unity3d.com.*|(.*)?vungle\.com.*|.*pangle.*|.*mintegral.*|prod.*(advertising|analytics).*|prodregistry.*org.*|featureassets.org.*|(.*)?log.*inmobi.*|(api.*adsdk.*)|mobile\.smartadserver\.com|.*ads.*vungle.*|.*amazonaws.com.*|(app|gdpr|subscription|ssrv)(.*)?adjust.*|adqualitysupport.smaato.com|ad.mail.ru.*|mobile.yandexadexchange.net|startapp\.com.*|googlemobileadssdk.*|pagead2\.googlesyndication\.com.pagead.*|adservice.google.com(.*)?|(.*)?pubmatic.com(.*)?|(.*)?pubnative.net(.*)?|(.*)?admob.com(.*)?|sb.scorecardresearch.com(.*)?|cdn.appnext.com(?:.*)|admost.(github.io|com)(.*)?|.*amplitude.com.|(cdn|api|api2).branch.io.|.*amazon-adsystem.com.*|api.onesignal.com.|zc.adswizz.com.*|sdk.*braze.com|..appbaqend.com.*|wsmetrics.batch.com(.*)?|(gov-)?mobile-(collector|crash).*(nr-data.net|newrelic.com)|.*tiktokpangle.*)"""
 )
 
-// A literal placeholder, same as the source ruleset's own replacement value -
-// no randomization, nothing generated at patch time.
 private const val NEUTRALIZED_VALUE = "http://127.0.0.1/source_code=@BlazeFTL/"
 
 private fun matchesAdUrlRuleset(value: String) =
     AD_URL_REGEX_1.matches(value) || AD_URL_REGEX_2.matches(value)
 
-// Two-fragment scheme-splitting obfuscation: a URL is assembled at runtime
-// from two adjacent const-strings carrying different scheme fragments
-// ("hts/" vs "tp:/"). Source ruleset only trips when the pair uses two
-// *different* fragment variants back to back.
 private val SCHEME_FRAGMENT_PATTERN = Regex("^(hts/|tp:/)")
 
 private fun schemeFragmentOf(value: String) = SCHEME_FRAGMENT_PATTERN.find(value)?.value
@@ -72,6 +66,20 @@ private fun Instruction.asStringLiteralOrNull(): String? {
     return ((this as ReferenceInstruction).reference as StringReference).string
 }
 
+// The source find/replace ruleset only ever matches activity/receiver/service/
+// activity-alias elements that open, contain >=1 intent-filter/meta-data/
+// action/data/category/property child, and close with an explicit end tag.
+// Self-closing leaf elements (no children) can never satisfy that pattern,
+// so they must pass through untouched here too, or this DOM-based port
+// over-matches relative to the ruleset it's porting.
+private fun Element.hasQualifyingChild(): Boolean {
+    val kids = childNodes
+    for (i in 0 until kids.length) {
+        if (kids.item(i) is Element) return true
+    }
+    return false
+}
+
 // name = null: brought in by removeAdsAnalyticsPatch via dependsOn, no
 // separate toggle of its own.
 val stripAdAnalyticsManifestComponentsPatch = resourcePatch(
@@ -92,10 +100,18 @@ val stripAdAnalyticsManifestComponentsPatch = resourcePatch(
                     val nameAttr = el.getAttribute("android:name")
                     if (nameAttr.isEmpty()) continue
 
+                    // "provider" intentionally excluded: providers are resolved
+                    // synchronously at runtime (e.g. ContentResolver.registerContentObserver),
+                    // so removing one whose init code still runs throws
+                    // SecurityException instead of failing silently like a
+                    // stripped activity/receiver/service would.
                     val hit = when (el.tagName) {
-                        "activity", "receiver", "service", "provider" ->
-                            MANIFEST_COMPONENT_REGEX_A.matches(nameAttr) || MANIFEST_COMPONENT_REGEX_E.matches(nameAttr)
-                        "activity-alias" -> MANIFEST_COMPONENT_REGEX_A.matches(nameAttr)
+                        "activity", "receiver", "service", "provider" -> {
+                            val matchesA = el.hasQualifyingChild() && MANIFEST_COMPONENT_REGEX_A.matches(nameAttr)
+                            val matchesE = MANIFEST_COMPONENT_REGEX_E.matches(nameAttr)
+                            matchesA || matchesE
+                        }
+                        "activity-alias" -> el.hasQualifyingChild() && MANIFEST_COMPONENT_REGEX_A.matches(nameAttr)
                         "property" -> MANIFEST_COMPONENT_REGEX_E.matches(nameAttr)
                         "meta-data", "uses-library" -> MANIFEST_META_REGEX.matches(nameAttr)
                         else -> false

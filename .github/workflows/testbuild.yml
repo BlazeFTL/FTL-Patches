@@ -1,0 +1,111 @@
+name: Test Build (single patch)
+
+on:
+  workflow_dispatch:
+    inputs:
+      make_release:
+        description: 'Create a tagged GitHub Release instead of pushing to test-builds'
+        type: boolean
+        default: false
+  push:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build patches.mpp
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      startsWith(github.event.head_commit.message, 'sin:')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Gradle (with caching)
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Build patches.mpp
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./gradlew :patches:buildAndroid
+
+      - name: Resolve mode
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.make_release }}" = "true" ]; then
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Determine next version
+        id: ver
+        run: |
+          last_tag=$(git for-each-ref refs/tags --sort=-creatordate --format='%(refname:short)' | head -n1)
+          if [ -z "$last_tag" ]; then
+            last_tag="v0.0.0"
+          fi
+          ver="${last_tag#v}"
+
+          if [[ "$ver" =~ ^([0-9]+\.[0-9]+\.[0-9]+)-dev\.([0-9]+)$ ]]; then
+            base="${BASH_REMATCH[1]}"
+            dev="${BASH_REMATCH[2]}"
+            next="${base}-dev.$((dev + 1))"
+          elif [[ "$ver" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            major="${BASH_REMATCH[1]}"
+            minor="${BASH_REMATCH[2]}"
+            patch="${BASH_REMATCH[3]}"
+            next="${major}.${minor}.$((patch + 1))"
+          else
+            echo "Unrecognized tag format: $last_tag" >&2
+            exit 1
+          fi
+
+          echo "last_tag=$last_tag" >> "$GITHUB_OUTPUT"
+          echo "version=$next" >> "$GITHUB_OUTPUT"
+          echo "tag=v${next}" >> "$GITHUB_OUTPUT"
+
+      - name: Stage build artifact
+        id: stage
+        run: |
+          mkdir -p /tmp/out
+          src="$(ls patches/build/libs/patches-*.mpp | head -n1)"
+          name="patches-${{ steps.ver.outputs.version }}.mpp"
+          cp "$src" "/tmp/out/$name"
+          echo "path=/tmp/out/$name" >> "$GITHUB_OUTPUT"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      # Raw upload: UI download button gives you the .mpp directly, no zip
+      - name: Upload raw .mpp artifact (no zip)
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ steps.stage.outputs.path }}
+          archive: false
+
+      - name: Create GitHub Release
+        if: steps.mode.outputs.release == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          prerelease_flag=""
+          if [[ "${{ steps.ver.outputs.version }}" == *-dev.* ]]; then
+            prerelease_flag="--prerelease"
+          fi
+          gh release create "${{ steps.ver.outputs.tag }}" \
+            "${{ steps.stage.outputs.path }}" \
+            --title "${{ steps.ver.outputs.tag }}" \
+            --notes "Manual test build release from $(git rev-parse --short HEAD). Previous tag: ${{ steps.ver.outputs.last_tag }}" \
+            $prerelease_flag
