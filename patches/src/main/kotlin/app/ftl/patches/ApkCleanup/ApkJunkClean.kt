@@ -59,9 +59,10 @@ private val JUNK_PATTERNS = listOf(
     Regex(""".*(?:^|/)baseline\.profm?$"""),
     // MX Player ad-webview templates / notices at assets root (exact names)
     Regex("""^assets/(?:privacy_notice|index|image_interstitial|fyb_static_endcard_tmpl|fyb_iframe_endcard_tmpl)\.html$"""),
-    // libphonenumber per-region metadata blobs in assets/data/: EVERY match goes,
-    // seen or unseen (approved regex). Covers both families found so far.
-    Regex("""^assets/data/(?:Short|Phone)NumberMetadataProto.*$"""),
+    // libphonenumber per-region proto blobs in assets/data/: EVERY match goes, seen or
+    // unseen (approved regex). Covers all families found so far; CarrierSpecificsProto
+    // is pre-covered as the only remaining family libphonenumber ships (no-op if absent).
+    Regex("""^assets/data/(?:ShortNumberMetadataProto|PhoneNumberMetadataProto|PhoneNumberAlternateFormatsProto|CarrierSpecificsProto).*$"""),
     // Optional: catch future GTM container ids too (uncomment if you ever want that):
     // Regex("""^assets/containers/GTM-.*\.json$"""),
     // Optional extra ad-stack files at assets root (still NOT selected by you):
