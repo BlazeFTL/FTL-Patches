@@ -8,18 +8,8 @@ import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 
-// isPremium(Context)Z ends as:
-//   const-string v0, "sL_01"
-//   const/4 v1, 0x0
-//   invoke-interface {p1, v0, v1}, Landroid/content/SharedPreferences;->getBoolean(Ljava/lang/String;Z)Z
-//   move-result p1
-//   return p1
-// The move-result right after the getBoolean call is replaced with a hardcoded
-// const/4 0x1 into the same register, so the stored preference is read but its
-// value is discarded and isPremium always reports true - every premium gate in
-// the app unlocks regardless of the "sL_01" flag. Only the stable SDK call
-// shape (SharedPreferences.getBoolean) is scanned for inside the fingerprinted
-// method, never an obfuscated name.
+// We check for the exact SDK method shape, but allow both INVOKE_INTERFACE
+// and INVOKE_INTERFACE_RANGE since R8 can emit either depending on register count.
 private fun MethodReference.isSharedPreferencesGetBooleanCall() =
     definingClass == "Landroid/content/SharedPreferences;" &&
         name == "getBoolean" &&
@@ -38,10 +28,14 @@ val unlockPremiumPatch = bytecodePatch(
         val method = IsPremiumFingerprint.method
         val instructions = method.instructionsOrNull?.toList() ?: return@execute
 
+        // Scan for the getBoolean call and its trailing MOVE_RESULT.
+        // We do this dynamically instead of a static fingerprint filter
+        // because getBoolean's exact instruction index varies per build.
         val moveResultIndex = instructions.indices
             .firstOrNull { i ->
                 val instruction = instructions[i]
-                instruction.opcode == Opcode.INVOKE_INTERFACE &&
+                val opcode = instruction.opcode
+                (opcode == Opcode.INVOKE_INTERFACE || opcode == Opcode.INVOKE_INTERFACE_RANGE) &&
                     ((instruction as? ReferenceInstruction)?.reference as? MethodReference)
                         ?.isSharedPreferencesGetBooleanCall() == true &&
                     instructions.getOrNull(i + 1)?.opcode == Opcode.MOVE_RESULT
@@ -49,6 +43,7 @@ val unlockPremiumPatch = bytecodePatch(
             ?.plus(1)
             ?: return@execute
 
+        // Replace the move-result with a hardcoded const/4 0x1
         val register = (instructions[moveResultIndex] as OneRegisterInstruction).registerA
         method.replaceInstruction(moveResultIndex, "const/4 v$register, 0x1")
     }
