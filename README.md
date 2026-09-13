@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.44.0-dev.57](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.44.0-dev.57)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;61 patches total
+> **[v1.43.1](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;61 patches total
 <details>
 <summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;5 patches</summary>
 <br>
@@ -215,7 +215,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 </details>
 
 <details>
-<summary>📦 ImpoStack&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<summary>📦 ImpoStack: PDF Imposition&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
 
 **🎯 Supported versions:**
