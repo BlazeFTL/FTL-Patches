@@ -52,6 +52,58 @@ private val JUNK_PATTERNS = listOf(
     Regex(""".*jetty-dir\.css$"""),
     // ART baseline profiles (also catches APKs that ship them outside assets/dexopt/)
     Regex(""".*(?:^|/)baseline\.profm?$"""),
+    // MX Player ad-webview templates / notices at assets root (exact names)
+    Regex("""^assets/(?:privacy_notice|index|image_interstitial|fyb_static_endcard_tmpl|fyb_iframe_endcard_tmpl)\.html$"""),
+    // libphonenumber short-number blobs: EVERY match goes, seen or unseen (approved regex)
+    Regex("""^assets/data/ShortNumberMetadataProto.*$"""),
+    // Optional: catch future GTM container ids too (uncomment if you ever want that):
+    // Regex("""^assets/containers/GTM-.*\.json$"""),
+    // Optional extra ad-stack files at assets root:
+    // Regex("""^assets/(?:omsdk-v1|aps-mraid|dtb-m)\.js$"""),
+    // Regex("""^assets/ia_(?:mraid_bridge|js_load_monitor)\.txt$"""),
+    // Regex("""^assets/(?:aps_mobile_client_config|customConfiguration)\.json$"""),
+    // Regex("""^assets/customConfiguration$"""),
+    // Regex("""^assets/(?:mini|hbde)\.db$"""),
+)
+
+// Exact file entries audited from screenshots. A future file added beside these survives.
+private val JUNK_ENTRIES = setOf(
+    // assets/PlayReady/ — 14/14 files shown
+    "assets/PlayReady/zprivsig.dat",
+    "assets/PlayReady/zprivencr.dat",
+    "assets/PlayReady/zgpriv.dat",
+    "assets/PlayReady/unsignedtemplate.dat",
+    "assets/PlayReady/priv.dat",
+    "assets/PlayReady/prinit.dat",
+    "assets/PlayReady/ndrpriv.dat",
+    "assets/PlayReady/ndrgpriv.dat",
+    "assets/PlayReady/ndrcerttemplate.dat",
+    "assets/PlayReady/devcerttemplate.dat",
+    "assets/PlayReady/devcert.dat",
+    "assets/PlayReady/bgroupcert.dat",
+    "assets/PlayReady/bDomainCertSecL0.dat",
+    "assets/PlayReady/bdevcert.dat",
+    // assets/META-INF/ — file entry shown
+    "assets/META-INF/\$catalog.json",
+    // assets/json/ — 1/1 shown
+    "assets/json/sampleResponse.json",
+    // assets/fatafat/ — 2/2 shown
+    "assets/fatafat/metadata.json",
+    "assets/fatafat/bundled.zip",
+    // assets/containers/ — 1/1 shown
+    "assets/containers/GTM-KZ83HD3.json",
+)
+
+// Folder entries shown as junk in screenshots: the folder itself + its interior go.
+// New siblings added next to them in future builds are NOT touched.
+private val JUNK_TREES = listOf(
+    "assets/META-INF/proguard",
+    "assets/composeResources/mxmediaadslib.vidadlibrary.generated.resources",
+    "assets/com/appsflyer",
+    "assets/com.amazon.avod.watchlist.room.ModifyWatchlistDatabase",
+    "assets/com.amazon.avod.watchlist.offline.ModifyWatchlistDatabase",
+    "assets/com.amazon.avod.search.room.LocalSearchQueryDatabase",
+    "assets/com.amazon.avod.cache.room.ResponseCacheDatabase",
 )
 
 // Directories whose ENTIRE content gets deleted, no matter what's inside.
@@ -69,6 +121,8 @@ private val EXCLUDED_PREFIXES = listOf("res/")
 val apkCleanupPatch = rawResourcePatch(
     name = "APK Junk Cleanup",
     description = "Removes junk and useless files with no runtime purpose inside apk. " +
+        "Asset junk removal is audited exact-entry based: only verified junk files/folders are " +
+        "removed, unknown future additions are kept (except ShortNumberMetadataProto in assets/data/). " +
         "To keep only one CPU architecture, use the patcher's strip-libs option " +
         "(Morphe Manager) or --striplibs (Morphe Desktop).",
     default = false,
@@ -78,6 +132,9 @@ val apkCleanupPatch = rawResourcePatch(
         var freedBytes = 0L
 
         fun isProtected(relativePath: String) = PROTECTED_PATTERNS.any { it.matches(relativePath) }
+
+        fun inTree(entryName: String, tree: String) =
+            entryName == tree || entryName.startsWith("$tree/")
 
         fun deleteEntry(entryName: String) {
             if (isProtected(entryName)) return
@@ -106,6 +163,8 @@ val apkCleanupPatch = rawResourcePatch(
 
             val shouldDelete = when {
                 JUNK_PATTERNS.any { it.matches(entryName) } -> true
+                entryName in JUNK_ENTRIES -> true
+                JUNK_TREES.any { inTree(entryName, it) } -> true
                 JUNK_DIRECTORY_PREFIXES.any { entryName.startsWith(it) } -> true
                 entryName == "kotlin" || entryName.startsWith("kotlin/") -> true
                 entryName == "assets/audience_network.dex" ||
