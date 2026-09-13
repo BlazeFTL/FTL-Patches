@@ -1,5 +1,6 @@
 package app.ftl.patches.apkcleanup
 
+import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.rawResourcePatch
 import app.morphe.patcher.patch.stringOption
 import java.io.File
@@ -7,7 +8,7 @@ import java.util.logging.Logger
 
 private val logger = Logger.getLogger("ApkCleanupPatch")
 
-private const val KEEP_ALL = "all"
+private const val DEFAULT_ABI = "arm64-v8a"
 private val KNOWN_ABIS = listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
 
 private val PROTECTED_PATTERNS = listOf(
@@ -133,19 +134,38 @@ val apkCleanupPatch = rawResourcePatch(
     description = "Removes junk and useless files with no runtime purpose inside apk. " +
         "Asset junk removal is audited exact-entry based: only verified junk files/folders are " +
         "removed, unknown future additions are kept (except the approved libphonenumber " +
-        "metadata regex in assets/data/). Optionally keeps only one native architecture.",
+        "metadata regex in assets/data/). Native libraries are left untouched unless the " +
+        "'Strip native architectures' toggle is enabled.",
     default = false,
 ) {
-    // Settings dropdown shown in Morphe Manager / Desktop.
+    // Master on/off switch for ABI stripping. OFF by default, so merely selecting
+    // this patch never touches lib/.
+    val stripLibs by booleanOption(
+        "stripLibs",
+        default = false,
+        title = "Strip native architectures",
+        description = "OFF (default): lib/ is left completely untouched. " +
+            "ON: deletes lib/<abi>/ of every architecture except the one selected below.",
+    )
+
+    // Only consulted when stripLibs is ON.
+    // NOTE: Morphe Manager renders the map KEYS as dropdown labels and applies the
+    // map VALUES as the option value (OptionValuesKt.applyPatchOptions), so the
+    // human-readable text goes on the left and the real value on the right.
     val keepAbi by stringOption(
         "keepAbi",
-        default = KEEP_ALL,
-        values = mapOf(KEEP_ALL to "Keep all architectures (no stripping)") +
-            KNOWN_ABIS.associateWith { "Keep only $it" },
+        default = DEFAULT_ABI,
+        values = mapOf(
+            "Keep only arm64-v8a (most phones)" to "arm64-v8a",
+            "Keep only armeabi-v7a (old 32-bit phones)" to "armeabi-v7a",
+            "Keep only x86_64 (emulators)" to "x86_64",
+            "Keep only x86 (old emulators)" to "x86",
+        ),
         title = "Architecture to keep",
-        description = "Deletes lib/<abi>/ of every other architecture from the patched APK. " +
+        description = "Used only when 'Strip native architectures' is ON. " +
+            "Deletes lib/<abi>/ of every other architecture from the patched APK. " +
             "Requires patcher v1.13.0+ (delete() on unstaged entries).",
-        validator = { it == null || it == KEEP_ALL || it in KNOWN_ABIS },
+        validator = { it == null || it in KNOWN_ABIS },
     )
 
     execute {
@@ -172,7 +192,7 @@ val apkCleanupPatch = rawResourcePatch(
         }
 
         listApkEntries().forEach { entryName ->
-            // Native libs are handled exclusively by the keepAbi option below.
+            // Native libs are handled exclusively by the stripLibs option below.
             if (entryName.startsWith("lib/")) return@forEach
             if (EXCLUDED_PREFIXES.any { entryName.startsWith(it) }) return@forEach
 
@@ -196,28 +216,34 @@ val apkCleanupPatch = rawResourcePatch(
             .mapNotNull { it.split("/").getOrNull(1) }
             .distinct()
 
-        val chosenAbi = keepAbi ?: KEEP_ALL
-        when {
-            shippedAbis.isEmpty() ->
-                logger.info("APK Cleanup: no native libraries in this APK, nothing to strip")
-            chosenAbi == KEEP_ALL ->
-                logger.info("APK Cleanup: detected native ABIs: ${shippedAbis.joinToString()} (keepAbi=$KEEP_ALL, nothing stripped)")
-            chosenAbi !in shippedAbis ->
-                logger.warning(
-                    "APK Cleanup: lib/$chosenAbi/ is not shipped by this APK " +
-                        "(has: ${shippedAbis.joinToString()}); ABI stripping skipped"
-                )
-            else -> {
-                val droppedAbis = shippedAbis - chosenAbi
-                droppedAbis.forEach { abi ->
-                    // Directory name deletes everything below it (morphe-patcher#199).
-                    delete("lib/$abi/")
-                    removedAbiTrees++
-                }
+        if (stripLibs != true) {
+            if (shippedAbis.isNotEmpty()) {
                 logger.info(
-                    "APK Cleanup: kept lib/$chosenAbi/, removed: " +
-                        droppedAbis.joinToString(", ") { "lib/$it/" }
+                    "APK Cleanup: ABI stripping is OFF; keeping all ABIs: ${shippedAbis.joinToString()}"
                 )
+            }
+        } else {
+            val chosenAbi = keepAbi ?: DEFAULT_ABI
+            when {
+                shippedAbis.isEmpty() ->
+                    logger.info("APK Cleanup: no native libraries in this APK, nothing to strip")
+                chosenAbi !in shippedAbis ->
+                    logger.warning(
+                        "APK Cleanup: lib/$chosenAbi/ is not shipped by this APK " +
+                            "(has: ${shippedAbis.joinToString()}); ABI stripping skipped"
+                    )
+                else -> {
+                    val droppedAbis = shippedAbis - chosenAbi
+                    droppedAbis.forEach { abi ->
+                        // Directory name deletes everything below it (morphe-patcher#199).
+                        delete("lib/$abi/")
+                        removedAbiTrees++
+                    }
+                    logger.info(
+                        "APK Cleanup: kept lib/$chosenAbi/, removed: " +
+                            droppedAbis.joinToString(", ") { "lib/$it/" }
+                    )
+                }
             }
         }
 
