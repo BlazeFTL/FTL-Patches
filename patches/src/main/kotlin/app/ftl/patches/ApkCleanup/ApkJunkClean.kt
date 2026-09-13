@@ -54,13 +54,12 @@ private val JUNK_PATTERNS = listOf(
     Regex(""".*(?:^|/)baseline\.profm?$"""),
     // MX Player ad-webview templates / notices at assets root (exact names)
     Regex("""^assets/(?:privacy_notice|index|image_interstitial|fyb_static_endcard_tmpl|fyb_iframe_endcard_tmpl)\.html$"""),
-    // libphonenumber short-number blobs: EVERY match goes, seen or unseen (approved regex)
-    Regex("""^assets/data/ShortNumberMetadataProto.*$"""),
+    // libphonenumber per-region metadata blobs in assets/data/: EVERY match goes,
+    // seen or unseen (approved regex). Covers both families found so far.
+    Regex("""^assets/data/(?:Short|Phone)NumberMetadataProto.*$"""),
     // Optional: catch future GTM container ids too (uncomment if you ever want that):
     // Regex("""^assets/containers/GTM-.*\.json$"""),
-    // Optional extra ad-stack files at assets root:
-    // Regex("""^assets/(?:omsdk-v1|aps-mraid|dtb-m)\.js$"""),
-    // Regex("""^assets/ia_(?:mraid_bridge|js_load_monitor)\.txt$"""),
+    // Optional extra ad-stack files at assets root (still NOT selected by you):
     // Regex("""^assets/(?:aps_mobile_client_config|customConfiguration)\.json$"""),
     // Regex("""^assets/customConfiguration$"""),
     // Regex("""^assets/(?:mini|hbde)\.db$"""),
@@ -92,6 +91,13 @@ private val JUNK_ENTRIES = setOf(
     "assets/fatafat/bundled.zip",
     // assets/containers/ — 1/1 shown
     "assets/containers/GTM-KZ83HD3.json",
+    // assets/ root ad-stack files (selected in your latest screenshot)
+    "assets/omsdk-v1.js",
+    "assets/ia_mraid_bridge.txt",
+    "assets/ia_js_load_monitor.txt",
+    "assets/dtb-m.js",
+    "assets/aps-mraid.js",
+    "assets/api_key.txt",
 )
 
 // Folder entries shown as junk in screenshots: the folder itself + its interior go.
@@ -122,7 +128,8 @@ val apkCleanupPatch = rawResourcePatch(
     name = "APK Junk Cleanup",
     description = "Removes junk and useless files with no runtime purpose inside apk. " +
         "Asset junk removal is audited exact-entry based: only verified junk files/folders are " +
-        "removed, unknown future additions are kept (except ShortNumberMetadataProto in assets/data/). " +
+        "removed, unknown future additions are kept (except the approved libphonenumber " +
+        "metadata regex in assets/data/). " +
         "To keep only one CPU architecture, use the patcher's strip-libs option " +
         "(Morphe Manager) or --striplibs (Morphe Desktop).",
     default = false,
