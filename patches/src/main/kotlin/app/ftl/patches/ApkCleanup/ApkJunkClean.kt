@@ -133,9 +133,7 @@ private val EXCLUDED_PREFIXES = listOf("res/")
 val apkCleanupPatch = rawResourcePatch(
     name = "APK Junk Cleanup",
     description = "Removes junk and useless files with no runtime purpose inside apk. " +
-        "Asset junk removal is audited exact-entry based: only verified junk files/folders are " +
-        "removed, unknown future additions are kept (except the approved libphonenumber " +
-        "metadata regex in assets/data/). Native libraries are left untouched unless the " +
+        "Native libraries are left untouched unless the " +
         "'Strip native architectures' toggle is enabled.",
     default = false,
 ) {
