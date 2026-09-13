@@ -1,10 +1,14 @@
 package app.ftl.patches.apkcleanup
 
 import app.morphe.patcher.patch.rawResourcePatch
+import app.morphe.patcher.patch.stringOption
 import java.io.File
 import java.util.logging.Logger
 
 private val logger = Logger.getLogger("ApkCleanupPatch")
+
+private const val KEEP_ALL = "all"
+private val KNOWN_ABIS = listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
 
 private val PROTECTED_PATTERNS = listOf(
     Regex(""".*META-INF/MANIFEST\.MF$"""),
@@ -91,7 +95,7 @@ private val JUNK_ENTRIES = setOf(
     "assets/fatafat/bundled.zip",
     // assets/containers/ — 1/1 shown
     "assets/containers/GTM-KZ83HD3.json",
-    // assets/ root ad-stack files (selected in your latest screenshot)
+    // assets/ root ad-stack files (selected in your screenshot)
     "assets/omsdk-v1.js",
     "assets/ia_mraid_bridge.txt",
     "assets/ia_js_load_monitor.txt",
@@ -129,42 +133,46 @@ val apkCleanupPatch = rawResourcePatch(
     description = "Removes junk and useless files with no runtime purpose inside apk. " +
         "Asset junk removal is audited exact-entry based: only verified junk files/folders are " +
         "removed, unknown future additions are kept (except the approved libphonenumber " +
-        "metadata regex in assets/data/). " +
-        "To keep only one CPU architecture, use the patcher's strip-libs option " +
-        "(Morphe Manager) or --striplibs (Morphe Desktop).",
+        "metadata regex in assets/data/). Optionally keeps only one native architecture.",
     default = false,
 ) {
+    // Settings dropdown shown in Morphe Manager / Desktop.
+    val keepAbi by stringOption(
+        "keepAbi",
+        default = KEEP_ALL,
+        values = mapOf(KEEP_ALL to "Keep all architectures (no stripping)") +
+            KNOWN_ABIS.associateWith { "Keep only $it" },
+        title = "Architecture to keep",
+        description = "Deletes lib/<abi>/ of every other architecture from the patched APK. " +
+            "Requires patcher v1.13.0+ (delete() on unstaged entries).",
+        validator = { it == null || it == KEEP_ALL || it in KNOWN_ABIS },
+    )
+
     execute {
         var removedFiles = 0
-        var freedBytes = 0L
+        var removedAbiTrees = 0
 
         fun isProtected(relativePath: String) = PROTECTED_PATTERNS.any { it.matches(relativePath) }
 
         fun inTree(entryName: String, tree: String) =
             entryName == tree || entryName.startsWith("$tree/")
 
+        // Patcher >= 1.13.0: delete() records the entry for exclusion from the output APK
+        // even when it was never staged (libs, root entries), and accepts directory names
+        // to drop everything below them (morphe-patcher#199).
         fun deleteEntry(entryName: String) {
             if (isProtected(entryName)) return
             try {
-                val file = get(entryName)
-                if (file.isFile) {
-                    val size = file.length()
-                    if (file.delete()) {
-                        removedFiles++
-                        freedBytes += size
-                        logger.fine("Removed file: $entryName (${size}B)")
-                    } else {
-                        logger.warning("APK Cleanup: failed to delete $entryName")
-                    }
-                }
+                delete(entryName)
+                removedFiles++
+                logger.fine("Removed entry: $entryName")
             } catch (e: Exception) {
-                logger.warning("APK Cleanup: failed to access $entryName: ${e.message}")
+                logger.warning("APK Cleanup: failed to delete $entryName: ${e.message}")
             }
         }
 
         listApkEntries().forEach { entryName ->
-            // Native libraries are never staged (morphe-patcher#192); deleting a lazily
-            // extracted copy does nothing. ABI stripping is the patcher's job now.
+            // Native libs are handled exclusively by the keepAbi option below.
             if (entryName.startsWith("lib/")) return@forEach
             if (EXCLUDED_PREFIXES.any { entryName.startsWith(it) }) return@forEach
 
@@ -188,12 +196,29 @@ val apkCleanupPatch = rawResourcePatch(
             .mapNotNull { it.split("/").getOrNull(1) }
             .distinct()
 
-        if (shippedAbis.isNotEmpty()) {
-            logger.info(
-                "APK Cleanup: detected native ABIs: ${shippedAbis.joinToString()}. " +
-                    "To strip unused architectures, enable strip-libs in Morphe Manager " +
-                    "or use --striplibs in Morphe Desktop."
-            )
+        val chosenAbi = keepAbi ?: KEEP_ALL
+        when {
+            shippedAbis.isEmpty() ->
+                logger.info("APK Cleanup: no native libraries in this APK, nothing to strip")
+            chosenAbi == KEEP_ALL ->
+                logger.info("APK Cleanup: detected native ABIs: ${shippedAbis.joinToString()} (keepAbi=$KEEP_ALL, nothing stripped)")
+            chosenAbi !in shippedAbis ->
+                logger.warning(
+                    "APK Cleanup: lib/$chosenAbi/ is not shipped by this APK " +
+                        "(has: ${shippedAbis.joinToString()}); ABI stripping skipped"
+                )
+            else -> {
+                val droppedAbis = shippedAbis - chosenAbi
+                droppedAbis.forEach { abi ->
+                    // Directory name deletes everything below it (morphe-patcher#199).
+                    delete("lib/$abi/")
+                    removedAbiTrees++
+                }
+                logger.info(
+                    "APK Cleanup: kept lib/$chosenAbi/, removed: " +
+                        droppedAbis.joinToString(", ") { "lib/$it/" }
+                )
+            }
         }
 
         val manifestFile = get("AndroidManifest.xml")
@@ -203,6 +228,6 @@ val apkCleanupPatch = rawResourcePatch(
             .filter { it.isDirectory && it != apkRoot && it.listFiles()?.isEmpty() == true }
             .forEach { it.delete() }
 
-        logger.info("APK Cleanup: removed $removedFiles files, freed ${freedBytes / 1024}KB")
+        logger.info("APK Cleanup: removed $removedFiles junk entries + $removedAbiTrees ABI tree(s)")
     }
 }
