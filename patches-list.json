@@ -1,10 +1,10 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.44.0-dev.56",
+  "version": "1.44.0-dev.57",
   "patches": [
     {
       "name": "APK Junk Cleanup",
-      "description": "Removes junk and useless files with no runtime purpose inside apk. Asset junk removal is audited exact-entry based: only verified junk files/folders are removed, unknown future additions are kept (except the approved libphonenumber metadata regex in assets/data/). Native libraries are left untouched unless the 'Strip native architectures' toggle is enabled.",
+      "description": "Removes junk and useless files with no runtime purpose inside apk. Native libraries are left untouched unless the 'Strip native architectures' toggle is enabled.",
       "default": false,
       "dependencies": [],
       "compatiblePackages": null,
@@ -1860,7 +1860,7 @@
     },
     {
       "name": "Unlock Premium",
-      "description": "Forces SecurityTracker.isPremium() to always return true, so every feature gated by the \"sL_01\" premium flag stays unlocked.",
+      "description": "Forces SecurityTracker.isPremium() to always return true, so every feature gated by the \"st_01\" premium flag stays unlocked.",
       "default": true,
       "dependencies": [],
       "compatiblePackages": [
