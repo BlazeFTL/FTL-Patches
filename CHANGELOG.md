@@ -1,3 +1,9 @@
+## [1.44.0-dev.55](https://github.com/BlazeFTL/FTL-Patches/compare/v1.44.0-dev.54...v1.44.0-dev.55) (2026-09-13)
+
+### 🐛 Bug Fixes
+
+* Add Impostack Pdf Premium Patch ([b198bde](https://github.com/BlazeFTL/FTL-Patches/commit/b198bde0759f3ab009b5c8bbc9236fe255e088d2))
+
 ## [1.44.0-dev.54](https://github.com/BlazeFTL/FTL-Patches/compare/v1.44.0-dev.53...v1.44.0-dev.54) (2026-09-12)
 
 ### 🐛 Bug Fixes

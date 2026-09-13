@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.44.0-dev.54](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.44.0-dev.54)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;60 patches total
+> **[v1.44.0-dev.55](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.44.0-dev.55)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;61 patches total
 <details>
 <summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;5 patches</summary>
 <br>
@@ -35,13 +35,13 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 **🎯 Supported versions:**
 
-| 3.1.4 | 3.2.1 |
-| :---: | :---: |
+| 3.1.4 | 3.2.1 | 3.2.2 |
+| :---: | :---: | :---: |
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
-| [Boost Splash Screen Time](#boost-splash-screen-time) | Disables MX Player's welcome/splash ad so playback starts immediately. |  |
-| [Clean Me Tab](#clean-me-tab) | WARNING: MX Player has an integrity check, and some mods add their own on top. Use a Play Store build, Use URV Manager, patch with signing off, then use MT Manager Enhanced Signature Kill or the app may refuse to start.Removes promo rows and unused tiles from the Me tab. Optional Add Network Stream tile. | • Add Network Stream tile |
+| [Boost Splash Screen Time](#boost-splash-screen-time) | WARNING: MX PLAYER HAS AN INTEGRITY CHECK, and some mods add their own on top. Use a Play Store build, Use URV Manager, patch with signing off, then use MT Manager Enhanced Signature Kill or the app may refuse to start.Disables MX Player's welcome/splash ad so playback starts immediately. |  |
+| [Clean Me Tab](#clean-me-tab) | Removes promo rows and unused tiles from the Me tab. Optional Add Network Stream tile. | • Add Network Stream tile |
 | [Configure Smart Enhance](#configure-smart-enhance) | Configures the Smart Enhance intro popup and enable/disable toast. | • Skip intro popup and animation<br>• Show toast on enable |
 | [Configure SpeedUp overlay](#configure-speedup-overlay) | "2x UI": keeps the long-press SpeedUp overlay/animation, with the stock leftover-visible-view bug fixed. "No UI": the overlay never shows at all - the speed change itself still applies, since that's handled elsewhere. | • No UI |
 | [Disable Bottom Bar And Add Me Tab To Top](#disable-bottom-bar-and-add-me-tab-to-top) | Hides the bottom navigation bar and adds a Me tab button to the toolbar. |  |
@@ -215,6 +215,21 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 </details>
 
 <details>
+<summary>📦 ImpoStack&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<br>
+
+**🎯 Supported versions:**
+
+| 1.4.0 |
+| :---: |
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Unlock Premium](#unlock-premium) | Forces SecurityTracker.isPremium() to always return true, so every feature gated by the "sL_01" premium flag stays unlocked. |  |
+
+</details>
+
+<details>
 <summary>📦 Bangla Dictionary&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
 
@@ -265,7 +280,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
-| [APK Junk Cleanup](#apk-junk-cleanup) | Removes junk and useless files with no runtime purpose inside apk. To keep only one CPU architecture, use the patcher's strip-libs option (Morphe Manager) or --striplibs (Morphe Desktop). |  |
+| [APK Junk Cleanup](#apk-junk-cleanup) | Removes junk and useless files with no runtime purpose inside apk. Asset junk removal is audited exact-entry based: only verified junk files/folders are removed, unknown future additions are kept (except the approved libphonenumber metadata regex in assets/data/). Native libraries are left untouched unless the 'Strip native architectures' toggle is enabled. | • Strip native architectures<br>• Architecture to keep |
 | [Add Save Data](#add-save-data) | Unpacks bundled save-data zip(s) into the app's storage on first launch. | • 1. Select data/data zip<br>• 2. Select Android/data zip<br>• 3. Select Android/obb zip<br>• Add toast<br>• Toast message<br>• Show toast once |
 | [Add Toast](#add-toast) | Shows a custom toast message when the app starts. Works on any app. | • Toast message<br>• Show once |
 | [Change Display Size](#change-display-size) | Change any app's display size without touching your phone's system settings. Make it bigger if things look too small, or smaller to fit more on screen. You Need To Configure 100(No Change), 90(10% Smaller App Ui), 110(10% Bigger App Ui). | • Display scale |
