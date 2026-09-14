@@ -8,6 +8,7 @@ import android.content.res.Configuration
 import android.content.res.Resources
 import android.os.Bundle
 import android.util.Log
+import android.view.ViewTreeObserver
 import kotlin.math.roundToInt
 
 object DensityPatch {
@@ -29,6 +30,12 @@ object DensityPatch {
 
     private val activeActivities =
         java.util.Collections.newSetFromMap(java.util.WeakHashMap<Activity, Boolean>())
+
+    // DIAGNOSTIC: tracks which activities already have the per-frame watchdog attached,
+    // so onActivityResumed (which can fire many times for the same instance) doesn't
+    // stack duplicate listeners.
+    private val watchedActivities =
+        java.util.WeakHashMap<Activity, ViewTreeObserver.OnGlobalLayoutListener>()
 
     @JvmStatic
     fun setPercent(value: Int) { percent = value }
@@ -75,11 +82,11 @@ object DensityPatch {
 
         if (targetDpi == originalDpi) return
 
-        applyTo(application.resources)
+        applyTo(application.resources, "register")
 
         application.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityPreCreated(activity: Activity, savedInstanceState: Bundle?) {
-                Log.i(TAG, "preCreated ${activity.javaClass.name} before=${activity.resources.displayMetrics.densityDpi}")
+                Log.i(TAG, "preCreated ${activity.javaClass.name} before=${activity.resources.displayMetrics.densityDpi} ${configSnapshot(activity)}")
                 forceDensity(activity)
                 Log.i(TAG, "preCreated ${activity.javaClass.name} after=${activity.resources.displayMetrics.densityDpi}")
             }
@@ -108,21 +115,25 @@ object DensityPatch {
                 Log.i(
                     TAG,
                     "resumed ${activity.javaClass.name} raw=" +
-                        "${activity.resources.displayMetrics.densityDpi} target=$targetDpi",
+                        "${activity.resources.displayMetrics.densityDpi} target=$targetDpi " +
+                        "${windowStateSnapshot(activity)} ${configSnapshot(activity)}",
                 )
                 forceDensity(activity)
+                attachWatchdog(activity)
             }
             override fun onActivityPaused(activity: Activity) {}
             override fun onActivityStopped(activity: Activity) {}
             override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
             override fun onActivityDestroyed(activity: Activity) {
                 activeActivities.remove(activity)
+                detachWatchdog(activity)
             }
         })
 
         application.registerComponentCallbacks(object : ComponentCallbacks2 {
             override fun onConfigurationChanged(newConfig: Configuration) {
-                applyTo(application.resources)
+                Log.i(TAG, "app onConfigurationChanged density=${newConfig.densityDpi} ${newConfig}")
+                applyTo(application.resources, "appConfigChanged")
                 activeActivities.toList().forEach { forceDensity(it) }
             }
 
@@ -131,17 +142,73 @@ object DensityPatch {
         })
     }
 
-    private fun forceDensity(activity: Activity) {
-        applyTo(activity.resources)
-        val base: Context? = activity.baseContext
-        if (base != null && base.resources !== activity.resources) {
-            applyTo(base.resources)
+    // DIAGNOSTIC: per-frame watchdog. Lifecycle callbacks (resume/configChanged) only
+    // fire on discrete transitions; if something is re-asserting a different density on
+    // every relayout (e.g. system-driven letterbox/size-compat rescaling), this catches
+    // it between those transitions instead of only after the fact.
+    private fun attachWatchdog(activity: Activity) {
+        if (watchedActivities.containsKey(activity)) return
+        val decorView = try { activity.window?.decorView } catch (t: Throwable) { null } ?: return
+        val listener = ViewTreeObserver.OnGlobalLayoutListener {
+            try {
+                val current = activity.resources.displayMetrics.densityDpi
+                if (current != targetDpi) {
+                    Log.w(
+                        TAG,
+                        "DRIFT ${activity.javaClass.name} was=$current target=$targetDpi " +
+                            "${windowStateSnapshot(activity)}",
+                    )
+                    forceDensity(activity)
+                    Log.w(TAG, "DRIFT ${activity.javaClass.name} corrected to=${activity.resources.displayMetrics.densityDpi}")
+                }
+            } catch (t: Throwable) {
+                Log.e(TAG, "watchdog failed", t)
+            }
+        }
+        try {
+            decorView.viewTreeObserver.addOnGlobalLayoutListener(listener)
+            watchedActivities[activity] = listener
+        } catch (t: Throwable) {
+            Log.e(TAG, "attachWatchdog failed", t)
         }
     }
 
-    private fun applyTo(resources: Resources) {
+    private fun detachWatchdog(activity: Activity) {
+        val listener = watchedActivities.remove(activity) ?: return
+        try {
+            activity.window?.decorView?.viewTreeObserver?.removeOnGlobalLayoutListener(listener)
+        } catch (t: Throwable) {
+            Log.e(TAG, "detachWatchdog failed", t)
+        }
+    }
+
+    private fun windowStateSnapshot(activity: Activity): String = try {
+        val multiWindow = activity.isInMultiWindowMode
+        val pip = activity.isInPictureInPictureMode
+        "multiWindow=$multiWindow pip=$pip"
+    } catch (t: Throwable) {
+        "windowState=unavailable(${t.javaClass.simpleName})"
+    }
+
+    private fun configSnapshot(activity: Activity): String = try {
+        val c = activity.resources.configuration
+        "screenWDp=${c.screenWidthDp} screenHDp=${c.screenHeightDp} smallestWDp=${c.smallestScreenWidthDp} cfg=$c"
+    } catch (t: Throwable) {
+        "config=unavailable(${t.javaClass.simpleName})"
+    }
+
+    private fun forceDensity(activity: Activity) {
+        applyTo(activity.resources, "activity:${activity.javaClass.simpleName}")
+        val base: Context? = activity.baseContext
+        if (base != null && base.resources !== activity.resources) {
+            applyTo(base.resources, "baseContext:${activity.javaClass.simpleName}")
+        }
+    }
+
+    private fun applyTo(resources: Resources, caller: String) {
         val metrics = resources.displayMetrics
         if (metrics.densityDpi == targetDpi) return
+        Log.i(TAG, "applyTo[$caller] ${metrics.densityDpi} -> $targetDpi")
 
         val scale = targetDpi / BASELINE_DPI
         metrics.densityDpi = targetDpi
