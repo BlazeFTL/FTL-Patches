@@ -144,7 +144,7 @@ val apkCleanupPatch = rawResourcePatch(
         default = false,
         title = "Strip native architectures",
         description = "OFF (default): lib/ is left completely untouched. " +
-            "ON: deletes lib/<abi>/ of every architecture except the one selected below.",
+            "ON: deletes libs of every architecture except the one selected below.",
     )
 
     // Only consulted when stripLibs is ON.
