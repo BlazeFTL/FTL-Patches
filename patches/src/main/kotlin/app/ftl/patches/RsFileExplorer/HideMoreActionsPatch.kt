@@ -32,11 +32,6 @@ private val HIDDEN_ACTION_IDS = setOf(
  * too — so "image_edit", a string unique to the "More actions" builder, is
  * included to disambiguate the two.
  */
-private object MoreActionsMenuFingerprint : Fingerprint(
-    returnType = "V",
-    parameters = emptyList(),
-    strings = HIDDEN_ACTION_IDS.toList() + "image_edit",
-)
 
 val hideMoreActionsPatch = bytecodePatch(
     name = "Hide more actions",
