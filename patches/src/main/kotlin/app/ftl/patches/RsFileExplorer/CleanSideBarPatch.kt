@@ -192,34 +192,26 @@ val cleanSideBarPatch = bytecodePatch(
     compatibleWith(COMPATIBILITY_RS_FILE_EXPLORER)
 
     execute {
-        // Each fingerprint is matched (and its section dropped) in turn, all
-        // against the same shared constructor. Every match after the first runs
-        // against the instruction list as it stands *after* the previous
-        // removal, so each one is free to be matched and dropped independently,
-        // in any order - none of their own anchor strings overlap with another
-        // section's registration block.
-        RemoteConnectionSectionFingerprint.method.dropSection(
-            RemoteConnectionSectionFingerprint.instructionMatches.last().index,
-        )
-        CategorySectionFingerprint.method.dropSection(
-            CategorySectionFingerprint.instructionMatches.last().index,
-        )
-        BookmarksSectionFingerprint.method.dropSection(
-            BookmarksSectionFingerprint.instructionMatches.last().index,
-        )
+        // All four fingerprints below match against the same shared constructor, and
+        // each one's index is only valid against the bytecode as it stood when
+        // matched - not after some other edit has since shifted it. Every target is
+        // therefore captured FIRST, before any edit runs, then applied strictly
+        // highest-index-first: an edit only ever shifts indices *after* its own
+        // position, so processing this way guarantees every other still-pending
+        // target - positioned earlier in the method - is never invalidated by an
+        // edit that runs before it.
+        val method = SideBarBuilderFingerprint.method
 
-        // --- Storage section: hide the Encrypt and Downloader entries only ---
+        val remoteIndex = RemoteConnectionSectionFingerprint.instructionMatches.last().index
+        val bookmarksIndex = BookmarksSectionFingerprint.instructionMatches.last().index
+        val categoryIndex = CategorySectionFingerprint.instructionMatches.last().index
 
-        val storageMethod = StorageEntryListFingerprint.method
-        val storageInstructions = storageMethod.implementation!!.instructions
-        val matches = StorageEntryListFingerprint.instructionMatches
-
-        val rootStringMatch = matches[0]
-        val equalsCallMatch = matches[1]
-        val incrementIndex = matches[4].index
-        // Captured as an instruction object, not an index, so it stays valid after the
-        // insertion below shifts every later index.
-        val incrementInstruction = storageInstructions[incrementIndex]
+        val storageMatches = StorageEntryListFingerprint.instructionMatches
+        val rootStringMatch = storageMatches[0]
+        val equalsCallMatch = storageMatches[1]
+        // Captured as an instruction object, not an index, so it stays valid no matter
+        // what runs before it.
+        val incrementInstruction = method.implementation!!.instructions[storageMatches[4].index]
 
         // The register holding the "root" string is free again right after this point
         // in the original code (about to be reassigned to "root" itself), so it's
@@ -229,12 +221,15 @@ val cleanSideBarPatch = bytecodePatch(
         // compared against "root" - the same value the new checks need to test.
         val identifierRegister = equalsCallMatch.getInstruction<FiveRegisterInstruction>().registerD
 
+        // --- Storage section: hide the Encrypt and Downloader entries only ---
+        // Highest-positioned edit, applied first, while nothing has moved yet.
+
         // The trailing "nop" after :keep_entry is required, not decorative: addInstructionsWithLabels
         // appends ":loop_increment\nnop" to the end of this text before compiling it as one block. A
         // label with nothing after it merges onto that same appended nop, and anything landing there
         // gets rewired to the external label - so without its own nop, :keep_entry would silently
         // become a second name for :loop_increment instead of falling through to the original code.
-        storageMethod.addInstructionsWithLabels(
+        method.addInstructionsWithLabels(
             rootStringMatch.index,
             """
                 const-string v$scratchRegister, "encrypt://"
@@ -252,5 +247,12 @@ val cleanSideBarPatch = bytecodePatch(
             """.trimIndent(),
             ExternalLabel("loop_increment", incrementInstruction),
         )
+
+        // --- Category, Bookmarks, Remote Connection: drop each section's
+        // registration, strictly in descending index order (all three positioned
+        // before Storage above, so none of them are affected by that insertion) ---
+        method.dropSection(categoryIndex)
+        method.dropSection(bookmarksIndex)
+        method.dropSection(remoteIndex)
     }
 }
