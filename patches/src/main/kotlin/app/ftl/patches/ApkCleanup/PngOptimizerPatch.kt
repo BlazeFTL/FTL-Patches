@@ -24,8 +24,6 @@ private val STRIPPABLE_CHUNK_TYPES = setOf(
     "sPLT",
 )
 
-private val COLORSPACE_CHUNK_TYPES = setOf("gAMA", "cHRM", "sRGB", "iCCP")
-
 private const val MAX_PALETTE_COLORS = 64
 
 private class PngChunk(val type: String, val data: ByteArray)
@@ -445,7 +443,7 @@ private fun assembleIndexedPng(
     height: Int,
     palette: IntArray,
     indices: ByteArray,
-    colorspaceChunks: List<PngChunk>,
+    ancillaryChunks: List<PngChunk>,
 ): ByteArray {
     val hasAlpha = palette.any { (it and 0xFF) != 0xFF }
     val plte = ByteArrayOutputStream(palette.size * 3).use { o ->
@@ -464,8 +462,16 @@ private fun assembleIndexedPng(
     } else {
         null
     }
-    return assemblePng(width, height, 8, 3, plte, trns, colorspaceChunks, indices, 1)
+    return assemblePng(width, height, 8, 3, plte, trns, ancillaryChunks, indices, 1)
 }
+
+/** Chunks that must survive any PNG we re-emit -- not just colorspace ones. Critically includes the
+ *  compiled nine-patch chunks (npTc/npOl); dropping npTc turns a .9.png into a plain stretched bitmap,
+ *  which is what produced the corrupted popup/menu backgrounds. */
+private fun preservableAncillaryChunks(chunks: List<PngChunk>): List<PngChunk> =
+    chunks.filter {
+        it.type !in setOf("IHDR", "PLTE", "tRNS", "IDAT", "IEND") && it.type !in STRIPPABLE_CHUNK_TYPES
+    }
 
 /** Re-picks the optimal per-row filter and recompresses at max zlib level -- the optipng role. */
 private fun structuralOptimize(bytes: ByteArray): ByteArray? {
@@ -494,9 +500,7 @@ private fun structuralOptimize(bytes: ByteArray): ByteArray? {
     val sampleBytes = unfilter(raw, header.height, stride, samples)
     val plte = chunks.firstOrNull { it.type == "PLTE" }?.data
     val trns = chunks.firstOrNull { it.type == "tRNS" }?.data
-    val ancillary = chunks.filter {
-        it.type !in setOf("IHDR", "PLTE", "tRNS", "IDAT", "IEND") && it.type !in STRIPPABLE_CHUNK_TYPES
-    }
+    val ancillary = preservableAncillaryChunks(chunks)
 
     return assemblePng(
         header.width,
@@ -563,8 +567,8 @@ private fun optimizePng(original: ByteArray, isNinePatch: Boolean): OptimizeResu
             try {
                 val palette = buildPalette(rgba, MAX_PALETTE_COLORS)
                 val indices = quantizeIndices(rgba, palette)
-                val colorspaceChunks = chunks.filter { it.type in COLORSPACE_CHUNK_TYPES }
-                val quantized = assembleIndexedPng(header.width, header.height, palette, indices, colorspaceChunks)
+                val ancillaryChunks = preservableAncillaryChunks(chunks)
+                val quantized = assembleIndexedPng(header.width, header.height, palette, indices, ancillaryChunks)
                 if (quantized.size < working.size) working = quantized
             } catch (e: Exception) {
                 logger.fine("PNG quantize skipped (${header.width}x${header.height}): ${e.message}")
