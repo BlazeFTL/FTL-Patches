@@ -33,6 +33,11 @@ private val HIDDEN_ACTION_IDS = setOf(
  * included to disambiguate the two.
  */
 
+private object MoreActionsMenuFingerprint : Fingerprint(
+    returnType = "V",
+    strings = HIDDEN_ACTION_IDS.toList() + "image_edit",
+)
+
 val hideMoreActionsPatch = bytecodePatch(
     name = "Hide more actions",
     description = "Hides Hide, Add to desktop, Encrypt, Decrypt, Add bookmark, Web Search, Copy to, Move to, Transfer, and Playing from the \"More actions\" menu.",
