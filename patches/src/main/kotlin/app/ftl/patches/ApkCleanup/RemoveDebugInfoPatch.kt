@@ -2,6 +2,7 @@ package app.ftl.patches.apkcleanup
 
 import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.util.proxy.mutableTypes.MutableClass
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.security.MessageDigest
@@ -57,7 +58,6 @@ private fun patchDex(buffer: ByteBuffer): Int {
 
         require(codeOff >= 0 && codeOff <= buffer.limit() - 16)
 
-        // code_item.debug_info_off
         if (readUInt(buffer, codeOff + 8) != 0) {
             buffer.putInt(codeOff + 8, 0)
             changed++
@@ -86,8 +86,8 @@ private fun patchDex(buffer: ByteBuffer): Int {
         }
 
         repeat(directMethodsSize + virtualMethodsSize) {
-            pos = readUleb128(buffer, pos).second // method_idx_diff
-            pos = readUleb128(buffer, pos).second // access_flags
+            pos = readUleb128(buffer, pos).second
+            pos = readUleb128(buffer, pos).second
 
             val (codeOff, next) = readUleb128(buffer, pos)
             pos = next
@@ -175,7 +175,33 @@ val removeAllDexDebugInfoPatch = bytecodePatch(
     default = false,
 ) {
     execute {
-        val changed = patchOriginalDexMappings(this)
-        println("Remove all DEX debug info: cleared $changed debug_info references")
+        val rawChanged = patchOriginalDexMappings(this)
+
+        var sourceCleared = 0
+        var lineCleared = 0
+
+        classDefForEach { classDef ->
+            if (classDef !is MutableClass) return@classDefForEach
+
+            if (classDef.sourceFile != null) {
+                classDef.setSourceFile(null)
+                sourceCleared++
+            }
+
+            classDef.methods.forEach { method ->
+                val impl = method.implementation ?: return@forEach
+                var cleared = false
+                impl.instructions.forEach { insn ->
+                    val items = insn.location.debugItems
+                    if (items.isNotEmpty()) {
+                        items.clear()
+                        cleared = true
+                    }
+                }
+                if (cleared) lineCleared++
+            }
+        }
+
+        println("Remove all DEX debug info: raw pass cleared $rawChanged debug_info references; in-memory pass cleared .source from $sourceCleared classes, .line from $lineCleared methods")
     }
 }
