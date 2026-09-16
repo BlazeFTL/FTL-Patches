@@ -1,11 +1,16 @@
 package app.ftl.patches.rsfileexplorer
 
 import app.morphe.patcher.Fingerprint
-import app.morphe.patcher.fieldAccess
+import app.morphe.patcher.InstructionLocation.MatchAfterWithin
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.removeInstructions
+import app.morphe.patcher.fieldAccess
+import app.morphe.patcher.literal
+import app.morphe.patcher.opcode
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.resourcePatch
+import app.morphe.patcher.string
+import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import org.w3c.dom.Element
 
@@ -14,34 +19,43 @@ private const val SPLASH_ACTIVITY = "com.edili.filemanager.module.activity.First
 private const val MAIN_ACTIVITY = "com.edili.filemanager.MainActivity"
 
 /**
- * Matches the private method that builds and shows the full-screen "grant storage
- * access" splash dialog. The method name itself is obfuscated and reshuffles every
- * build, so it's identified instead by the sget of the app's own unobfuscated
- * resource field for the dialog's theme, which only appears in this one method.
+ * As of 2.3.1.1 the dialog-builder is no longer its own small method - the dev
+ * merged it into the same method that also gates the legacy (pre-API 30)
+ * permission flow and the POST_NOTIFICATIONS flow (`v()`). The dialog's own
+ * resource-field anchor is also gone: the theme is now an inlined resource-ID
+ * literal instead of a named `R$style` sget, so it can no longer be pinned by
+ * name either.
+ *
+ * Matched instead by a chain of only real, unobfuscated landmarks, in the
+ * order they appear in `v()`:
+ *  1. the real `Build.VERSION.SDK_INT` field read that gates this dialog to
+ *     API 30+
+ *  2. the literal `30` it's compared against
+ *  3. the app's own SharedPreferences key that can suppress this dialog
+ *     ("key_not_support_storage_perm") - a string the devs chose, far more
+ *     durable than a resource ID or obfuscated symbol
+ *  4. the branch on that pref's value - the first instruction of the block
+ *     being replaced
+ *  5. the `return-void` that ends the block - the block's own dialog-reuse
+ *     branch (`:cond_8c`/`:goto_94`) merges back into linear order before it,
+ *     so this is still the first return-void reachable after filter 4
+ *
+ * `accessFlags = PUBLIC, FINAL` + 0 params disambiguates `v()` from the
+ * class's other public 0-arg void methods (`onDestroy`, `w()`), neither of
+ * which is both public and final.
  */
-private object FullScreenAskStorageDialogFingerprint : Fingerprint(
+private object StorageOnboardingDialogFingerprint : Fingerprint(
     definingClass = PERMISSION_ACTIVITY_CLASS,
+    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL),
     returnType = "V",
     parameters = emptyList(),
     filters = listOf(
-        fieldAccess(
-            smali = "Lcom/edili/filemanager/common/R\$style;->RS_FullScreen_Dialog:I",
-            opcode = Opcode.SGET,
-        ),
+        fieldAccess(smali = "Landroid/os/Build\$VERSION;->SDK_INT:I", opcode = Opcode.SGET),
+        literal(30L),
+        string("key_not_support_storage_perm"),
+        opcode(Opcode.IF_NEZ, MatchAfterWithin(6)),
+        opcode(Opcode.RETURN_VOID, MatchAfterWithin(50)),
     ),
-)
-
-/**
- * Matches the private click-handler that the dialog's "Grant" button calls, which
- * launches the all-files-access settings screen. Also obfuscated, so it's found by
- * the real Android settings action string it fires instead of its method name — the
- * exact reference is read back off the match rather than hardcoded.
- */
-private object GrantAllFilesAccessFingerprint : Fingerprint(
-    definingClass = PERMISSION_ACTIVITY_CLASS,
-    returnType = "V",
-    parameters = listOf("Landroid/view/View;"),
-    strings = listOf("android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION"),
 )
 
 /**
@@ -106,21 +120,37 @@ val skipSplashScreenPatch = bytecodePatch(
     dependsOn(moveLauncherToMainActivityPatch)
 
     execute {
-        val grantMethod = GrantAllFilesAccessFingerprint.method
-        val paramsSmali = grantMethod.parameterTypes.joinToString("")
-        val grantMethodSmali = "${grantMethod.definingClass}->${grantMethod.name}(${paramsSmali})${grantMethod.returnType}"
+        val fingerprint = StorageOnboardingDialogFingerprint
+        val matches = fingerprint.instructionMatches
+        val startIndex = matches[3].index // IF_NEZ - first instruction of the dialog block
+        val endIndex = matches[4].index // RETURN_VOID - last instruction of the dialog block
+        val method = fingerprint.method
 
-        FullScreenAskStorageDialogFingerprint.method.let { method ->
-            val instructionCount = method.implementation!!.instructions.size
-            method.removeInstructions(0, instructionCount)
-            method.addInstructions(
-                0,
-                """
-                    const/4 v0, 0x0
-                    invoke-direct {p0, v0}, $grantMethodSmali
-                    return-void
-                """.trimIndent(),
-            )
-        }
+        // Replace "check suppress-pref, then build/show the full-screen dialog and
+        // wire its button to the app's onClick dispatcher" with a direct launch of
+        // the all-files-access settings screen. Deliberately does NOT reuse the
+        // app's own click-handler (Ledili/wg-style lambda dispatcher, reached via a
+        // synthetic switch-case index): both the dispatcher's class name and its
+        // case index are R8-merge artifacts that reshuffle every build, and the
+        // dispatcher itself is shared by dozens of unrelated features. Every
+        // instruction below is a real, unobfuscated Android API instead.
+        method.removeInstructions(startIndex, endIndex - startIndex + 1)
+        method.addInstructions(
+            startIndex,
+            """
+                new-instance v0, Landroid/content/Intent;
+                const-string v1, "android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION"
+                invoke-direct {v0, v1}, Landroid/content/Intent;-><init>(Ljava/lang/String;)V
+                const-string v1, "package"
+                invoke-virtual {p0}, Landroid/content/Context;->getPackageName()Ljava/lang/String;
+                move-result-object v2
+                const/4 v3, 0x0
+                invoke-static {v1, v2, v3}, Landroid/net/Uri;->fromParts(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Landroid/net/Uri;
+                move-result-object v1
+                invoke-virtual {v0, v1}, Landroid/content/Intent;->setData(Landroid/net/Uri;)Landroid/content/Intent;
+                invoke-virtual {p0, v0}, Landroid/content/Context;->startActivity(Landroid/content/Intent;)V
+                return-void
+            """.trimIndent(),
+        )
     }
 }
