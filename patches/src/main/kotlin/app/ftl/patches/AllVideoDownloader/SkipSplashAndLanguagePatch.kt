@@ -44,7 +44,7 @@ private object AlreadyNavigatedGuardFingerprint : Fingerprint(
 val skipSplashAndLanguagePatch = bytecodePatch(
     name = "Skip splash and language screens",
     description = "Jumps straight to the main activity from the splash screen, skipping the splash " +
-        "animation, the language-selection screen, and any ad/app-open dialog normally shown first.",
+        "animation, the language-selection screen, DONT UNSELECT THIS,IT HAS SIGNATURE BYPASS INCLUDED.",
     default = true,
 ) {
     compatibleWith(COMPATIBILITY_ALL_VIDEO_DOWNLOADER)
