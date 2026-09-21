@@ -4,7 +4,7 @@ import app.morphe.patcher.patch.resourcePatch
 
 val hideLocalTilesPatch = resourcePatch(
     name = "Hide top tiles",
-    description = "Hides the top tiles.",
+    description = "Hides the top tiles that appears in top of video folders in homescreen",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_PRO)
