@@ -34,8 +34,13 @@ private const val MAIN_ACTIVITY = "com.edili.filemanager.MainActivity"
  *  3. the app's own SharedPreferences key that can suppress this dialog
  *     ("key_not_support_storage_perm") - a string the devs chose, far more
  *     durable than a resource ID or obfuscated symbol
- *  4. the branch on that pref's value - the first instruction of the block
- *     being replaced
+ *  4. the branch on that pref's value - this IF_NEZ must stay: when the pref
+ *     is true it skips straight to the legacy request-perm flow, and ripping
+ *     it out (as an earlier version of this patch did) makes that skip
+ *     unconditional, so the replacement code fires even when this device
+ *     already granted the permission - an ActivityNotFoundException on ROMs
+ *     without the All-Files-Access settings screen. Only its index is used,
+ *     as the boundary right before the dialog body being replaced
  *  5. the `return-void` that ends the block - the block's own dialog-reuse
  *     branch (`:cond_8c`/`:goto_94`) merges back into linear order before it,
  *     so this is still the first return-void reachable after filter 4
@@ -122,16 +127,18 @@ val skipSplashScreenPatch = bytecodePatch(
     execute {
         val fingerprint = StorageOnboardingDialogFingerprint
         val matches = fingerprint.instructionMatches
-        val startIndex = matches[3].index // IF_NEZ - first instruction of the dialog block
+        val startIndex = matches[3].index + 1 // instruction after IF_NEZ - keep the guard itself intact
         val endIndex = matches[4].index // RETURN_VOID - last instruction of the dialog block
         val method = fingerprint.method
 
-        // Replace "check suppress-pref, then build/show the full-screen dialog and
-        // wire its button to the app's onClick dispatcher" with a direct launch of
-        // the all-files-access settings screen. Deliberately does NOT reuse the
-        // app's own click-handler (Ledili/wg-style lambda dispatcher, reached via a
-        // synthetic switch-case index): both the dispatcher's class name and its
-        // case index are R8-merge artifacts that reshuffle every build, and the
+        // Replace "build/show the full-screen dialog and wire its button to the
+        // app's onClick dispatcher" with a direct launch of the all-files-access
+        // settings screen, WITHOUT touching the IF_NEZ guard in front of it - that
+        // guard is what makes this code only run when the pref says the device
+        // doesn't support the storage-permission flow. Deliberately does NOT reuse
+        // the app's own click-handler (Ledili/wg-style lambda dispatcher, reached
+        // via a synthetic switch-case index): both the dispatcher's class name and
+        // its case index are R8-merge artifacts that reshuffle every build, and the
         // dispatcher itself is shared by dozens of unrelated features. Every
         // instruction below is a real, unobfuscated Android API instead.
         method.removeInstructions(startIndex, endIndex - startIndex + 1)
