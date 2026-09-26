@@ -7,7 +7,6 @@ import app.morphe.patcher.fieldAccess
 import app.morphe.patcher.literal
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.opcode
-import app.morphe.patcher.extensions.InstructionExtensions.addInstruction
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
@@ -110,16 +109,35 @@ private object NavigateToMeFingerprint : Fingerprint(
 
 val disableBottomBarAndAddMeTabPatch = bytecodePatch(
     name = "Disable Bottom Bar And Add Me Tab To Top",
-    description = "Hides the bottom navigation bar and adds a Me tab button to the toolbar.",
+    description = "Adds a permanent Me tab button to the toolbar. Hiding the bottom bar itself is " +
+        "toggled live in Me tab > Mod Settings, not here - the Me tab button always stays wired, " +
+        "on purpose, since Mod Settings lives behind it and turning it off should never be able " +
+        "to lock you out of turning it back on.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
 
-    dependsOn(addMeTabMenuResourcePatch)
+    dependsOn(addMeTabMenuResourcePatch, modSettingsPatch, modSettingFlagPatch(KEY_HOME_HIDE_BOTTOM_BAR))
 
     execute {
-        // Always take the "hide" branch, regardless of what the caller passes.
-        ToggleBottomBarFingerprint.method.addInstruction(0, "const/4 p1, 0x1")
+        val toggleMethod = ToggleBottomBarFingerprint.method
+
+        // OR the Mod Setting into the caller's own "should hide" argument (p1) instead of
+        // overwriting it outright: when the setting is on, p1 becomes true no matter what the
+        // caller passed (bar forced hidden); when it's off, p1 keeps whatever value the caller
+        // passed, so stock show/hide behavior is untouched rather than permanently disabled.
+        // Not attempted live - Mod Settings always reloads the activity on this toggle
+        // instead (see ModSettings.Entry.needsReload), landing back on the Local tab so a
+        // hide can never strand someone who reached Me tab with no back stack of their own.
+        toggleMethod.addInstructions(
+            0,
+            """
+                const-string v0, "$KEY_HOME_HIDE_BOTTOM_BAR"
+                invoke-static {v0}, $MOD_SETTINGS_CLASS->get(Ljava/lang/String;)Z
+                move-result v0
+                or-int/2addr p1, v0
+            """.trimIndent(),
+        )
 
         val mjClass = MjMenuPrepareFingerprint.classDef
         val navigateMethod = NavigateToMeFingerprint.method

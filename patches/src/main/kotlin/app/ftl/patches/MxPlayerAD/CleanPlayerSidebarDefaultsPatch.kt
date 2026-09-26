@@ -5,53 +5,17 @@ import app.morphe.patcher.InstructionLocation
 import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.InstructionLocation.MatchAfterWithin
 import app.morphe.patcher.OpcodesFilter
-import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
+import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.fieldAccess
 import app.morphe.patcher.opcode
 import app.morphe.patcher.patch.BytecodePatchContext
-import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.bytecodePatch
-import app.morphe.patcher.patch.resourcePatch
+import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.BuilderOffsetInstruction
 import com.android.tools.smali.dexlib2.builder.Label
-import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction20t
-import org.w3c.dom.Element
-
-private const val MENU_MORE_LAYOUT = "res/layout/menu_more.xml"
-
-// Unregistered here - cleanSidebarShortcutsPatch registers it, so it's configured from there.
-internal val hideVideoDisplayOption = booleanOption(key = "hideVideoDisplay", default = true, title = "Hide Video Display")
-
-// name = null - only reached via cleanSidebarShortcutsPatch's dependsOn below.
-internal val hideVideoDisplayPatch = resourcePatch(
-    name = null,
-) {
-    compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
-
-    execute {
-        if (hideVideoDisplayOption.value != true) return@execute
-
-        document(MENU_MORE_LAYOUT).use { document ->
-            fun collapse(id: String, vararg marginAttrs: String) {
-                val nodes = document.getElementsByTagName("*")
-                for (i in 0 until nodes.length) {
-                    val node = nodes.item(i) as? Element ?: continue
-                    val nodeId = node.getAttribute("android:id")
-                    if (nodeId != "@id/$id" && nodeId != "@+id/$id") continue
-
-                    node.setAttribute("android:visibility", "gone")
-                    node.setAttribute("android:layout_width", "0dp")
-                    node.setAttribute("android:layout_height", "0dp")
-                    marginAttrs.forEach { node.setAttribute("android:$it", "0dp") }
-                }
-            }
-
-            collapse("tv_video_display", "layout_marginLeft", "layout_marginTop")
-            collapse("sw_video_display", "layout_marginRight")
-        }
-    }
-}
+import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 
 private class AnyInvokeVirtualFilter(location: InstructionLocation = InstructionLocation.MatchAfterAnywhere()) :
     OpcodesFilter(listOf(Opcode.INVOKE_VIRTUAL, Opcode.INVOKE_VIRTUAL_RANGE), location)
@@ -61,6 +25,12 @@ private fun Fingerprint.target(matchIndex: Int): Label {
     val index = instructionMatches[matchIndex].index
     return (method.implementation!!.instructions[index] as BuilderOffsetInstruction).target
 }
+
+// All 5 fingerprints below match inside the same method (MenuHelper.d(), class Lswb;), which
+// builds the player sidebar's item list. Confirmed against the real smali (not assumed): that
+// method reuses register v4 as its "item currently being built" register throughout, and always
+// fully drains it (adds it to a list) before the next item's block begins - so v4 is dead, and
+// safe scratch, immediately before every block's own first instruction, including all 5 below.
 
 internal object BookmarkFingerprint : Fingerprint(
     filters = listOf(
@@ -107,68 +77,104 @@ internal object PlayingQueueFingerprint : Fingerprint(
     ),
 )
 
+// name = null - only reached via cleanSidebarShortcutsPatch's dependsOn below.
+internal val cleanSidebarShortcutItemsPatch = bytecodePatch(
+    name = null,
+    description = "Adds Mod Settings switches for the Bookmark, Favourite, Add to Playlist, Tutorial, and " +
+        "Playing Queue shortcuts in the player sidebar.",
+) {
+    compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
+
+    dependsOn(
+        modSettingsPatch,
+        modSettingFlagPatch(KEY_SIDEBAR_HIDE_BOOKMARK),
+        modSettingFlagPatch(KEY_SIDEBAR_HIDE_FAVOURITE),
+        modSettingFlagPatch(KEY_SIDEBAR_HIDE_ADD_TO_PLAYLIST),
+        modSettingFlagPatch(KEY_SIDEBAR_HIDE_TUTORIAL),
+        modSettingFlagPatch(KEY_SIDEBAR_HIDE_PLAYING_QUEUE),
+    )
+
+    execute {
+        // Inserted right before each block's own first instruction: check the flag, and if it
+        // says "hide", jump straight to hideTarget (the same place the block's own stock
+        // condition would have jumped to skip it). If the flag says "keep", fall through into
+        // the ORIGINAL, completely untouched instructions, which still run their own stock
+        // check exactly as before.
+        fun conditionalHide(fingerprint: Fingerprint, insertIndex: Int, key: String, hideTarget: Instruction) =
+            fingerprint.method.addInstructionsWithLabels(
+                insertIndex,
+                """
+                    const-string v4, "$key"
+                    invoke-static {v4}, $MOD_SETTINGS_CLASS->get(Ljava/lang/String;)Z
+                    move-result v4
+                    if-nez v4, :hide
+                """.trimIndent(),
+                ExternalLabel("hide", hideTarget),
+            )
+
+        // Processed from the last block in the method to the first, so that inserting at one
+        // position never shifts the not-yet-used index of a block still to come.
+
+        conditionalHide(
+            TutorialFingerprint,
+            TutorialFingerprint.instructionMatches[0].index,
+            KEY_SIDEBAR_HIDE_TUTORIAL,
+            TutorialFingerprint.target(1).location.instruction!!,
+        )
+
+        // Favourite and Add to Playlist share one stock guard (Lswb;->g:Z) and sit back to
+        // back with no branch between them - stock code that reaches Favourite always falls
+        // through into Add to Playlist too. Add to Playlist's own check is inserted first, so
+        // Favourite's "hide" jump can be re-pointed at THAT check's entry (not at the original,
+        // now-shifted, instruction it used to point to) - otherwise hiding both at once would
+        // skip Add to Playlist's own check and always show it.
+        val atpInsertIndex = AddToPlaylistFingerprint.instructionMatches[0].index
+        conditionalHide(
+            AddToPlaylistFingerprint,
+            atpInsertIndex,
+            KEY_SIDEBAR_HIDE_ADD_TO_PLAYLIST,
+            FavouriteFingerprint.target(1).location.instruction!!,
+        )
+        val atpCheckEntry = AddToPlaylistFingerprint.method.getInstruction(atpInsertIndex)
+        conditionalHide(
+            FavouriteFingerprint,
+            FavouriteFingerprint.instructionMatches[0].index,
+            KEY_SIDEBAR_HIDE_FAVOURITE,
+            atpCheckEntry,
+        )
+
+        conditionalHide(
+            BookmarkFingerprint,
+            BookmarkFingerprint.instructionMatches[0].index,
+            KEY_SIDEBAR_HIDE_BOOKMARK,
+            BookmarkFingerprint.target(1).location.instruction!!,
+        )
+
+        conditionalHide(
+            PlayingQueueFingerprint,
+            PlayingQueueFingerprint.instructionMatches[0].index,
+            KEY_SIDEBAR_HIDE_PLAYING_QUEUE,
+            PlayingQueueFingerprint.target(5).location.instruction!!,
+        )
+    }
+}
+
 val cleanSidebarShortcutsPatch = bytecodePatch(
     name = "Sidebar & Player Defaults",
-    description = "Cleans the player sidebar and More menu; sets default shortcuts and subtitle view.",
+    description = "Cleans the player sidebar and More menu; sets default shortcuts and subtitle view. " +
+        "Configurable in Mod Settings, except the default shortcuts bitmask, still a Morphe option " +
+        "pending its Mod Settings move.",
     default = true,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
-    dependsOn(hideVideoDisplayPatch, cleanSidebarMorePatch, defaultShortcutsPatch, openSubtitleSettingsByDefaultPatch)
+    dependsOn(
+        hideVideoDisplayPatch,
+        cleanSidebarMorePatch,
+        cleanSidebarShortcutItemsPatch,
+        defaultShortcutsPatch,
+        openSubtitleSettingsByDefaultPatch,
+    )
 
-    val hideBookmark by booleanOption(key = "hideBookmark", default = true, title = "Hide Bookmark")
-    val hideFavourite by booleanOption(key = "hideFavourite", default = true, title = "Hide Favourite")
-    val hideAddToPlaylist by booleanOption(key = "hideAddToPlaylist", default = true, title = "Hide Add to Playlist")
-    val hideTutorial by booleanOption(key = "hideTutorial", default = true, title = "Hide Tutorial")
-    val hidePlayingQueue by booleanOption(key = "hidePlayingQueue", default = true, title = "Hide Playing Queue")
-
-    hideVideoDisplayOption()
-    hideMoreMenuHelpOption()
     enableDefaultShortcutsOption()
     defaultShortcutsMaskOption()
-    openSubtitleSettingsOption()
-
-    execute {
-        if (hideBookmark == true) {
-            val m = BookmarkFingerprint
-            m.method.replaceInstruction(
-                m.instructionMatches[1].index,
-                BuilderInstruction20t(Opcode.GOTO_16, m.target(1)),
-            )
-        }
-
-        val addToPlaylistStart = AddToPlaylistFingerprint.instructionMatches[0].index
-        val originalFavouriteTarget = FavouriteFingerprint.target(1)
-
-        if (hideFavourite == true) {
-            val m = FavouriteFingerprint
-            val narrowedTarget = m.method.implementation!!.newLabelForIndex(addToPlaylistStart)
-            m.method.replaceInstruction(
-                m.instructionMatches[1].index,
-                BuilderInstruction20t(Opcode.GOTO_16, narrowedTarget),
-            )
-        }
-
-        if (hideAddToPlaylist == true) {
-            AddToPlaylistFingerprint.method.replaceInstruction(
-                addToPlaylistStart,
-                BuilderInstruction20t(Opcode.GOTO_16, originalFavouriteTarget),
-            )
-        }
-
-        if (hideTutorial == true) {
-            val m = TutorialFingerprint
-            m.method.replaceInstruction(
-                m.instructionMatches[1].index,
-                BuilderInstruction20t(Opcode.GOTO_16, m.target(1)),
-            )
-        }
-
-        if (hidePlayingQueue == true) {
-            val m = PlayingQueueFingerprint
-            m.method.replaceInstruction(
-                m.instructionMatches[0].index,
-                BuilderInstruction20t(Opcode.GOTO_16, m.target(5)),
-            )
-        }
-    }
 }
