@@ -102,23 +102,35 @@ val removeRecycleBinPatch = bytecodePatch(
         // this specific build's obfuscated/renamed identifiers (matches the validated
         // compare build, versionCode 2001003531) - re-check against a fresh compare
         // zip if this patch ever needs to target a different build.
-        // Real class name is obfuscated ("a" in the sample build, reshuffles every
-        // build); sourceFile ("MediaDeleteConfirmDialog.kt") survives R8 renaming but
-        // is shared with this class's nested a$a/a$b/a$c siblings, so it alone isn't
-        // unique. The old check paired it with an exact superclass match
-        // ("Landroidx/appcompat/app/d;") - but that "d" is itself an obfuscated
-        // single-letter androidx name (AppCompatDialog, minified same as any app
-        // class) and reshuffles across builds just like any other leaf identifier,
-        // which is exactly why this broke on the next build. Anchored instead on the
-        // real, stable "androidx/appcompat/app/" package prefix (any AppCompatDialog-
-        // family superclass in that package) plus excluding nested types ('$' in the
-        // class name) - that distinguishes the outer dialog class from its nested
-        // siblings without pinning any obfuscated leaf name. Re-verify uniqueness
-        // (only one class should match) if this ever needs to target a different build.
+        // Real class name is obfuscated ("a", reshuffles every build). sourceFile
+        // ("MediaDeleteConfirmDialog.kt") used to anchor this, but this build also
+        // applies Remove Debug Info, which clears every class's source-file
+        // attribute along with line numbers/local names - so by the time this
+        // patch's execute runs, sourceFile is null on every class, debug info or
+        // not. Rebuilt on anchors untouched by either R8 renaming or debug-info
+        // stripping, none of them obfuscated leaves:
+        //   - superclass under the real "androidx/appcompat/app/" package (some
+        //     AppCompatDialog-family type; the exact leaf letter, e.g. "d", still
+        //     reshuffles per build so only the package prefix is pinned)
+        //   - not a nested class ('$' in the type), which is what previously
+        //     needed the now-gone sourceFile to rule out the a$a/a$b/a$c siblings
+        //   - has a field of the real (never-obfuscated) stdlib type
+        //     Ljava/util/Collection; (the pending-delete file list)
+        //   - has a 2-arg constructor (name "<init>" is a fixed dex intrinsic,
+        //     never renamed) whose first param is under the real
+        //     "androidx/fragment/app/" package (FragmentActivity) and second is Z
+        // Re-verify this combination is still unique in the class pool if this
+        // ever needs to target a different build.
         val dialogClass = mutableClassDefBy { classDef ->
-            classDef.sourceFile == "MediaDeleteConfirmDialog.kt" &&
-                classDef.superclass?.startsWith("Landroidx/appcompat/app/") == true &&
-                '$' !in classDef.type
+            classDef.superclass?.startsWith("Landroidx/appcompat/app/") == true &&
+                '$' !in classDef.type &&
+                classDef.fields.any { it.type == "Ljava/util/Collection;" } &&
+                classDef.methods.any { method ->
+                    method.name == "<init>" &&
+                        method.parameters.size == 2 &&
+                        method.parameters[0].type.startsWith("Landroidx/fragment/app/") &&
+                        method.parameters[1].type == "Z"
+                }
         }
 
         val onClickListenerType = "Landroid/content/DialogInterface\$OnClickListener;"
