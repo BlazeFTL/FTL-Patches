@@ -4,12 +4,11 @@ import app.morphe.patcher.patch.bytecodePatch
 
 val cleanMeTabPatch = bytecodePatch(
     name = "Clean Me Tab",
-    description = "Removes promo rows and unused tiles from the Me tab. Optional Add Network Stream tile.",
+    description = "Adds Mod Settings switches, on by default, that hide promo rows, unused tiles, and " +
+        "Private Folder / File Transfer / Add to Playlist entries.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
 
-    dependsOn(cleanMeTabLayoutsPatch, cleanMeTabTilesPatch, addNetworkStreamTilePatch)
-
-    addNetworkStreamOption()
+    dependsOn(cleanMeTabLayoutsPatch, cleanMeTabTilesPatch)
 }

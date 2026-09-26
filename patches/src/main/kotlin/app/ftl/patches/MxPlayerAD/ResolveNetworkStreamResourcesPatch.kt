@@ -8,6 +8,10 @@ internal var networkStreamIconId: Int = 0
     private set
 internal var networkStreamTitleId: Int = 0
     private set
+internal var mxShareMenuId: Int = 0
+    private set
+internal var privateFolderMenuId: Int = 0
+    private set
 
 // DOM lookup instead of regex-over-raw-text: immune to attribute order/whitespace
 // differences between decoders/builds. The previous regex assumed a fixed
@@ -35,5 +39,17 @@ internal val resolveNetworkStreamResourcesPatch = resourcePatch(
     execute {
         networkStreamIconId = resourceId("drawable", "ic_me_tab_cloud_drive")
         networkStreamTitleId = resourceId("string", "network_stream")
+    }
+}
+
+internal val resolveMeTabMenuIdsPatch = resourcePatch(
+    name = null,
+    description = "Resolves the multi-select menu item ids for File Transfer and Private Folder by name.",
+) {
+    compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
+
+    execute {
+        mxShareMenuId = resourceId("id", "mx_share")
+        privateFolderMenuId = resourceId("id", "option_private_folder")
     }
 }

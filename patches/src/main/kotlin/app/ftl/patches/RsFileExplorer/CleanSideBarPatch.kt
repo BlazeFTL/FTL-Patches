@@ -2,7 +2,7 @@ package app.ftl.patches.rsfileexplorer
 
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
-import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.InstructionLocation.MatchAfterWithin
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.extensions.InstructionExtensions.removeInstructions
 import app.morphe.patcher.methodCall
@@ -17,83 +17,111 @@ import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 
 /**
- * Anchor for the whole sidebar-builder class. Matches the method that builds
- * the "add a remote connection" list (sharebrowser, http, ftp, smb, webdav,
- * flashair, bluetooth, ...) via its own two real (unobfuscated) protocol-scheme
- * string literals - a pair unique to this one feature. Every other fingerprint
- * below pins `classFingerprint` to this one, so none of them can ever match a
- * method in some unrelated class elsewhere in the app - the bug that broke the
- * previous version of this patch (an unscoped fingerprint silently matched an
- * unrelated method elsewhere that also happened to contain the word "root").
+ * As of 2.3.1.1 the sidebar was rewritten: Bookmarks, remote-connection and
+ * Category are no longer separate private no-arg methods on an
+ * ExpandableListAdapter (pre-2.3.1.1 shape) - all of it, plus Storage, is
+ * now inlined directly into the constructor of the new section-builder,
+ * alongside several unrelated toggle rows. Gutting a whole method is no
+ * longer an option (it would take the entire sidebar down with it), so
+ * every section below is instead hidden by skipping only the one call that
+ * registers its finished section object into the sidebar's master list -
+ * the section is still built into a local, now-unreferenced object, it
+ * just never gets added.
  *
- * `accessFlags = PRIVATE` matters here specifically: `<clinit>` builds the
- * very array these two scheme strings live in, so it contains both literals
- * too and would otherwise satisfy this same filter chain. `<clinit>` is a
- * static constructor, never private, so pinning PRIVATE is what keeps this
- * fingerprint pointed at the real method (R()) instead of silently gutting
- * the class's static array initializers - exactly what broke the sidebar on
- * the first build of this rewrite (NPEs in R()/T() reading now-null arrays).
+ * Anchor for this constructor: its own two real (unobfuscated)
+ * protocol-scheme string literals for the remote-connection section
+ * (sharebrowser, http, ...), plus the real MainActivity/View parameter
+ * types and the real CONSTRUCTOR access flag - required because a sibling
+ * class's `<clinit>` holds the same two literals in its backing string
+ * array and would otherwise satisfy the string filters too.
  */
-private object RemoteConnectionListFingerprint : Fingerprint(
-    accessFlags = listOf(AccessFlags.PRIVATE),
+private object SideBarBuilderFingerprint : Fingerprint(
+    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.CONSTRUCTOR),
     returnType = "V",
-    parameters = emptyList(),
+    parameters = listOf("Lcom/edili/filemanager/MainActivity;", "Landroid/view/View;"),
     filters = listOf(
         string("sharebrowser://"),
         string("http://"),
     ),
 )
 
-/**
- * Matches the method that builds the Category section (Photos, Music, Video,
- * Books, Archives), via its own real content-scheme string literals.
- */
-private object CategoryListFingerprint : Fingerprint(
-    classFingerprint = RemoteConnectionListFingerprint,
-    accessFlags = listOf(AccessFlags.PRIVATE),
+/** Every section's finished object is registered the same way: one real,
+ *  unobfuscated `CopyOnWriteArrayList#add(Object)` call. Removing it plus
+ *  the 10 instructions right after it (this section's own position
+ *  bookkeeping into a ConcurrentHashMap, keyed off the list's own real
+ *  `size()` right before the add - an idiom identical and unique per
+ *  section) fully un-registers the section without touching anything
+ *  upstream that builds it. */
+private const val REGISTRATION_BLOCK_SIZE = 11
+
+private fun MutableMethod.dropSection(registerCallIndex: Int) {
+    removeInstructions(registerCallIndex, REGISTRATION_BLOCK_SIZE)
+}
+
+private object RemoteConnectionSectionFingerprint : Fingerprint(
+    classFingerprint = SideBarBuilderFingerprint,
+    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.CONSTRUCTOR),
     returnType = "V",
-    parameters = emptyList(),
+    parameters = listOf("Lcom/edili/filemanager/MainActivity;", "Landroid/view/View;"),
+    filters = listOf(
+        string("sharebrowser://"),
+        string("http://"),
+        methodCall(
+            definingClass = "Ljava/util/concurrent/CopyOnWriteArrayList;",
+            name = "add",
+            parameters = listOf("Ljava/lang/Object;"),
+            returnType = "Z",
+            opcode = Opcode.INVOKE_VIRTUAL,
+        ),
+    ),
+)
+
+/** Matches the Category section's five real content-scheme string
+ *  literals (Photos, Music, Video, Books, Archives), then the same
+ *  registration call as above. */
+private object CategorySectionFingerprint : Fingerprint(
+    classFingerprint = SideBarBuilderFingerprint,
+    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.CONSTRUCTOR),
+    returnType = "V",
+    parameters = listOf("Lcom/edili/filemanager/MainActivity;", "Landroid/view/View;"),
     filters = listOf(
         string("gallery://local/buckets/"),
         string("music://"),
         string("video://"),
         string("book://"),
         string("archive://"),
+        methodCall(
+            definingClass = "Ljava/util/concurrent/CopyOnWriteArrayList;",
+            name = "add",
+            parameters = listOf("Ljava/lang/Object;"),
+            returnType = "Z",
+            opcode = Opcode.INVOKE_VIRTUAL,
+        ),
     ),
 )
 
-/**
- * Matches the method that (re)builds the Bookmarks section list. Its own
- * class, the private List field it clears/repopulates, and the 0-arg static
- * factory it reads from are all obfuscated and reshuffle every build, so none
- * of those are pinned. Instead this is matched by a chain of only real,
- * unobfuscated JDK calls that occur back-to-back nowhere else in the class: an
- * IGET_OBJECT read of a List field, immediately cleared via the real
- * `java.util.List#clear()`, immediately followed by a re-read of the same
- * shape of field, an obfuscated 0-arg factory returning the real
- * `java.util.ArrayList`, and immediately repopulated via the real
- * `java.util.List#addAll(Collection)`. A near-identical clear+refill idiom
- * exists elsewhere in this class (a conditional "refresh" method), but there
- * it's separated by other instructions rather than fully back-to-back, so
- * requiring every step immediately after the last is what keeps this
- * fingerprint pointed at only this one method.
- */
-private object BookmarksListFingerprint : Fingerprint(
-    classFingerprint = RemoteConnectionListFingerprint,
-    accessFlags = listOf(AccessFlags.PRIVATE),
+/** Matches the Bookmarks section's (re)population of its own field: the
+ *  real `java.util.LinkedList#clear()`, immediately followed by a 0-arg
+ *  obfuscated static factory returning the real `java.util.ArrayList`,
+ *  immediately followed by the real `java.util.LinkedList#addAll(Collection)`
+ *  - a shape that appears exactly once in this method. Its own class, the
+ *  field it clears/repopulates and the factory it reads from are all
+ *  obfuscated and reshuffle every build, so none of those are pinned. */
+private object BookmarksSectionFingerprint : Fingerprint(
+    classFingerprint = SideBarBuilderFingerprint,
+    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.CONSTRUCTOR),
     returnType = "V",
-    parameters = emptyList(),
+    parameters = listOf("Lcom/edili/filemanager/MainActivity;", "Landroid/view/View;"),
     filters = listOf(
         opcode(Opcode.IGET_OBJECT),
         methodCall(
-            definingClass = "Ljava/util/List;",
+            definingClass = "Ljava/util/LinkedList;",
             name = "clear",
             parameters = emptyList(),
             returnType = "V",
-            opcode = Opcode.INVOKE_INTERFACE,
+            opcode = Opcode.INVOKE_VIRTUAL,
             location = MatchAfterImmediately(),
         ),
-        opcode(Opcode.IGET_OBJECT, MatchAfterImmediately()),
         methodCall(
             parameters = emptyList(),
             returnType = "Ljava/util/ArrayList;",
@@ -102,35 +130,43 @@ private object BookmarksListFingerprint : Fingerprint(
         ),
         opcode(Opcode.MOVE_RESULT_OBJECT, MatchAfterImmediately()),
         methodCall(
-            definingClass = "Ljava/util/List;",
+            definingClass = "Ljava/util/LinkedList;",
             name = "addAll",
             parameters = listOf("Ljava/util/Collection;"),
             returnType = "Z",
-            opcode = Opcode.INVOKE_INTERFACE,
+            opcode = Opcode.INVOKE_VIRTUAL,
             location = MatchAfterImmediately(),
+        ),
+        methodCall(
+            definingClass = "Ljava/util/concurrent/CopyOnWriteArrayList;",
+            name = "add",
+            parameters = listOf("Ljava/lang/Object;"),
+            returnType = "Z",
+            opcode = Opcode.INVOKE_VIRTUAL,
         ),
     ),
 )
 
 /**
- * Matches the method that builds the Storage section's entry list (root
- * storage, SD card, OTG, encrypted vault, downloader, ...). The class scope
- * alone would already stop this from matching some unrelated "root" string
- * elsewhere in the app (the previous version's bug), but this also pins the
- * exact real, unobfuscated shape immediately following the literal: every
- * entry gets compared with the real `java.lang.String#equals(Object)`, whose
- * result is immediately branched on. Within this class "root" only appears
- * twice - once here, and once in a static array initializer that has no
- * equals-call after it at all - so this shape alone already disambiguates the
- * two even before the class scope is considered. The loop's own increment,
- * immediately followed by its own goto, is then found the same way as before,
- * now guaranteed to be this loop's and not some coincidental one elsewhere.
+ * Matches the Storage section's entry-building loop (root storage, SD
+ * card, OTG, encrypted vault, downloader, ...): every entry's identifier is
+ * compared with the real `java.lang.String#equals(Object)` against the
+ * real "root" literal, whose result is immediately branched on - as of
+ * 2.3.1.1 that branch builds either the root entry or a regular one
+ * inline, and the two paths only reconverge well after, at the loop's own
+ * increment, so that can no longer be pinned as immediately following
+ * IF_EQZ (the bug that broke this on 2.3.1.1: both branches together run
+ * under 25 instructions before reconverging, so MatchAfterWithin(30) finds
+ * it on either path without risk of hitting some other loop's increment
+ * first). "root" appears a second time in a sibling class's static array
+ * initializer with no equals-call after it, but the class scope above
+ * already excludes that class entirely.
  */
 private object StorageEntryListFingerprint : Fingerprint(
-    classFingerprint = RemoteConnectionListFingerprint,
-    accessFlags = listOf(AccessFlags.PRIVATE),
+    classFingerprint = SideBarBuilderFingerprint,
+    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.CONSTRUCTOR),
     returnType = "V",
-    parameters = emptyList(),
+    parameters = listOf("Lcom/edili/filemanager/MainActivity;", "Landroid/view/View;"),
     filters = listOf(
         string("root"),
         methodCall(
@@ -143,17 +179,10 @@ private object StorageEntryListFingerprint : Fingerprint(
         ),
         opcode(Opcode.MOVE_RESULT, MatchAfterImmediately()),
         opcode(Opcode.IF_EQZ, MatchAfterImmediately()),
-        opcode(Opcode.ADD_INT_LIT8),
+        opcode(Opcode.ADD_INT_LIT8, MatchAfterWithin(30)),
         opcode(Opcode.GOTO, MatchAfterImmediately()),
     ),
 )
-
-/** Replaces a matched no-arg void method's entire body with a single `return-void`. */
-private fun MutableMethod.gut() {
-    val instructionCount = implementation!!.instructions.size
-    removeInstructions(0, instructionCount)
-    addInstructions(0, "return-void")
-}
 
 val cleanSideBarPatch = bytecodePatch(
     name = "Clean sidebar",
@@ -163,26 +192,26 @@ val cleanSideBarPatch = bytecodePatch(
     compatibleWith(COMPATIBILITY_RS_FILE_EXPLORER)
 
     execute {
-        // All 3 are private, single-purpose section builders; gutting them to
-        // return-void means their section is never built and never added to the
-        // sidebar's section list. Matched and edited independently - neither depends
-        // on the others, or on locating their (obfuscated) caller.
-        BookmarksListFingerprint.method.gut()
-        RemoteConnectionListFingerprint.method.gut()
-        CategoryListFingerprint.method.gut()
+        // All four fingerprints below match against the same shared constructor, and
+        // each one's index is only valid against the bytecode as it stood when
+        // matched - not after some other edit has since shifted it. Every target is
+        // therefore captured FIRST, before any edit runs, then applied strictly
+        // highest-index-first: an edit only ever shifts indices *after* its own
+        // position, so processing this way guarantees every other still-pending
+        // target - positioned earlier in the method - is never invalidated by an
+        // edit that runs before it.
+        val method = SideBarBuilderFingerprint.method
 
-        // --- Storage section: hide the Encrypt and Downloader entries only ---
+        val remoteIndex = RemoteConnectionSectionFingerprint.instructionMatches.last().index
+        val bookmarksIndex = BookmarksSectionFingerprint.instructionMatches.last().index
+        val categoryIndex = CategorySectionFingerprint.instructionMatches.last().index
 
-        val storageMethod = StorageEntryListFingerprint.method
-        val storageInstructions = storageMethod.implementation!!.instructions
-        val matches = StorageEntryListFingerprint.instructionMatches
-
-        val rootStringMatch = matches[0]
-        val equalsCallMatch = matches[1]
-        val incrementIndex = matches[4].index
-        // Captured as an instruction object, not an index, so it stays valid after the
-        // insertion below shifts every later index.
-        val incrementInstruction = storageInstructions[incrementIndex]
+        val storageMatches = StorageEntryListFingerprint.instructionMatches
+        val rootStringMatch = storageMatches[0]
+        val equalsCallMatch = storageMatches[1]
+        // Captured as an instruction object, not an index, so it stays valid no matter
+        // what runs before it.
+        val incrementInstruction = method.implementation!!.instructions[storageMatches[4].index]
 
         // The register holding the "root" string is free again right after this point
         // in the original code (about to be reassigned to "root" itself), so it's
@@ -192,12 +221,15 @@ val cleanSideBarPatch = bytecodePatch(
         // compared against "root" - the same value the new checks need to test.
         val identifierRegister = equalsCallMatch.getInstruction<FiveRegisterInstruction>().registerD
 
+        // --- Storage section: hide the Encrypt and Downloader entries only ---
+        // Highest-positioned edit, applied first, while nothing has moved yet.
+
         // The trailing "nop" after :keep_entry is required, not decorative: addInstructionsWithLabels
         // appends ":loop_increment\nnop" to the end of this text before compiling it as one block. A
         // label with nothing after it merges onto that same appended nop, and anything landing there
         // gets rewired to the external label - so without its own nop, :keep_entry would silently
         // become a second name for :loop_increment instead of falling through to the original code.
-        storageMethod.addInstructionsWithLabels(
+        method.addInstructionsWithLabels(
             rootStringMatch.index,
             """
                 const-string v$scratchRegister, "encrypt://"
@@ -215,5 +247,12 @@ val cleanSideBarPatch = bytecodePatch(
             """.trimIndent(),
             ExternalLabel("loop_increment", incrementInstruction),
         )
+
+        // --- Category, Bookmarks, Remote Connection: drop each section's
+        // registration, strictly in descending index order (all three positioned
+        // before Storage above, so none of them are affected by that insertion) ---
+        method.dropSection(categoryIndex)
+        method.dropSection(bookmarksIndex)
+        method.dropSection(remoteIndex)
     }
 }
