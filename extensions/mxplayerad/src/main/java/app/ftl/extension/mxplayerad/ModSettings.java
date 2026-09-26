@@ -46,7 +46,7 @@ public final class ModSettings {
             "smart_enhance_skip_popup",
             "Skip intro popup",
             "On: the player menu item toggles Smart Enhance directly, without the popup and animation. Off: stock popup.",
-            false,
+            true,
             false
         ),
         new Entry(
@@ -54,7 +54,7 @@ public final class ModSettings {
             "smart_enhance_toast",
             "Toast on enable",
             "On: toast when Smart Enhance turns on. Off: silent toggle.",
-            true,
+            false,
             false
         ),
         new Entry(
