@@ -444,7 +444,6 @@ internal val smartEnhanceControlSliderPatch = bytecodePatch(
                 move-result p1
                 if-eqz p1, :stock
                 return-void
-                :stock
             """.trimIndent(),
             ExternalLabel("stock", progressStart),
         )
@@ -458,7 +457,6 @@ internal val smartEnhanceControlSliderPatch = bytecodePatch(
                 move-result p1
                 if-eqz p1, :stock
                 return-void
-                :stock
             """.trimIndent(),
             ExternalLabel("stock", startStart),
         )
@@ -472,7 +470,6 @@ internal val smartEnhanceControlSliderPatch = bytecodePatch(
                 move-result p1
                 if-eqz p1, :stock
                 return-void
-                :stock
             """.trimIndent(),
             ExternalLabel("stock", stopStart),
         )
