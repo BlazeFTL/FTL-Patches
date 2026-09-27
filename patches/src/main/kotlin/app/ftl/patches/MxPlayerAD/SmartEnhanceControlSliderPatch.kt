@@ -73,6 +73,27 @@ internal object OnStopTrackingTouchFingerprint : Fingerprint(
     parameters = listOf("Landroid/widget/SeekBar;"),
 )
 
+/**
+ * Locates ActivityScreen's PlaybackController state-change callback (originally
+ * "O0" - the app's own listener interface, not an Android SDK one, so unlike the
+ * SeekBar callbacks above the name itself isn't safe to pin). Matched purely by
+ * defining class + real parameter/return types - the only obfuscated thing about
+ * this signature is the method's own name, which is never referenced.
+ * Verify uniqueness against a live dex before shipping (rule 6): this exact
+ * (PlaybackController, I, I, Z)V shape is plausible-but-unconfirmed to be
+ * singular within ActivityScreen.
+ */
+internal object PlaybackControllerCallbackFingerprint : Fingerprint(
+    definingClass = "Lcom/mxtech/videoplayer/ActivityScreen;",
+    returnType = "V",
+    parameters = listOf(
+        "Lcom/mxtech/videoplayer/widget/PlaybackController;",
+        "I",
+        "I",
+        "Z",
+    ),
+)
+
 internal val smartEnhanceControlSliderPatch = bytecodePatch(
     name = "Smart Enhance Control Slider",
     description = "Replaces the Smart Enhance on/off toggle with a live 0-100% popup slider " +
@@ -472,6 +493,24 @@ internal val smartEnhanceControlSliderPatch = bytecodePatch(
                 return-void
             """.trimIndent(),
             ExternalLabel("stock", stopStart),
+        )
+
+        // --- 9. Dismiss the popup when the player controls themselves hide --------
+        // Confirmed via the real build's diff: this callback's only change is these
+        // 4 instructions prepended at index 0 (p2 == 0 signals controls hidden) -
+        // everything else in the method is untouched, baksmali just renumbers the
+        // existing :cond_N labels to make room for this one.
+        val callbackMethod = PlaybackControllerCallbackFingerprint.method
+        val callbackStart = callbackMethod.getInstruction(0)
+        callbackMethod.addInstructionsWithLabels(
+            0,
+            """
+                if-nez p2, :cond_0
+                iget-object v0, p0, $activityScreenType->$ENHANCE_POPUP_FIELD:Landroid/widget/PopupWindow;
+                if-eqz v0, :cond_0
+                invoke-virtual {v0}, Landroid/widget/PopupWindow;->dismiss()V
+            """.trimIndent(),
+            ExternalLabel("cond_0", callbackStart),
         )
     }
 }
