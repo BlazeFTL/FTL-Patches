@@ -18,14 +18,17 @@ import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public final class ModSettings {
@@ -54,6 +57,15 @@ public final class ModSettings {
             "smart_enhance_toast",
             "Toast on enable",
             "On: toast when Smart Enhance turns on. Off: silent toggle.",
+            false,
+            false
+        ),
+        new Entry(
+            "Smart Enhance",
+            "smart_enhance_always_on",
+            "Always On",
+            "Turns Smart Enhance on automatically every time a video starts, at the level below. " +
+                "Drag the in-player slider to override for the current video only.",
             false,
             false
         ),
@@ -214,6 +226,22 @@ public final class ModSettings {
         ),
     };
 
+    // Only rendered while its dependsOnKey Entry is checked - see the second pass in
+    // showDialog(). Same isPatched() asset-marker gate as ENTRIES; type has no bearing
+    // on that check, so modSettingFlagPatch(key) is reused as-is for these too.
+    private static final IntEntry[] INT_ENTRIES = {
+        new IntEntry(
+            "Smart Enhance",
+            "smart_enhance_default_pct",
+            "Default level",
+            "Strength Smart Enhance starts at when Always On applies it automatically.",
+            20,
+            0,
+            100,
+            "smart_enhance_always_on"
+        ),
+    };
+
     private static Context appContext;
     private static WeakReference<Object> tilesOwner;
     private static String tilesMethod;
@@ -251,6 +279,23 @@ public final class ModSettings {
         ModViewHider.refreshAll();
     }
 
+    private static IntEntry findInt(String key) {
+        for (IntEntry entry : INT_ENTRIES) if (entry.key.equals(key)) return entry;
+        return null;
+    }
+
+    public static int getInt(String key) {
+        IntEntry entry = findInt(key);
+        int def = entry == null ? 0 : entry.def;
+        SharedPreferences prefs = prefs(context());
+        return prefs == null ? def : prefs.getInt(key, def);
+    }
+
+    public static void setInt(String key, int value) {
+        SharedPreferences prefs = prefs(context());
+        if (prefs != null) prefs.edit().putInt(key, value).apply();
+    }
+
     public static void showDialog(final Context host) {
         AlertDialog.Builder builder = new AlertDialog.Builder(host);
         Context dc = builder.getContext();
@@ -263,6 +308,10 @@ public final class ModSettings {
 
         int shown = 0;
         Map<String, LinearLayout> groupContent = new LinkedHashMap<String, LinearLayout>();
+        // Populated in the INT_ENTRIES pass below, read from the ENTRIES pass's switch
+        // listeners (constructed first) - safe because both run before .show(), and the
+        // listeners only look the map up lazily on click, once it's fully populated.
+        final Map<String, List<View>> dependentRows = new HashMap<String, List<View>>();
         int secondaryColor = resolveColor(dc, android.R.attr.textColorSecondary, 0xFF888888);
         TypedValue ripple = new TypedValue();
         final boolean hasRipple = dc.getTheme().resolveAttribute(android.R.attr.selectableItemBackground, ripple, true);
@@ -347,6 +396,10 @@ public final class ModSettings {
                     set(entry.key, checked);
                     if (entry.tiles && !refreshTiles()) refreshFailed[0] = true;
                     if (entry.needsReload) refreshFailed[0] = true;
+                    List<View> dependents = dependentRows.get(entry.key);
+                    if (dependents != null) {
+                        for (View row : dependents) row.setVisibility(checked ? View.VISIBLE : View.GONE);
+                    }
                 }
             });
             content.addView(toggle, new LinearLayout.LayoutParams(
@@ -359,6 +412,74 @@ public final class ModSettings {
                 summary.setAlpha(0.7f);
                 content.addView(summary, new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+            }
+        }
+
+        for (final IntEntry entry : INT_ENTRIES) {
+            if (!isPatched(dc, entry.key)) continue;
+            LinearLayout content = groupContent.get(entry.group);
+            if (content == null) continue;
+            shown++;
+
+            LinearLayout row = new LinearLayout(dc);
+            row.setOrientation(LinearLayout.VERTICAL);
+            row.setPadding(0, dp(dc, 10), 0, dp(dc, 2));
+            row.setVisibility(entry.dependsOnKey == null || get(entry.dependsOnKey) ? View.VISIBLE : View.GONE);
+
+            LinearLayout labelRow = new LinearLayout(dc);
+            labelRow.setOrientation(LinearLayout.HORIZONTAL);
+            TextView title = new TextView(dc);
+            title.setText(entry.title);
+            labelRow.addView(title, new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            final TextView valueLabel = new TextView(dc);
+            valueLabel.setText(getInt(entry.key) + "%");
+            valueLabel.setAlpha(0.7f);
+            labelRow.addView(valueLabel, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+            row.addView(labelRow, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+            SeekBar seekBar = new SeekBar(dc);
+            seekBar.setMax(entry.max - entry.min);
+            seekBar.setProgress(getInt(entry.key) - entry.min);
+            seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
+                    if (!fromUser) return;
+                    int value = progress + entry.min;
+                    setInt(entry.key, value);
+                    valueLabel.setText(value + "%");
+                }
+
+                @Override
+                public void onStartTrackingTouch(SeekBar bar) {}
+
+                @Override
+                public void onStopTrackingTouch(SeekBar bar) {}
+            });
+            row.addView(seekBar, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+            if (entry.summary != null) {
+                TextView summary = new TextView(dc);
+                summary.setText(entry.summary);
+                summary.setTextSize(13f);
+                summary.setAlpha(0.7f);
+                row.addView(summary, new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+            }
+
+            content.addView(row, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+            if (entry.dependsOnKey != null) {
+                List<View> dependents = dependentRows.get(entry.dependsOnKey);
+                if (dependents == null) {
+                    dependents = new ArrayList<View>();
+                    dependentRows.put(entry.dependsOnKey, dependents);
+                }
+                dependents.add(row);
             }
         }
 
@@ -617,6 +738,33 @@ public final class ModSettings {
             this.def = def;
             this.tiles = tiles;
             this.needsReload = needsReload;
+        }
+    }
+
+    private static final class IntEntry {
+        final String group;
+        final String key;
+        final String title;
+        final String summary;
+        final int def;
+        final int min;
+        final int max;
+        // Null means always shown. Non-null must name a boolean Entry's key in the
+        // same build - the row tracks that switch live, no dialog rebuild needed.
+        final String dependsOnKey;
+
+        IntEntry(
+            String group, String key, String title, String summary,
+            int def, int min, int max, String dependsOnKey
+        ) {
+            this.group = group;
+            this.key = key;
+            this.title = title;
+            this.summary = summary;
+            this.def = def;
+            this.min = min;
+            this.max = max;
+            this.dependsOnKey = dependsOnKey;
         }
     }
 }
