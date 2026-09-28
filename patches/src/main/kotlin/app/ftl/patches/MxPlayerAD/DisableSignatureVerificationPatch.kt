@@ -12,16 +12,18 @@ import java.io.RandomAccessFile
 private data class SoPatch(val path: String, val offset: Long, val bytes: ByteArray)
 
 private val SO_PATCHES = listOf(
-    // arm64-v8a: AArch64 "b #0" -> word 0x14000000, little-endian.
+    // arm64-v8a: file offset = vaddr 0x9f2e8 - .text delta 0x4000 (separate PT_LOAD segment).
+    // Lands on a CBZ. AArch64 "b #0" -> word 0x14000000, little-endian.
     SoPatch(
         path = "lib/arm64-v8a/libc++_shared.so",
-        offset = 0x0009f2e8L,
+        offset = 0x0009b2e8L,
         bytes = byteArrayOf(0x00, 0x00, 0x00, 0x14),
     ),
-    // armeabi-v7a: Thumb "b ." -> halfword 0xE7FE, little-endian.
+    // armeabi-v7a: file offset = vaddr 0x6aabe - .text delta 0x1000. Lands on a BNE.
+    // Thumb "b ." -> halfword 0xE7FE, little-endian.
     SoPatch(
         path = "lib/armeabi-v7a/libc++_shared.so",
-        offset = 0x0006aabeL,
+        offset = 0x00069abeL,
         bytes = byteArrayOf(0xFE.toByte(), 0xE7.toByte()),
     ),
 )
