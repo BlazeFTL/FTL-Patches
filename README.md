@@ -9,14 +9,14 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.2-dev.1](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.2-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;61 patches total
+> **[v1.43.2-dev.2](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.2-dev.2)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;67 patches total
 <details>
-<summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;5 patches</summary>
+<summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
 <br>
 
 **🎯 Supported versions:**
 
-| 1.9.7 |
+| 1.9.8 |
 | :---: |
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
@@ -24,13 +24,16 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Boost Splash Screen](#boost-splash-screen) | Fixes Remove Ads And Remove Ads Lite Gettings Stuck In Splash Screen Useless if you also select skip splash and language activity patch. Also stops the splash from hiding the on-screen navigation buttons. | • Splash duration (ms) |
 | [Disable ad dialog when reopening app](#disable-ad-dialog-when-reopening-app) | Prevents the full-screen "loading ad" dialog from appearing when the app is reopened after being minimized. |  |
 | [Disable downloader from download menu](#disable-downloader-from-download-menu) | Strips WebDownloadActivity's intent-filter data so it no longer offers itself as a handler in the system download/"complete action using" chooser. |  |
+| [Disable rate dialogs](#disable-rate-dialogs) | Prevents the rate and star rating dialogs from showing. |  |
+| [Hide Scan (AD) menu item](#hide-scan-ad-menu-item) | Removes the Scan (AD) row from the browser overflow menu. |  |
 | [Remove from default browser list](#remove-from-default-browser-list) | Removes the unscoped http/https <data> entries from MainActivity's first intent-filter carrying them so the app stops appearing as a candidate in the system's default browser / "open with" chooser. |  |
-| [Skip splash and language screens](#skip-splash-and-language-screens) | Jumps straight to the main activity from the splash screen, skipping the splash animation, the language-selection screen, and any ad/app-open dialog normally shown first. |  |
+| [Skip splash and language screens](#skip-splash-and-language-screens) | Jumps straight to the main activity from the splash screen, skipping the splash animation, the language-selection screen, DONT UNSELECT THIS,IT HAS SIGNATURE BYPASS INCLUDED. |  |
+| [Skip tips screen](#skip-tips-screen) | Closes the onboarding tips screen as soon as it opens. |  |
 
 </details>
 
 <details>
-<summary>📦 MX Player&nbsp;&nbsp;•&nbsp;&nbsp;7 patches</summary>
+<summary>📦 MX Player&nbsp;&nbsp;•&nbsp;&nbsp;10 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -40,13 +43,16 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
-| [Boost Splash Screen Time](#boost-splash-screen-time) | WARNING: MX PLAYER HAS AN INTEGRITY CHECK, and some mods add their own on top. Use a Play Store build, Use URV Manager, patch with signing off, then use MT Manager Enhanced Signature Kill or the app may refuse to start.Disables MX Player's welcome/splash ad so playback starts immediately. |  |
-| [Clean Me Tab](#clean-me-tab) | Removes promo rows and unused tiles from the Me tab. Optional Add Network Stream tile. | • Add Network Stream tile |
-| [Configure Smart Enhance](#configure-smart-enhance) | Configures the Smart Enhance intro popup and enable/disable toast. | • Skip intro popup and animation<br>• Show toast on enable |
-| [Configure SpeedUp overlay](#configure-speedup-overlay) | "2x UI": keeps the long-press SpeedUp overlay/animation, with the stock leftover-visible-view bug fixed. "No UI": the overlay never shows at all - the speed change itself still applies, since that's handled elsewhere. | • No UI |
-| [Disable Bottom Bar And Add Me Tab To Top](#disable-bottom-bar-and-add-me-tab-to-top) | Hides the bottom navigation bar and adds a Me tab button to the toolbar. |  |
-| [Remove Recycle Bin](#remove-recycle-bin) | Disables the Recycle Bin and removes it from the Me tab; deleted files are removed permanently. |  |
-| [Sidebar & Player Defaults](#sidebar-player-defaults) | Cleans the player sidebar and More menu; sets default shortcuts and subtitle view. | • Hide Bookmark<br>• Hide Favourite<br>• Hide Add to Playlist<br>• Hide Tutorial<br>• Hide Playing Queue<br>• Hide Video Display<br>• Hide More menu Help section<br>• Change default shortcuts<br>• Default shortcuts bitmask (hex)<br>• Open subtitle settings by default |
+| [Boost Splash Screen Time](#boost-splash-screen-time) | Dont Apply These Patches Over Some Other Persons Mod, Use Untouched Apk. Disables MX Player's welcome/splash ad so playback starts immediately. |  |
+| [Clean Me Tab](#clean-me-tab) | Adds Mod Settings switches, on by default, that hide promo rows, unused tiles, and Private Folder / File Transfer / Add to Playlist entries. |  |
+| [Configure Smart Enhance](#configure-smart-enhance) | Removes the Smart Enhance disable toast and adds Mod Settings switches for the intro popup and the enable toast. |  |
+| [Configure SpeedUp overlay](#configure-speedup-overlay) | Fixes the stock leftover-visible-view bug in the long-press SpeedUp overlay. "No UI" is toggled in Me tab > Mod Settings. |  |
+| [Disable Bottom Bar And Add Me Tab To Top](#disable-bottom-bar-and-add-me-tab-to-top) | Adds a permanent Me tab button to the toolbar. Hiding the bottom bar itself is toggled live in Me tab > Mod Settings, not here - the Me tab button always stays wired, on purpose, since Mod Settings lives behind it and turning it off should never be able to lock you out of turning it back on. |  |
+| [Disable signature verification](#disable-signature-verification) | Patches libc++_shared.so (arm64-v8a and armeabi-v7a) to branch-to-self at the signature check call site, hanging that code path instead of letting it fail the app. |  |
+| [Remove Recycle Bin](#remove-recycle-bin) | Deleted files are always removed permanently, whenever this patch is applied - there's no safe way to make that half a runtime switch without the stock (unpatched) delete-dialog code to fall back to. The Me tab tile itself is a Mod Settings switch: off just brings the tile back, it doesn't restore recycling. |  |
+| [Sidebar & Player Defaults](#sidebar-player-defaults) | Cleans the player sidebar and More menu; sets default shortcuts and subtitle view. Configurable in Mod Settings, except the default shortcuts bitmask, still a Morphe option pending its Mod Settings move. | • Change default shortcuts<br>• Default shortcuts bitmask (hex) |
+| [Smart Enhance Always On](#smart-enhance-always-on) | Applies Smart Enhance automatically on every video, at a default level set in Mod Settings (still adjustable per-video via the Control Slider). |  |
+| [Smart Enhance Control Slider](#smart-enhance-control-slider) | Replaces the Smart Enhance on/off toggle with a live 0-100% popup slider in the player. |  |
 
 </details>
 
@@ -166,9 +172,9 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
-| [Hide File Transfer, Video Playlist, Private Folder tiles](#hide-file-transfer-video-playlist-private-folder-tiles) | Removes the File Transfer, Video Playlist, and Private Folder tiles from settings Page. |  |
-| [Hide Settings Page UseLess Buttons](#hide-settings-page-useless-buttons) | Collapses the WhatsApp, Legal, and Help entries on the Me tab. |  |
-| [Hide top tiles](#hide-top-tiles) | Hides the top tiles. |  |
+| [Hide File Transfer, Video Playlist, Private Folder tiles](#hide-file-transfer-video-playlist-private-folder-tiles) | Removes the File Transfer, Video Playlist, and Private Folder tiles from settings Page. | • Hide File Transfer<br>• Hide Private Folder<br>• Hide Video Playlists |
+| [Hide Settings Page UseLess Buttons](#hide-settings-page-useless-buttons) | Collapses the WhatsApp, Legal, and Help entries on the Me tab. | • Hide WhatsApp<br>• Hide Legal<br>• Hide Help |
+| [Hide top tiles](#hide-top-tiles) | Hides the top tiles that appears in top of video folders in homescreen |  |
 | [Skip Splash Screen](#skip-splash-screen) | Skips Splash Screen so the app boots straight past the splash and update screen. |  |
 
 </details>
