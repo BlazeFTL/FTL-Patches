@@ -31,6 +31,8 @@ val disableSignatureVerificationPatch = rawResourcePatch(
     description = "Patches libc++_shared.so (arm64-v8a and armeabi-v7a) to branch-to-self at the " +
         "signature check call site, hanging that code path instead of letting it fail the app.",
 ) {
+    compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
+
     execute {
         val apkEntries = listApkEntries("lib/").toSet()
 
