@@ -1,4 +1,4 @@
-package app.morphe.patches.disablesignatureverification
+package app.ftl.patches.mxplayerad
 
 import app.morphe.patcher.patch.rawResourcePatch
 import java.io.RandomAccessFile
