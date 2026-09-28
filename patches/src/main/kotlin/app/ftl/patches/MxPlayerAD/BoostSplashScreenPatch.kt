@@ -60,7 +60,6 @@ private object WelcomeAdEnabledCheckFingerprint : Fingerprint(
 val boostSplashScreenPatch = bytecodePatch(
     name = "Boost Splash Screen Time",
     description = "Dont Apply These Patches Over Some Other Persons Mod, Use Untouched Apk. " +
-        "Use a Play Store build, Use URV Manager, patch with signing off, " +
         "Disables MX Player's welcome/splash ad so playback starts immediately.",
     default = true,
 ) {
