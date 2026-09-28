@@ -688,10 +688,13 @@ internal val smartEnhanceControlSliderPatch = bytecodePatch(
 
         // --- 12. Stop the lock/unlock state-change path from force-disabling ------
         // Found by content, not name: the one caller of M9() immediately preceded by
-        // two other zero-arg-void invoke-virtual calls on p0. Confirmed by reading
-        // the real method (originally "H6") - that shape is K9()+L9()+M9(), and nothing
-        // after it in H6 depends on M9's side effects (all void, no results consumed),
-        // so swapping this one call for an icon refresh + forcer-restart is safe.
+        // two other zero-arg-void invoke-virtual calls on p0, INSIDE a method whose
+        // own real signature is (B)V - a single raw byte parameter, void return.
+        // Confirmed by reading the real method (originally "H6(B)V") - the byte param
+        // is a genuinely distinctive shape in this class, needed because the call-
+        // triple shape alone isn't unique (multiple M9 callers share it). Nothing
+        // after this call in H6 depends on M9's side effects (all void, no results
+        // consumed), so swapping it for an icon refresh + forcer-restart is safe.
         // "Next video" and other M9 call sites are untouched, so per-video reset still
         // works normally - this only changes the lock/unlock/state-change path.
         fun isZeroArgVoidVirtualCall(insn: Instruction): Boolean {
@@ -710,6 +713,11 @@ internal val smartEnhanceControlSliderPatch = bytecodePatch(
         }
 
         val stateChangeCandidates = activityScreenClass.methods.mapNotNull { candidate ->
+            if (candidate.parameterTypes.map { it.toString() } != listOf("B") ||
+                candidate.returnType.toString() != "V"
+            ) {
+                return@mapNotNull null
+            }
             val insns = candidate.implementation?.instructions ?: return@mapNotNull null
             for (i in 2 until insns.size) {
                 if (isForceMethodCall(insns[i]) &&
