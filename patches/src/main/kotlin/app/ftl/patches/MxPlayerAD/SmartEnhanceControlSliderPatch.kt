@@ -74,6 +74,28 @@ internal object OnStopTrackingTouchFingerprint : Fingerprint(
 )
 
 /**
+ * Extracts ActivityScreen's PlaybackController field (originally "Z") and its
+ * auto-hide-timer reset method (originally "c()V") from the one place in stock where
+ * they're used back-to-back inside a real, unobfuscated SDK override:
+ * onGenericMotionEvent(MotionEvent)Z has exactly one read of that field, immediately
+ * followed by the reset call. Nothing is inserted here - only the two references are
+ * read, and neither obfuscated name is ever pinned.
+ */
+internal object PlaybackControllerResetHideFingerprint : Fingerprint(
+    definingClass = "Lcom/mxtech/videoplayer/ActivityScreen;",
+    name = "onGenericMotionEvent",
+    returnType = "Z",
+    parameters = listOf("Landroid/view/MotionEvent;"),
+    filters = listOf(
+        fieldAccess(
+            type = "Lcom/mxtech/videoplayer/widget/PlaybackController;",
+            opcode = Opcode.IGET_OBJECT,
+        ),
+        opcode(Opcode.INVOKE_VIRTUAL, location = MatchAfterImmediately()),
+    ),
+)
+
+/**
  * Locates ActivityScreen's PlaybackController state-change callback (originally
  * "O0" - the app's own listener interface, not an Android SDK one, so unlike the
  * SeekBar callbacks above the name itself isn't safe to pin). Matched purely by
@@ -153,6 +175,16 @@ internal val smartEnhanceControlSliderPatch = bytecodePatch(
             (menuItemInstructions[menuItemMatches[3].index] as ReferenceInstruction).reference as FieldReference
         val m1Field = "${m1FieldRef.definingClass}->${m1FieldRef.name}:${m1FieldRef.type}"
 
+        val resetHideMatches = PlaybackControllerResetHideFingerprint.instructionMatches
+        val resetHideInstructions =
+            PlaybackControllerResetHideFingerprint.method.implementation!!.instructions
+        val zFieldRef =
+            (resetHideInstructions[resetHideMatches[0].index] as ReferenceInstruction).reference as FieldReference
+        val cMethodRef =
+            (resetHideInstructions[resetHideMatches[1].index] as ReferenceInstruction).reference as MethodReference
+        val zField = "${zFieldRef.definingClass}->${zFieldRef.name}:${zFieldRef.type}"
+        val cMethod = "${cMethodRef.definingClass}->${cMethodRef.name}()${cMethodRef.returnType}"
+
         val llleQField = "${llleQFieldRef.definingClass}->${llleQFieldRef.name}:${llleQFieldRef.type}"
         val saMethod = "${saMethodRef.definingClass}->${saMethodRef.name}()${saMethodRef.returnType}"
         val pType = pFieldRef.type
@@ -198,11 +230,7 @@ internal val smartEnhanceControlSliderPatch = bytecodePatch(
         pClass.methods.add(setFilterMethod)
 
         // --- 2. New fields on ActivityScreen ---------------------------------------
-        // No PlaybackController auto-hide-timer nudge here (the real build's V8(I)V
-        // resets it via an obfuscated no-arg method with no safe/unique anchor found -
-        // dropped as a cosmetic omission rather than guessed; the popup still shows
-        // and works, the on-screen controls' own auto-hide timer just isn't reset
-        // while dragging).
+        // New state fields (all ours - no anchors needed).
         listOf(
             Triple(ENHANCE_LABEL_FIELD, "Landroid/widget/TextView;", AccessFlags.PRIVATE.value),
             Triple(ENHANCE_POPUP_FIELD, "Landroid/widget/PopupWindow;", AccessFlags.PRIVATE.value),
@@ -260,6 +288,10 @@ internal val smartEnhanceControlSliderPatch = bytecodePatch(
         applyPercentMethod.addInstructions(
             0,
             """
+                iget-object v0, p0, $pField
+                if-nez v0, :has_player
+                return-void
+                :has_player
                 iget-object v0, p0, $activityScreenType->$ENHANCE_LABEL_FIELD:Landroid/widget/TextView;
                 if-eqz v0, :cond_1
                 invoke-static {p1}, $activityScreenType->patch_smartEnhancePctLabel(I)Ljava/lang/String;
@@ -414,6 +446,10 @@ internal val smartEnhanceControlSliderPatch = bytecodePatch(
                 """
                     iget-object v0, p0, $activityScreenType->$ENHANCE_SEEKBAR_FIELD:Landroid/widget/SeekBar;
                     if-ne v0, p1, :cond_no
+                    iget-object v0, p0, $zField
+                    if-eqz v0, :cond_skip
+                    invoke-virtual {v0}, $cMethod
+                    :cond_skip
                     invoke-virtual {p0, p2}, $activityScreenType->$ENHANCE_APPLY_PERCENT_METHOD(I)V
                     const/4 v0, 0x1
                     return v0
