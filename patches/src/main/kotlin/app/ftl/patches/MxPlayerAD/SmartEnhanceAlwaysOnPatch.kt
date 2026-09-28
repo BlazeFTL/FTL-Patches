@@ -18,18 +18,12 @@ import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 
 private const val SMART_ENHANCE_ALWAYS_ON_KEY = "smart_enhance_always_on"
 private const val SMART_ENHANCE_DEFAULT_PCT_KEY = "smart_enhance_default_pct"
-private const val STARTED_FIELD = "patch_smartEnhanceAlwaysOnStarted"
+private const val TICKS_FIELD = "patch_smartEnhanceAlwaysOnTicks"
+private const val START_METHOD = "patch_smartEnhanceAlwaysOnStart"
 
-// Stock M9(): force-disables Smart Enhance (q=false, E0(-1)) on some internal reset
-// path - exact trigger unconfirmed, only its shape matters here. This is the STOCK
-// shape (single-arg E0(I)V, literal v1=-1) - Slider adds a *new* E0(IF)V overload
-// alongside the untouched original rather than replacing it, so M9 keeps this exact
-// shape regardless of whether Slider has already run. Anchored purely on opcode/
-// literal shape, no obfuscated names read: CONST_4(0) -> SPUT_BOOLEAN(q) ->
-// IGET_OBJECT(player field) -> CONST_4(-1) -> INVOKE_VIRTUAL(E0(I)V) ->
-// INVOKE_VIRTUAL(icon refresh) -> RETURN_VOID.
-// Verify uniqueness against a live dex before shipping (rule 6) - this exact 7-opcode
-// run is plausible-but-unconfirmed to be singular across the whole class.
+// Stock M9(): the "next video" reset - force-disables Smart Enhance. Stock shape
+// (single-arg E0(I)V; Slider only adds a new overload, never alters this call).
+// Verify uniqueness against a live dex (rule 6).
 internal object SmartEnhanceForceMethodFingerprint : Fingerprint(
     returnType = "V",
     parameters = emptyList(),
@@ -42,6 +36,16 @@ internal object SmartEnhanceForceMethodFingerprint : Fingerprint(
         opcode(Opcode.INVOKE_VIRTUAL, location = MatchAfterImmediately()), // icon refresh
         opcode(Opcode.RETURN_VOID, location = MatchAfterImmediately()),
     ),
+)
+
+// Real, stable Activity lifecycle override. A fresh video open builds a new
+// ActivityScreen, which resets the flag in here and never goes through M9() -
+// that path only runs for "next video" on an already-live activity.
+internal object ActivityScreenOnCreateFingerprint : Fingerprint(
+    definingClass = "Lcom/mxtech/videoplayer/ActivityScreen;",
+    name = "onCreate",
+    returnType = "V",
+    parameters = listOf("Landroid/os/Bundle;"),
 )
 
 internal val smartEnhanceAlwaysOnPatch = bytecodePatch(
@@ -66,23 +70,30 @@ internal val smartEnhanceAlwaysOnPatch = bytecodePatch(
         val activityScreen = mutableClassDefBy(activityScreenType)
             ?: throw PatchException("Could not resolve ActivityScreen class")
 
-        // --- New field: guards the poller against starting more than once ---------
         activityScreen.fields.add(
-            ImmutableField(activityScreenType, STARTED_FIELD, "Z", AccessFlags.PRIVATE.value, null, null, null)
+            ImmutableField(activityScreenType, TICKS_FIELD, "I", AccessFlags.PRIVATE.value, null, null, null)
                 .toMutable(),
         )
 
-        // --- Fold the poller into ActivityScreen itself (self-as-Runnable) ---------
-        // No new class (same constraint as removeRecycleBinPatch): ActivityScreen
-        // implements Runnable itself and gets one new run()V method carrying the
-        // repeat logic (confirmed no existing run()V on stock ActivityScreen),
-        // scheduled via the real, unobfuscated View.postDelayed - no new fields
-        // needed beyond the started-guard above, and delegates to
-        // patch_applySmartEnhancePercent(I)V (added by Slider) for the actual work.
+        // --- Burst re-apply after a fresh open --------------------------------------
+        // The player is built asynchronously after onCreate and the app re-derives its
+        // "off" state during setup, so a single call can lose the race. Re-apply every
+        // 300ms, 9 times (~2.7s), then stop - it must NOT run forever or it would keep
+        // overwriting whatever the user drags the Control Slider to.
+        // ActivityScreen becomes its own Runnable (no new class possible here).
         val runnableType = "Ljava/lang/Runnable;"
         if (runnableType !in activityScreen.interfaces) activityScreen.interfaces.add(runnableType)
 
-        val tickMethod = ImmutableMethod(
+        val postBody = """
+            new-instance v1, Landroid/os/Handler;
+            invoke-static {}, Landroid/os/Looper;->getMainLooper()Landroid/os/Looper;
+            move-result-object v2
+            invoke-direct {v1, v2}, Landroid/os/Handler;-><init>(Landroid/os/Looper;)V
+            const-wide/16 v2, 0x12c
+            invoke-virtual {v1, p0, v2, v3}, Landroid/os/Handler;->postDelayed(Ljava/lang/Runnable;J)Z
+        """.trimIndent()
+
+        val runMethod = ImmutableMethod(
             activityScreen.type,
             "run",
             emptyList(),
@@ -92,10 +103,14 @@ internal val smartEnhanceAlwaysOnPatch = bytecodePatch(
             null,
             MutableMethodImplementation(5),
         ).toMutable()
-
-        tickMethod.addInstructions(
+        runMethod.addInstructions(
             0,
             """
+                iget v0, p0, $activityScreenType->$TICKS_FIELD:I
+                const/16 v1, 0x9
+                if-ge v0, v1, :done
+                add-int/lit8 v0, v0, 0x1
+                iput v0, p0, $activityScreenType->$TICKS_FIELD:I
                 const-string v0, "$SMART_ENHANCE_ALWAYS_ON_KEY"
                 invoke-static {v0}, $MOD_SETTINGS_CLASS->get(Ljava/lang/String;)Z
                 move-result v0
@@ -105,36 +120,60 @@ internal val smartEnhanceAlwaysOnPatch = bytecodePatch(
                 move-result v0
                 invoke-virtual {p0, v0}, $activityScreenType->$ENHANCE_APPLY_PERCENT_METHOD(I)V
                 :reschedule
-                invoke-virtual {p0}, Landroid/app/Activity;->getWindow()Landroid/view/Window;
-                move-result-object v1
-                invoke-virtual {v1}, Landroid/view/Window;->getDecorView()Landroid/view/View;
-                move-result-object v1
-                const-wide/16 v2, 0x12c
-                invoke-virtual {v1, p0, v2, v3}, Landroid/view/View;->postDelayed(Ljava/lang/Runnable;J)Z
+                $postBody
+                :done
                 return-void
             """.trimIndent(),
         )
-        activityScreen.methods.add(tickMethod)
+        activityScreen.methods.add(runMethod)
 
-        // --- M9(): flip force-disable to force-enable-at-default-%, and start the --
-        // poller loop the first time M9 ever fires for this Activity instance (guard
-        // field above prevents restarting it - and once running, the loop's own
-        // 300ms recheck covers every later video in the same session on its own, so
-        // it never needs to be kicked off again). Delegates entirely to Slider's
-        // patch_applySmartEnhancePercent(I)V for the actual flag/icon/E0 work.
+        // First post only - deliberately touches nothing else, since it runs at the very
+        // start of onCreate before the activity is set up.
+        val startMethod = ImmutableMethod(
+            activityScreen.type,
+            START_METHOD,
+            emptyList(),
+            "V",
+            AccessFlags.PUBLIC.value or AccessFlags.FINAL.value,
+            null,
+            null,
+            MutableMethodImplementation(5),
+        ).toMutable()
+        startMethod.addInstructions(
+            0,
+            """
+                $postBody
+                return-void
+            """.trimIndent(),
+        )
+        activityScreen.methods.add(startMethod)
+
+        // onCreate has .registers 18, so p0 is v16 - past the 4-bit limit of plain
+        // invoke-virtual {p0}. The assembler then silently drops the method instead of
+        // reporting an error ("Collection is empty"), so this must use the /range form
+        // (same reason stock's own Ha() calls Sa() via invoke-virtual/range).
+        ActivityScreenOnCreateFingerprint.method.addInstructions(
+            0,
+            "invoke-virtual/range {p0 .. p0}, $activityScreenType->$START_METHOD()V",
+        )
+
+        // --- M9() ("next video" reset): apply the default when Always On is on,
+        // otherwise behave like stock (force off = 0%).
         forceMethod.removeInstructions(matches[0].index, matches[6].index - matches[0].index + 1)
         forceMethod.addInstructions(
             matches[0].index,
             """
-                iget-boolean v0, p0, $activityScreenType->$STARTED_FIELD:Z
-                if-nez v0, :already_started
-                const/4 v0, 0x1
-                iput-boolean v0, p0, $activityScreenType->$STARTED_FIELD:Z
-                invoke-virtual {p0}, $activityScreenType->run()V
-                :already_started
+                const-string v0, "$SMART_ENHANCE_ALWAYS_ON_KEY"
+                invoke-static {v0}, $MOD_SETTINGS_CLASS->get(Ljava/lang/String;)Z
+                move-result v0
+                if-eqz v0, :off
                 const-string v0, "$SMART_ENHANCE_DEFAULT_PCT_KEY"
                 invoke-static {v0}, $MOD_SETTINGS_CLASS->getInt(Ljava/lang/String;)I
                 move-result v0
+                goto :apply
+                :off
+                const/4 v0, 0x0
+                :apply
                 invoke-virtual {p0, v0}, $activityScreenType->$ENHANCE_APPLY_PERCENT_METHOD(I)V
                 return-void
             """.trimIndent(),
