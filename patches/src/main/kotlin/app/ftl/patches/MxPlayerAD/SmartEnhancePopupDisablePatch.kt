@@ -9,9 +9,7 @@ import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.string
 import app.morphe.patcher.util.smali.ExternalLabel
-import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
-import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
@@ -90,27 +88,16 @@ internal val disableSmartEnhancePopupPatch = bytecodePatch(
                 defReg = getBoolean.startRegister + 2
             }
         }
-        var defaultValue: Boolean? = null
-        if (defReg >= 0) {
-            for (i in matches[0].index - 1 downTo caseStart) {
-                val insn = instructions[i]
-                if (insn is OneRegisterInstruction && insn.registerA == defReg) {
-                    if ((insn.opcode == Opcode.CONST_4 || insn.opcode == Opcode.CONST_16) && insn is NarrowLiteralInstruction) {
-                        defaultValue = insn.narrowLiteral != 0
-                    }
-                    break
-                }
-            }
+        if (prefsReg < 0 || defReg < 0) {
+            throw PatchException("Smart Enhance click handler: getBoolean call has an unexpected shape")
         }
-        val markSeen = if (prefsReg >= 0 && prefsReg != scratch && defaultValue != null) {
-            val fn = if (defaultValue) "markNewSeenFalse" else "markNewSeenTrue"
-            """
-                move-object/from16 p1, v$prefsReg
-                invoke-static/range {p1 .. p1}, $ENHANCE_CONFIG_CLASS->$fn(Ljava/lang/Object;)V
-            """.trimIndent()
-        } else {
-            throw PatchException("Smart Enhance click handler: could not resolve the prefs register / default for the New badge")
-        }
+        // Both registers are already loaded here (only the key const-string sits between this
+        // point and the call). The default is read at runtime, so no literal lookup is needed.
+        val markSeen = """
+            invoke-static/range {v$defReg .. v$defReg}, $ENHANCE_CONFIG_CLASS->rememberDefault(Z)V
+            move-object/from16 p1, v$prefsReg
+            invoke-static/range {p1 .. p1}, $ENHANCE_CONFIG_CLASS->markNewSeen(Ljava/lang/Object;)V
+        """.trimIndent()
 
         method.addInstructionsWithLabels(
             matches[0].index,
