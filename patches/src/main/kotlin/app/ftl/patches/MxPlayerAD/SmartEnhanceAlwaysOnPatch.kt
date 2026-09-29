@@ -1,94 +1,106 @@
 package app.ftl.patches.mxplayerad
 
 import app.morphe.patcher.Fingerprint
-import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
-import app.morphe.patcher.extensions.InstructionExtensions.removeInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
+import app.morphe.patcher.extensions.InstructionExtensions.replaceInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
+import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
+import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 
-private const val SMART_ENHANCE_ALWAYS_ON_KEY = "smart_enhance_always_on"
-private const val SMART_ENHANCE_DEFAULT_PCT_KEY = "smart_enhance_default_pct"
-
-// Real, stable Activity lifecycle override. A fresh video open builds a new
-// ActivityScreen, which resets the flag directly in here and never goes through
-// M9() at all - that reset path only runs for "next video" on an already-live
-// activity (confirmed: this is a separate reset point from M9, found by testing).
+// Real Activity lifecycle override - never renamed.
 internal object ActivityScreenOnCreateFingerprint : Fingerprint(
-    definingClass = "Lcom/mxtech/videoplayer/ActivityScreen;",
+    definingClass = ACTIVITY_SCREEN_CLASS,
     name = "onCreate",
     returnType = "V",
     parameters = listOf("Landroid/os/Bundle;"),
 )
 
+/**
+ * Compare-build edits (stock -> Always On), plus the lock/unlock fix:
+ *  1. M9 (reset): q = true instead of false, E0(1) instead of E0(-1)      [B]
+ *  2. onCreate: initial q = true instead of false                          [B]
+ *  3. onCreate: right after the player is stored in I, restart the forcer  [B: EnhanceForcer.run(),
+ *     now the retrying patch_enhanceKick()]
+ *  4. fix: M9 also restarts the retrying re-applier after Sa(), because lock/unlock calls M9 while
+ *     the surface and native renderer are being rebuilt, so the single E0(1) is lost.
+ * Every edit replaces an instruction in place (never inserts before a branch target).
+ */
 internal val smartEnhanceAlwaysOnPatch = bytecodePatch(
     name = "Smart Enhance Always On",
-    description = "Applies Smart Enhance automatically on every video, at a default level " +
-        "set in Mod Settings (still adjustable per-video via the Control Slider).",
+    description = "Turns Smart Enhance on for every video and keeps it on after lock/unlock.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
-    dependsOn(
-        smartEnhanceControlSliderPatch,
-        modSettingsPatch,
-        modSettingFlagPatch(SMART_ENHANCE_ALWAYS_ON_KEY),
-        modSettingFlagPatch(SMART_ENHANCE_DEFAULT_PCT_KEY),
-    )
+    dependsOn(smartEnhanceCorePatch)
 
     execute {
-        // SmartEnhanceForceMethodFingerprint now lives in SmartEnhanceControlSliderPatch.kt
-        // (same package, no import needed) - Slider needs M9's identity too, for its
-        // own lock/unlock fix, independent of whether this patch is installed.
-        val forceMethod = SmartEnhanceForceMethodFingerprint.method
-        val matches = SmartEnhanceForceMethodFingerprint.instructionMatches
-        val activityScreenType = forceMethod.definingClass
+        val activity = EnhanceRefs.activityScreen.type
+        val qField = EnhanceRefs.qField.smali()
+        val pFieldSmali = EnhanceRefs.playerField.smali()
 
-        // --- M9() ("next video" reset): apply the default when Always On is on,
-        // otherwise behave like stock (force off = 0%). Delegates entirely to
-        // Slider's patch_applySmartEnhancePercent(I)V.
-        forceMethod.removeInstructions(matches[0].index, matches[6].index - matches[0].index + 1)
-        forceMethod.addInstructions(
-            matches[0].index,
+        // --- 1 + 4: M9 ---------------------------------------------------------
+        val m9 = EnhanceRefs.m9
+        val m = SmartEnhanceForceMethodFingerprint.instructionMatches
+        val qReg = m[0].getInstruction<OneRegisterInstruction>().registerA
+        val oneReg = m[3].getInstruction<OneRegisterInstruction>().registerA
+        val returnIndex = m[6].index
+
+        m9.replaceInstruction(m[0].index, "const/4 v$qReg, 0x1")
+        m9.replaceInstruction(m[3].index, "const/4 v$oneReg, 0x1")
+        m9.replaceInstructions(
+            returnIndex,
             """
-                const-string v0, "$SMART_ENHANCE_ALWAYS_ON_KEY"
-                invoke-static {v0}, $MOD_SETTINGS_CLASS->get(Ljava/lang/String;)Z
-                move-result v0
-                if-eqz v0, :off
-                const-string v0, "$SMART_ENHANCE_DEFAULT_PCT_KEY"
-                invoke-static {v0}, $MOD_SETTINGS_CLASS->getInt(Ljava/lang/String;)I
-                move-result v0
-                goto :apply
-                :off
-                const/4 v0, 0x0
-                :apply
-                invoke-virtual {p0, v0}, $activityScreenType->$ENHANCE_APPLY_PERCENT_METHOD(I)V
+                const/4 v$oneReg, 0x0
+                iput v$oneReg, p0, $activity->$ENHANCE_LEVEL_FIELD:F
+                invoke-virtual {p0}, $activity->$ENHANCE_KICK_METHOD()V
                 return-void
             """.trimIndent(),
         )
 
-        // --- onCreate(): prime state for a fresh video open ------------------------
-        // patch_applySmartEnhancePercent(I)V already returns early if the player field
-        // is null (added for exactly this reason), so calling it here is safe even
-        // though the player doesn't exist yet at this point in onCreate - it still
-        // correctly sets the on/off flag, the stored level, and refreshes the icon.
-        // Slider's surfaceCreated-triggered forcer (added for the lock/unlock case)
-        // then picks up that already-set state once the player/surface actually exist,
-        // retrying across the same async-setup window a fresh open goes through -
-        // so no separate retry loop is needed here.
-        // onCreate has many registers here (confirmed 18 in the compare), which can put
-        // p0 out of range for a plain invoke - move it to a low register first, the
-        // same idiom stock's own Ha() uses for the same reason.
-        ActivityScreenOnCreateFingerprint.method.addInstructions(
-            0,
+        // --- 2 + 3: onCreate ---------------------------------------------------
+        val onCreate = ActivityScreenOnCreateFingerprint.method
+        val insns = onCreate.implementation!!.instructions
+
+        val qIndex = insns.indexOfFirst {
+            it.opcode == Opcode.SPUT_BOOLEAN && ((it as ReferenceInstruction).reference as FieldReference).smali() == qField
+        }
+        if (qIndex < 0) throw PatchException("onCreate: initial q write not found")
+
+        var oneRegister = -1
+        val scanStart = maxOf(0, qIndex - 12)
+        for (i in qIndex - 1 downTo scanStart) {
+            val insn = insns[i]
+            if (insn.opcode == Opcode.CONST_4 && (insn as NarrowLiteralInstruction).narrowLiteral == 1) {
+                val reg = (insn as OneRegisterInstruction).registerA
+                val clobbered = (i + 1 until qIndex).any {
+                    val later = insns[it]
+                    later is OneRegisterInstruction && later.registerA == reg
+                }
+                if (!clobbered) {
+                    oneRegister = reg
+                    break
+                }
+            }
+        }
+        if (oneRegister < 0) throw PatchException("onCreate: no register holding 1 before the q write")
+        onCreate.replaceInstruction(qIndex, "sput-boolean v$oneRegister, $qField")
+
+        val playerStoreIndex = insns.indexOfFirst {
+            it.opcode == Opcode.IPUT_OBJECT && ((it as ReferenceInstruction).reference as FieldReference).smali() == pFieldSmali
+        }
+        if (playerStoreIndex < 0) throw PatchException("onCreate: player field store not found")
+        val store = insns[playerStoreIndex] as TwoRegisterInstruction
+        onCreate.replaceInstructions(
+            playerStoreIndex,
             """
-                move-object/from16 v0, p0
-                const-string v1, "$SMART_ENHANCE_ALWAYS_ON_KEY"
-                invoke-static {v1}, $MOD_SETTINGS_CLASS->get(Ljava/lang/String;)Z
-                move-result v1
-                if-eqz v1, :skip
-                const-string v1, "$SMART_ENHANCE_DEFAULT_PCT_KEY"
-                invoke-static {v1}, $MOD_SETTINGS_CLASS->getInt(Ljava/lang/String;)I
-                move-result v1
-                invoke-virtual {v0, v1}, $activityScreenType->$ENHANCE_APPLY_PERCENT_METHOD(I)V
-                :skip
+                iput-object v${store.registerA}, v${store.registerB}, $pFieldSmali
+                invoke-virtual/range {p0 .. p0}, $activity->$ENHANCE_KICK_METHOD()V
             """.trimIndent(),
         )
     }
