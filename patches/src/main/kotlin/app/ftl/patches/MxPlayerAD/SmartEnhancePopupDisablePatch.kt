@@ -11,11 +11,11 @@ import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.string
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
 import app.morphe.patcher.util.smali.ExternalLabel
-import com.android.tools.smali.dexlib2.AccessFlags
-import com.android.tools.smali.dexlib2.Opcode
-import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
+import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
@@ -126,6 +126,34 @@ internal val disableSmartEnhancePopupPatch = bytecodePatch(
 
         val stockStart = method.getInstruction(matches[0].index)
 
+        // "New" badge: stock persists the seen state through this same pref key after the intro
+        // dialog. Skipping the case skipped that write, so the badge came back on every new
+        // player session. Read the SharedPreferences register and the getBoolean default off
+        // the stock call; first-run state is the default, so seen = !default. Semantic-free.
+        val getBoolean = matches[1].getInstruction<Instruction>()
+        var prefsReg = -1
+        var defReg = -1
+        when (getBoolean) {
+            is FiveRegisterInstruction -> {
+                prefsReg = getBoolean.registerC
+                defReg = getBoolean.registerE
+            }
+            is RegisterRangeInstruction -> {
+                prefsReg = getBoolean.startRegister
+                defReg = getBoolean.startRegister + 2
+            }
+        }
+        if (prefsReg < 0 || defReg < 0) {
+            throw PatchException("Smart Enhance click handler: getBoolean call has an unexpected shape")
+        }
+        // Both registers are already loaded here (only the key const-string sits between this
+        // point and the call). The default is read at runtime, so no literal lookup is needed.
+        val markSeen = """
+            invoke-static/range {v$defReg .. v$defReg}, $ENHANCE_CONFIG_CLASS->rememberDefault(Z)V
+            move-object/from16 p1, v$prefsReg
+            invoke-static/range {p1 .. p1}, $ENHANCE_CONFIG_CLASS->markNewSeen(Ljava/lang/Object;)V
+        """.trimIndent()
+
         method.addInstructionsWithLabels(
             matches[0].index,
             """
@@ -133,7 +161,7 @@ internal val disableSmartEnhancePopupPatch = bytecodePatch(
                 invoke-static/range {v$scratch .. v$scratch}, $MOD_SETTINGS_CLASS->get(Ljava/lang/String;)Z
                 move-result v$scratch
                 if-eqz v$scratch, :stock
-                invoke-static {}, ${method.definingClass}->patch_markSmartEnhanceSeen()V
+                $markSeen
                 iget-object p1, p0, $outerField
                 check-cast p1, ${toggleMethodRef.definingClass}
                 invoke-virtual {p1}, $toggleMethod
