@@ -33,7 +33,7 @@ internal object ActivityScreenOnCreateFingerprint : Fingerprint(
 internal val smartEnhanceAlwaysOnPatch = bytecodePatch(
     name = "Smart Enhance Always On",
     description = "Applies Smart Enhance to every video at a level set in Mod Settings, and keeps it after lock/unlock.",
-    default = false,
+    default = true,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
     dependsOn(
