@@ -5,7 +5,7 @@ import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
-import app.morphe.patcher.extensions.InstructionExtensions.replaceInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.fieldAccess
 import app.morphe.patcher.opcode
 import app.morphe.patcher.patch.PatchException
@@ -239,12 +239,10 @@ internal val smartEnhanceControlSliderPatch = bytecodePatch(
             throw PatchException("Expected exactly one state-change caller of M9(), found ${candidates.size}")
         }
         val (stateChange, callIndex) = candidates.single()
-        stateChange.replaceInstructions(
-            callIndex,
-            """
-                invoke-virtual {p0}, $saMethod
-                invoke-virtual {p0}, $activity->$ENHANCE_KICK_METHOD()V
-            """.trimIndent(),
+        stateChange.replaceInstruction(callIndex, "invoke-virtual {p0}, $saMethod")
+        stateChange.addInstructions(
+            callIndex + 1,
+            "invoke-virtual {p0}, $activity->$ENHANCE_KICK_METHOD()V",
         )
     }
 }
