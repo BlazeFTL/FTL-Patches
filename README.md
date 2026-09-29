@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.2-dev.2](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.2-dev.2)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;67 patches total
+> **[v1.43.2-dev.3](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.2-dev.3)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;67 patches total
 <details>
 <summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
 <br>
@@ -38,8 +38,8 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 **🎯 Supported versions:**
 
-| 3.1.4 | 3.2.1 | 3.2.2 |
-| :---: | :---: | :---: |
+| 3.1.4 | 3.2.1 | 3.2.2 | 3.2.5 |
+| :---: | :---: | :---: | :---: |
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
@@ -51,8 +51,8 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Disable signature verification](#disable-signature-verification) | Patches libc++_shared.so (arm64-v8a and armeabi-v7a) to branch-to-self at the signature check call site, hanging that code path instead of letting it fail the app. |  |
 | [Remove Recycle Bin](#remove-recycle-bin) | Deleted files are always removed permanently, whenever this patch is applied - there's no safe way to make that half a runtime switch without the stock (unpatched) delete-dialog code to fall back to. The Me tab tile itself is a Mod Settings switch: off just brings the tile back, it doesn't restore recycling. |  |
 | [Sidebar & Player Defaults](#sidebar-player-defaults) | Cleans the player sidebar and More menu; sets default shortcuts and subtitle view. Configurable in Mod Settings, except the default shortcuts bitmask, still a Morphe option pending its Mod Settings move. | • Change default shortcuts<br>• Default shortcuts bitmask (hex) |
-| [Smart Enhance Always On](#smart-enhance-always-on) | Applies Smart Enhance automatically on every video, at a default level set in Mod Settings (still adjustable per-video via the Control Slider). |  |
-| [Smart Enhance Control Slider](#smart-enhance-control-slider) | Replaces the Smart Enhance on/off toggle with a live 0-100% popup slider in the player. |  |
+| [Smart Enhance Always On](#smart-enhance-always-on) | Applies Smart Enhance to every video at a level set in Mod Settings, and keeps it after lock/unlock. |  |
+| [Smart Enhance Slider](#smart-enhance-slider) | Replaces the Smart Enhance toggle with a 0-100% popup slider and keeps the level after lock/unlock. |  |
 
 </details>
 
@@ -114,7 +114,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 **🎯 Supported versions:**
 
-| 2.3.1.1 |
+| 2.3.1.2 |
 | :---: |
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
