@@ -113,7 +113,7 @@ val disableBottomBarAndAddMeTabPatch = bytecodePatch(
         "toggled live in Me tab > Mod Settings, not here - the Me tab button always stays wired, " +
         "on purpose, since Mod Settings lives behind it and turning it off should never be able " +
         "to lock you out of turning it back on.",
-    default = false,
+    default = true,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
 
