@@ -3,7 +3,11 @@ package app.ftl.patches.mxplayerad
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.removeInstructions
+import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
+import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 
 private const val SMART_ENHANCE_ALWAYS_ON_KEY = "smart_enhance_always_on"
 private const val SMART_ENHANCE_DEFAULT_PCT_KEY = "smart_enhance_default_pct"
@@ -65,19 +69,48 @@ internal val smartEnhanceAlwaysOnPatch = bytecodePatch(
         )
 
         // --- onCreate(): prime state for a fresh video open ------------------------
-        // patch_applySmartEnhancePercent(I)V already returns early if the player field
-        // is null (added for exactly this reason), so calling it here is safe even
-        // though the player doesn't exist yet at this point in onCreate - it still
-        // correctly sets the on/off flag, the stored level, and refreshes the icon.
-        // Slider's surfaceCreated-triggered forcer (added for the lock/unlock case)
-        // then picks up that already-set state once the player/surface actually exist,
-        // retrying across the same async-setup window a fresh open goes through -
-        // so no separate retry loop is needed here.
+        // onCreate has its OWN unconditional "Llle;->q = false" reset, separate from
+        // and unrelated to M9() (confirmed by reading the real instructions - it's
+        // part of a general flag-reset block early in onCreate, nothing to do with
+        // Smart Enhance specifically). Inserting at index 0, as an earlier version of
+        // this patch did, put our priming call BEFORE that reset - so stock
+        // immediately overwrote q back to false, and fresh opens never worked while
+        // next-video (which doesn't go through onCreate at all) did. Fixed by finding
+        // that exact write via the same Llle;->q field Slider already extracts from
+        // Ha(), and inserting right after it instead.
+        //
+        // patch_applySmartEnhancePercent(I)V already returns early on the native apply
+        // when the player field is null (the label/flag/level updates still happen
+        // regardless), so calling it here is safe even though the player doesn't exist
+        // yet at this point in onCreate. Slider's surfaceCreated-triggered forcer then
+        // picks up that already-set state once the player/surface actually exist,
+        // retrying across the same async-setup window a fresh open goes through - so
+        // no separate retry loop is needed here.
+        val haMethod = SmartEnhanceToggleFingerprint.method
+        val haMatches = SmartEnhanceToggleFingerprint.instructionMatches
+        val haInstructions = haMethod.implementation!!.instructions
+        val llleQFieldRef =
+            (haInstructions[haMatches[0].index - 3] as ReferenceInstruction).reference as FieldReference
+
+        val onCreateMethod = ActivityScreenOnCreateFingerprint.method
+        val onCreateInstructions = onCreateMethod.implementation!!.instructions
+        val resetIndex = onCreateInstructions.indexOfFirst { insn ->
+            insn.opcode == Opcode.SPUT_BOOLEAN &&
+                ((insn as? ReferenceInstruction)?.reference as? FieldReference)?.let { ref ->
+                    ref.definingClass == llleQFieldRef.definingClass &&
+                        ref.name == llleQFieldRef.name &&
+                        ref.type == llleQFieldRef.type
+                } == true
+        }
+        if (resetIndex == -1) {
+            throw PatchException("Could not find onCreate()'s Llle.q reset - fingerprint needs re-checking against this build")
+        }
+
         // onCreate has many registers here (confirmed 18 in the compare), which can put
         // p0 out of range for a plain invoke - move it to a low register first, the
         // same idiom stock's own Ha() uses for the same reason.
-        ActivityScreenOnCreateFingerprint.method.addInstructions(
-            0,
+        onCreateMethod.addInstructions(
+            resetIndex + 1,
             """
                 move-object/from16 v0, p0
                 const-string v1, "$SMART_ENHANCE_ALWAYS_ON_KEY"
