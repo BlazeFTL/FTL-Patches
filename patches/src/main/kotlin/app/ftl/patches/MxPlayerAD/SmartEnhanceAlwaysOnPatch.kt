@@ -2,7 +2,7 @@ package app.ftl.patches.mxplayerad
 
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
-import app.morphe.patcher.extensions.InstructionExtensions.replaceInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
@@ -10,7 +10,6 @@ import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
-import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 
 // Real Activity lifecycle override - never renamed.
@@ -53,13 +52,12 @@ internal val smartEnhanceAlwaysOnPatch = bytecodePatch(
 
         m9.replaceInstruction(m[0].index, "const/4 v$qReg, 0x1")
         m9.replaceInstruction(m[3].index, "const/4 v$oneReg, 0x1")
-        m9.replaceInstructions(
+        m9.addInstructions(
             returnIndex,
             """
                 const/4 v$oneReg, 0x0
                 iput v$oneReg, p0, $activity->$ENHANCE_LEVEL_FIELD:F
                 invoke-virtual {p0}, $activity->$ENHANCE_KICK_METHOD()V
-                return-void
             """.trimIndent(),
         )
 
@@ -95,13 +93,9 @@ internal val smartEnhanceAlwaysOnPatch = bytecodePatch(
             it.opcode == Opcode.IPUT_OBJECT && ((it as ReferenceInstruction).reference as FieldReference).smali() == pFieldSmali
         }
         if (playerStoreIndex < 0) throw PatchException("onCreate: player field store not found")
-        val store = insns[playerStoreIndex] as TwoRegisterInstruction
-        onCreate.replaceInstructions(
-            playerStoreIndex,
-            """
-                iput-object v${store.registerA}, v${store.registerB}, $pFieldSmali
-                invoke-virtual/range {p0 .. p0}, $activity->$ENHANCE_KICK_METHOD()V
-            """.trimIndent(),
+        onCreate.addInstructions(
+            playerStoreIndex + 1,
+            "invoke-virtual/range {p0 .. p0}, $activity->$ENHANCE_KICK_METHOD()V",
         )
     }
 }
