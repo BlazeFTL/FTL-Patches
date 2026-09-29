@@ -329,10 +329,6 @@ internal val smartEnhanceControlSliderPatch = bytecodePatch(
         applyPercentMethod.addInstructions(
             0,
             """
-                iget-object v0, p0, $pField
-                if-nez v0, :has_player
-                return-void
-                :has_player
                 iget-object v0, p0, $activityScreenType->$ENHANCE_LABEL_FIELD:Landroid/widget/TextView;
                 if-eqz v0, :cond_1
                 invoke-static {p1}, $activityScreenType->patch_smartEnhancePctLabel(I)Ljava/lang/String;
@@ -350,22 +346,28 @@ internal val smartEnhanceControlSliderPatch = bytecodePatch(
                 sput-boolean v1, $llleQField
                 invoke-virtual {p0}, $saMethod
                 :cond_3
-                iget-object v0, p0, $pField
-                if-eqz p1, :cond_4
+                if-eqz p1, :cond_off
                 int-to-float v2, p1
                 const/high16 v3, 0x42c80000
                 div-float/2addr v2, v3
                 const v3, 0x3e3851ec
                 mul-float/2addr v2, v3
                 iput v2, p0, $activityScreenType->$ENHANCE_LEVEL_FIELD:F
-                const/4 v3, 0x1
-                invoke-virtual {v0, v3, v2}, $pType->$ENHANCE_SET_FILTER_METHOD(IF)V
-                return-void
-                :cond_4
+                goto :cond_have_level
+                :cond_off
                 const/4 v2, 0x0
                 iput v2, p0, $activityScreenType->$ENHANCE_LEVEL_FIELD:F
+                :cond_have_level
+                iget-object v0, p0, $pField
+                if-eqz v0, :cond_no_player
+                if-eqz p1, :cond_native_off
+                const/4 v3, 0x1
+                invoke-virtual {v0, v3, v2}, $pType->$ENHANCE_SET_FILTER_METHOD(IF)V
+                goto :cond_no_player
+                :cond_native_off
                 const/4 v3, -0x1
                 invoke-virtual {v0, v3, v2}, $pType->$ENHANCE_SET_FILTER_METHOD(IF)V
+                :cond_no_player
                 return-void
             """.trimIndent(),
         )
