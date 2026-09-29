@@ -9,8 +9,13 @@ import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.string
 import app.morphe.patcher.util.smali.ExternalLabel
+import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 
@@ -68,6 +73,45 @@ internal val disableSmartEnhancePopupPatch = bytecodePatch(
 
         val stockStart = method.getInstruction(matches[0].index)
 
+        // "New" badge: stock persists the seen state through this same pref key after the intro
+        // dialog. Skipping the case skipped that write, so the badge came back on every new
+        // player session. Read the SharedPreferences register and the getBoolean default off
+        // the stock call; first-run state is the default, so seen = !default. Semantic-free.
+        val getBoolean = matches[1].getInstruction<Instruction>()
+        var prefsReg = -1
+        var defReg = -1
+        when (getBoolean) {
+            is FiveRegisterInstruction -> {
+                prefsReg = getBoolean.registerC
+                defReg = getBoolean.registerE
+            }
+            is RegisterRangeInstruction -> {
+                prefsReg = getBoolean.startRegister
+                defReg = getBoolean.startRegister + 2
+            }
+        }
+        var defaultValue: Boolean? = null
+        if (defReg >= 0) {
+            for (i in matches[0].index - 1 downTo caseStart) {
+                val insn = instructions[i]
+                if (insn is OneRegisterInstruction && insn.registerA == defReg) {
+                    if ((insn.opcode == Opcode.CONST_4 || insn.opcode == Opcode.CONST_16) && insn is NarrowLiteralInstruction) {
+                        defaultValue = insn.narrowLiteral != 0
+                    }
+                    break
+                }
+            }
+        }
+        val markSeen = if (prefsReg >= 0 && prefsReg != scratch && defaultValue != null) {
+            val fn = if (defaultValue) "markNewSeenFalse" else "markNewSeenTrue"
+            """
+                move-object/from16 p1, v$prefsReg
+                invoke-static/range {p1 .. p1}, $ENHANCE_CONFIG_CLASS->$fn(Ljava/lang/Object;)V
+            """.trimIndent()
+        } else {
+            throw PatchException("Smart Enhance click handler: could not resolve the prefs register / default for the New badge")
+        }
+
         method.addInstructionsWithLabels(
             matches[0].index,
             """
@@ -75,6 +119,7 @@ internal val disableSmartEnhancePopupPatch = bytecodePatch(
                 invoke-static/range {v$scratch .. v$scratch}, $MOD_SETTINGS_CLASS->get(Ljava/lang/String;)Z
                 move-result v$scratch
                 if-eqz v$scratch, :stock
+                $markSeen
                 iget-object p1, p0, $outerField
                 check-cast p1, ${toggleMethodRef.definingClass}
                 invoke-virtual {p1}, $toggleMethod

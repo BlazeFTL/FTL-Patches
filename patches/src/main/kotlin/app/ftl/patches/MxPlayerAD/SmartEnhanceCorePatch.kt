@@ -24,6 +24,10 @@ import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
 
 internal const val ACTIVITY_SCREEN_CLASS = "Lcom/mxtech/videoplayer/ActivityScreen;"
 internal const val ENHANCE_FORCER_CLASS = "Lapp/ftl/extension/mxplayerad/EnhanceForcer;"
+internal const val ENHANCE_CONFIG_CLASS = "Lapp/ftl/extension/mxplayerad/EnhanceConfig;"
+internal const val KEY_ENHANCE_SLIDER = "smart_enhance_slider"
+internal const val KEY_ENHANCE_ALWAYS_ON = "smart_enhance_always_on"
+internal const val KEY_ENHANCE_DEFAULT_PCT = "smart_enhance_default_pct"
 internal const val ENHANCE_LEVEL_FIELD = "patch_enhanceLevel"
 internal const val ENHANCE_FORCER_FIELD = "patch_enhanceForcer"
 internal const val ENHANCE_KICK_METHOD = "patch_enhanceKick"

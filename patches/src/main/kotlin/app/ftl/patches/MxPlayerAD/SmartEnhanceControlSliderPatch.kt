@@ -74,7 +74,7 @@ internal object PlaybackControllerCallbackFingerprint : Fingerprint(
 
 /**
  * Compare-build edits (stock -> Slider), plus the lock/unlock fix:
- *  - Ha() opens a 0-100% popup slider instead of toggling                    [B: showEnhancePercentMenu]
+ *  - Ha() opens a 0-100% popup slider (Mod Settings switch) instead of toggling                    [B: showEnhancePercentMenu]
  *  - seek listener class -> extension EnhanceSlider (B: menu/EnhanceSeekListener)
  *  - V8(I) -> patch_onEnhancePercent(I): hide-timer nudge, q flag + Sa(), level, apply [B: V8]
  *  - E0(IF) -> patch_applyEnhance(IF) on the player class (shared core; stock E0(I) left intact)
@@ -90,7 +90,7 @@ internal val smartEnhanceControlSliderPatch = bytecodePatch(
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
-    dependsOn(smartEnhanceCorePatch)
+    dependsOn(smartEnhanceCorePatch, modSettingFlagPatch(KEY_ENHANCE_SLIDER))
 
     execute {
         val activityScreen = EnhanceRefs.activityScreen
@@ -181,14 +181,20 @@ internal val smartEnhanceControlSliderPatch = bytecodePatch(
             """,
         )
 
-        // Ha(): open the slider. Original body stays below as unreachable code.
-        SmartEnhanceHaFingerprint.method.addInstructions(
+        // Ha(): open the slider when the Mod Settings switch is on, else stock toggle.
+        val ha = SmartEnhanceHaFingerprint.method
+        val haStart = ha.getInstruction(0)
+        ha.addInstructionsWithLabels(
             0,
             """
+                invoke-static {}, $ENHANCE_CONFIG_CLASS->sliderOn()Z
+                move-result v0
+                if-eqz v0, :stock
                 move-object/from16 v0, p0
                 invoke-virtual {v0}, $activity->$ENHANCE_SHOW_METHOD()V
                 return-void
             """.trimIndent(),
+            ExternalLabel("stock", haStart),
         )
 
         // Dismiss the popup when the controls hide (p2 == 0).
