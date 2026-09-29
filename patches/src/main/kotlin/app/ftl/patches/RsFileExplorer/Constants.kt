@@ -7,6 +7,6 @@ internal val COMPATIBILITY_RS_FILE_EXPLORER = Compatibility(
     packageName = "com.rs.explorer.filemanager",
     name = "RS File Manager",
     targets = listOf(
-        AppTarget(version = "2.3.1.1", versionCode = 241),
+        AppTarget(version = "2.3.1.2", versionCode = 242),
     ),
 )
