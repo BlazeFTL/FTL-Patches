@@ -80,10 +80,15 @@ internal val smartEnhanceAlwaysOnPatch = bytecodePatch(
             0,
             """
                 move-object/from16 v0, p0
+                const-string v1, "$SMART_ENHANCE_ALWAYS_ON_KEY"
+                invoke-static {v1}, $MOD_SETTINGS_CLASS->get(Ljava/lang/String;)Z
+                move-result v1
+                if-eqz v1, :skip
                 const-string v1, "$SMART_ENHANCE_DEFAULT_PCT_KEY"
                 invoke-static {v1}, $MOD_SETTINGS_CLASS->getInt(Ljava/lang/String;)I
                 move-result v1
                 invoke-virtual {v0, v1}, $activityScreenType->$ENHANCE_APPLY_PERCENT_METHOD(I)V
+                :skip
             """.trimIndent(),
         )
     }
