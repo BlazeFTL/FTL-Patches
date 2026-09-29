@@ -62,10 +62,18 @@ public final class ModSettings {
         ),
         new Entry(
             "Smart Enhance",
+            "smart_enhance_slider",
+            "Control slider",
+            "On: the player menu item opens a 0-100% popup slider. Off: stock on/off toggle.",
+            true,
+            false
+        ),
+        new Entry(
+            "Smart Enhance",
             "smart_enhance_always_on",
             "Always On",
             "Turns Smart Enhance on automatically every time a video starts, at the level below. " +
-                "Drag the in-player slider to override for the current video only.",
+                "With the Control slider on, dragging it overrides the level for the current video only.",
             false,
             false
         ),
@@ -234,7 +242,7 @@ public final class ModSettings {
             "Smart Enhance",
             "smart_enhance_default_pct",
             "Default level",
-            "Strength Smart Enhance starts at when Always On applies it automatically.",
+            "Strength Always On applies to every video.",
             20,
             0,
             100,
