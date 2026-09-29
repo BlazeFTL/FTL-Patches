@@ -87,7 +87,7 @@ internal object PlaybackControllerCallbackFingerprint : Fingerprint(
 internal val smartEnhanceControlSliderPatch = bytecodePatch(
     name = "Smart Enhance Slider",
     description = "Replaces the Smart Enhance toggle with a 0-100% popup slider and keeps the level after lock/unlock.",
-    default = false,
+    default = true,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
     dependsOn(smartEnhanceCorePatch, modSettingFlagPatch(KEY_ENHANCE_SLIDER))
