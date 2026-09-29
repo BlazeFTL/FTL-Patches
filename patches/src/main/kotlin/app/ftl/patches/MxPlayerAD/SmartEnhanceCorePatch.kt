@@ -4,7 +4,6 @@ import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
-import app.morphe.patcher.extensions.InstructionExtensions.replaceInstructions
 import app.morphe.patcher.literal
 import app.morphe.patcher.opcode
 import app.morphe.patcher.patch.PatchException
@@ -236,20 +235,16 @@ internal val smartEnhanceCorePatch = bytecodePatch(
             """,
         )
 
-        // Every surface (re)build restarts the retry window. Replacing return-void
-        // (instead of inserting before it) keeps any label bound to it intact.
+        // Every surface (re)build restarts the retry window (inserted before return-void).
         val surface = SurfaceCreatedFingerprint.method
         val surfaceInstructions = surface.implementation!!.instructions
         val last = surfaceInstructions.lastIndex
         if (surfaceInstructions[last].opcode != Opcode.RETURN_VOID) {
             throw PatchException("surfaceCreated does not end in return-void")
         }
-        surface.replaceInstructions(
+        surface.addInstructions(
             last,
-            """
-                invoke-virtual {p0}, $activity->$ENHANCE_KICK_METHOD()V
-                return-void
-            """.trimIndent(),
+            "invoke-virtual {p0}, $activity->$ENHANCE_KICK_METHOD()V",
         )
     }
 }
