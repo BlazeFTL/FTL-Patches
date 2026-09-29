@@ -20,17 +20,15 @@ public final class EnhanceConfig {
         return pct / 100f * MAX_LEVEL;
     }
 
-    public static void markNewSeenTrue(Object prefs) {
-        mark(prefs, true);
+    private static boolean lastDefault;
+
+    public static void rememberDefault(boolean value) {
+        lastDefault = value;
     }
 
-    public static void markNewSeenFalse(Object prefs) {
-        mark(prefs, false);
-    }
-
-    private static void mark(Object prefs, boolean value) {
+    public static void markNewSeen(Object prefs) {
         if (prefs instanceof SharedPreferences) {
-            ((SharedPreferences) prefs).edit().putBoolean(NEW_BADGE_KEY, value).apply();
+            ((SharedPreferences) prefs).edit().putBoolean(NEW_BADGE_KEY, !lastDefault).apply();
         }
     }
 }
