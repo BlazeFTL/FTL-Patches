@@ -84,7 +84,7 @@ private fun Element.hasQualifyingChild(): Boolean {
 // separate toggle of its own.
 val stripAdAnalyticsManifestComponentsPatch = resourcePatch(
     name = null,
-    description = "DONT CHOOSE 2 SAME PATCHES...Removes ad/analytics SDK activity, service, receiver, provider, " +
+    description = "Removes ad/analytics SDK activity, service, receiver, provider, " +
         "meta-data, permission, and package-visibility declarations from the manifest.",
 ) {
     execute {
@@ -164,7 +164,7 @@ val stripAdAnalyticsManifestComponentsPatch = resourcePatch(
 
 val removeAdsAnalyticsPatch = bytecodePatch(
     name = "Remove Analytics New",
-    description = "Corrupts analytics network URLs and split-scheme string obfuscation " +
+    description = "DONT CHOOSE 2 SAME PATCHES...Corrupts analytics network URLs and split-scheme string obfuscation " +
         "inside the code, and strips matching manifest components.",
     default = false,
 ) {
