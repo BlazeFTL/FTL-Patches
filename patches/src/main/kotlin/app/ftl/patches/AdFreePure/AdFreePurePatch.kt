@@ -2,8 +2,26 @@ package app.ftl.patches.adfreepure
 
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
+import com.android.tools.smali.dexlib2.AccessFlags
+import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.util.MethodUtil
 import java.util.logging.Logger
+
+private fun voidStubFor(method: Method): String {
+    var reg = if (AccessFlags.STATIC.isSet(method.accessFlags)) 0 else 1
+    for (type in method.parameterTypes) {
+        if (type.toString() == "Ljava/lang/Runnable;") {
+            return """
+                if-eqz p$reg, :ftl_no_cb
+                invoke-interface/range {p$reg .. p$reg}, Ljava/lang/Runnable;->run()V
+                :ftl_no_cb
+                return-void
+            """.trimIndent()
+        }
+        reg += if (type == "J" || type == "D") 2 else 1
+    }
+    return "return-void"
+}
 
 @Suppress("unused")
 val adFreePurePatch = bytecodePatch(
@@ -73,12 +91,7 @@ val adFreePurePatch = bytecodePatch(
                         val mutableMethod = mutableClass.methods.first {
                             MethodUtil.methodSignaturesMatch(it, method)
                         }
-                        mutableMethod.addInstructions(
-                            0,
-                            """
-                            return-void
-                            """.trimIndent(),
-                        )
+                        mutableMethod.addInstructions(0, voidStubFor(method))
                         hookedPoints++
                         logger.fine("[$targetName AdBlock] Neutralized presentation: ${classDef.type}->${method.name}")
                     } catch (e: Exception) {
