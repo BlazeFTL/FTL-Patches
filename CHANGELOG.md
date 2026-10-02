@@ -1,3 +1,9 @@
+## [1.43.2-dev.4](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.2-dev.3...v1.43.2-dev.4) (2026-10-02)
+
+### 🐛 Bug Fixes
+
+* Update Remove Analytics Patch Breaking FCM Push ([131db7b](https://github.com/BlazeFTL/FTL-Patches/commit/131db7b176c03435c80e90e62b299b8cc4769d9c))
+
 ## [1.43.2-dev.3](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.2-dev.2...v1.43.2-dev.3) (2026-09-29)
 
 ### 🐛 Bug Fixes
