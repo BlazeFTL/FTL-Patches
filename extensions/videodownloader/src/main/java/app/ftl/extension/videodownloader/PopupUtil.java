@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.net.Uri;
+import android.os.SystemClock;
 
 import java.util.Locale;
 
@@ -45,6 +46,23 @@ final class PopupUtil {
     }
 
     private static final int SHORT_MAX = 60;
+    private static final long BUSY_TIMEOUT_MS = 60000L;
+    private static boolean busy;
+    private static long busySince;
+
+    static synchronized boolean tryAcquire() {
+        long now = SystemClock.uptimeMillis();
+        if (busy && now - busySince < BUSY_TIMEOUT_MS) {
+            return false;
+        }
+        busy = true;
+        busySince = now;
+        return true;
+    }
+
+    static synchronized void release() {
+        busy = false;
+    }
 
     static String shorten(String url) {
         if (url == null) {

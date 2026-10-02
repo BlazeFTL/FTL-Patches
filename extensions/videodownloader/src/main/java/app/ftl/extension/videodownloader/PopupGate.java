@@ -9,8 +9,6 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 
 public final class PopupGate implements DialogInterface.OnClickListener, DialogInterface.OnDismissListener {
-    private static boolean showing;
-
     private final Activity activity;
     private final String host;
     private final String url;
@@ -67,10 +65,9 @@ public final class PopupGate implements DialogInterface.OnClickListener, DialogI
         if (PopupStore.get(activity, PopupStore.REDIRECT, host) == PopupStore.BLOCK) {
             return;
         }
-        if (showing || activity.isFinishing()) {
+        if (activity.isFinishing() || !PopupUtil.tryAcquire()) {
             return;
         }
-        showing = true;
         PopupGate gate = new PopupGate(activity, host, url, view);
         try {
             new AlertDialog.Builder(activity)
@@ -82,7 +79,7 @@ public final class PopupGate implements DialogInterface.OnClickListener, DialogI
                     .setOnDismissListener(gate)
                     .show();
         } catch (Throwable t) {
-            showing = false;
+            PopupUtil.release();
         }
     }
 
@@ -97,6 +94,6 @@ public final class PopupGate implements DialogInterface.OnClickListener, DialogI
 
     @Override
     public void onDismiss(DialogInterface dialog) {
-        showing = false;
+        PopupUtil.release();
     }
 }

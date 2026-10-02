@@ -9,7 +9,6 @@ import android.webkit.WebView;
 import java.lang.ref.WeakReference;
 
 public final class PopupWindowGate implements DialogInterface.OnClickListener, DialogInterface.OnDismissListener {
-    private static boolean showing;
     private static WeakReference<WebView> openerView;
     private static String openerUrl;
     private static String hitExtra;
@@ -40,26 +39,26 @@ public final class PopupWindowGate implements DialogInterface.OnClickListener, D
     public static boolean shouldBlock(Message resultMsg) {
         try {
             WebView view = openerView != null ? openerView.get() : null;
-            if (view == null) {
-                return false;
-            }
-            Activity activity = PopupUtil.activityOf(view.getContext());
+            Activity activity = view != null ? PopupUtil.activityOf(view.getContext()) : null;
             if (activity == null) {
-                return false;
+                cancel(resultMsg);
+                return true;
             }
             return isBlocked(activity, openerUrl != null ? openerUrl : "", hitExtra, resultMsg);
         } catch (Throwable t) {
-            showing = false;
-            return false;
+            try {
+                cancel(resultMsg);
+            } catch (Throwable ignored) {
+            }
+            return true;
         }
     }
 
     private static boolean isBlocked(Activity activity, String opener, String hit, Message msg) {
-        if (showing) {
+        if (!PopupUtil.tryAcquire()) {
             cancel(msg);
             return true;
         }
-        showing = true;
         if (msg == null) {
             decide(activity, opener, hit);
             return true;
@@ -80,11 +79,11 @@ public final class PopupWindowGate implements DialogInterface.OnClickListener, D
         if (host != null && !PopupUtil.sameSite(PopupUtil.hostOf(opener), host)) {
             int rule = PopupStore.get(activity, PopupStore.WINDOW, host);
             if (rule == PopupStore.BLOCK) {
-                showing = false;
+                PopupUtil.release();
                 return;
             }
             if (rule == PopupStore.ALLOW) {
-                showing = false;
+                PopupUtil.release();
                 PopupUtil.openUrl(activity, url);
                 return;
             }
@@ -116,7 +115,7 @@ public final class PopupWindowGate implements DialogInterface.OnClickListener, D
             }
             builder.setOnDismissListener(gate).show();
         } catch (Throwable t) {
-            showing = false;
+            PopupUtil.release();
         }
     }
 
@@ -136,6 +135,6 @@ public final class PopupWindowGate implements DialogInterface.OnClickListener, D
 
     @Override
     public void onDismiss(DialogInterface dialog) {
-        showing = false;
+        PopupUtil.release();
     }
 }
