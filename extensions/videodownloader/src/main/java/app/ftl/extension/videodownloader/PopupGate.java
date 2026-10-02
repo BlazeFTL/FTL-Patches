@@ -75,7 +75,7 @@ public final class PopupGate implements DialogInterface.OnClickListener, DialogI
         try {
             new AlertDialog.Builder(activity)
                     .setTitle("Popup blocked")
-                    .setMessage(url)
+                    .setMessage(PopupUtil.shorten(url))
                     .setPositiveButton("Allow", gate)
                     .setNeutralButton("Block", gate)
                     .setNegativeButton("Always Block", gate)

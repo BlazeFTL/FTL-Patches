@@ -102,7 +102,8 @@ public final class PopupWindowGate implements DialogInterface.OnClickListener, D
         try {
             AlertDialog.Builder builder = new AlertDialog.Builder(activity)
                     .setTitle("Popup blocked")
-                    .setMessage("Popup from: " + opener + "\nOpened URL: " + (url != null ? url : "N/A (script popup)"));
+                    .setMessage("Popup from: " + PopupUtil.shorten(opener) + "\nOpened URL: "
+                            + (url != null ? PopupUtil.shorten(url) : "N/A (script popup)"));
             if (key != null) {
                 builder.setPositiveButton("Always allow", gate)
                         .setNeutralButton("Allow once", gate)

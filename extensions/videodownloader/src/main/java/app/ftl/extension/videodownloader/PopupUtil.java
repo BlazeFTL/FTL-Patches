@@ -44,6 +44,21 @@ final class PopupUtil {
         return a.equals(b) || b.endsWith("." + a) || a.endsWith("." + b);
     }
 
+    private static final int SHORT_MAX = 60;
+
+    static String shorten(String url) {
+        if (url == null) {
+            return null;
+        }
+        String s = url;
+        if (s.startsWith("https://")) {
+            s = s.substring(8);
+        } else if (s.startsWith("http://")) {
+            s = s.substring(7);
+        }
+        return s.length() > SHORT_MAX ? s.substring(0, SHORT_MAX) + "\u2026" : s;
+    }
+
     static void openUrl(Context ctx, String url) {
         if (url == null) {
             return;
