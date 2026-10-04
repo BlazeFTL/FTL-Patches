@@ -1,3 +1,9 @@
+## [1.43.2-dev.6](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.2-dev.5...v1.43.2-dev.6) (2026-10-04)
+
+### 🐛 Bug Fixes
+
+* Add FireFox Pin Extension To Search Bar ([d81086f](https://github.com/BlazeFTL/FTL-Patches/commit/d81086fddd6f7969f59d50f3d1650a5ee05804b6))
+
 ## [1.43.2-dev.5](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.2-dev.4...v1.43.2-dev.5) (2026-10-04)
 
 ### 🐛 Bug Fixes

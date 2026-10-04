@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.2-dev.5](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.2-dev.5)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;72 patches total
+> **[v1.43.2-dev.6](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.2-dev.6)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;72 patches total
 <details>
 <summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
 <br>
@@ -203,7 +203,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
-| [Old style 3 dot menu](#old-style-3-dot-menu) | Adds "Mod Settings" to the 3 dot menu to switch between the stock bottom sheet menu and the old style popup menu. |  |
+| [Old style 3 dot menu](#old-style-3-dot-menu) | Adds "Mod Settings" to the 3 dot menu: switch between the stock bottom sheet menu and the old style popup menu, and pin extensions to the search bar. |  |
 | [Remember tab scroll position](#remember-tab-scroll-position) | Keeps the tab tray scroll position when it is closed and reopened. |  |
 
 </details>
