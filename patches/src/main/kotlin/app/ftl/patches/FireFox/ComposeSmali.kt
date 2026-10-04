@@ -220,6 +220,11 @@ internal val COMPOSE_METHODS = listOf(
             move-result-object v0
             const/4 v1, 0x6
             invoke-static {v0, p0, v1}, Lorg/mozilla/fenix/components/menu/compose/MenuGroupKt;->MenuGroup(Landroidx/compose/runtime/internal/ComposableLambdaImpl;Landroidx/compose/runtime/Composer;I)V
+            invoke-static {}, Lapp/ftl/extension/firefox/OldMenu;->showBottomDivider()Z
+            move-result v0
+            if-eqz v0, :ftl_end
+            invoke-static {p0}, Lapp/ftl/extension/firefox/ModCompose;->divider(Ljava/lang/Object;)V
+            :ftl_end
             return-void
 """,
     ),
