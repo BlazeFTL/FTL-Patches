@@ -237,7 +237,8 @@ internal val COMPOSE_METHODS = listOf(
             check-cast v0, Landroid/content/Context;
             invoke-static {v0}, Lapp/ftl/extension/firefox/ModClick;->open(Landroid/content/Context;)Lapp/ftl/extension/firefox/ModClick;
             move-result-object v10
-            sget v1, Lmozilla/components/ui/icons/R$drawable;->mozac_ic_settings_24:I
+            invoke-static {v0}, Lapp/ftl/extension/firefox/OldMenu;->modIcon(Landroid/content/Context;)I
+            move-result v1
             const/4 v5, 0x0
             move-object/from16 v4, v17
             invoke-static {v1, v4, v5}, Landroidx/compose/ui/res/PainterResources_androidKt;->painterResource(ILandroidx/compose/runtime/Composer;I)Landroidx/compose/ui/graphics/painter/Painter;
