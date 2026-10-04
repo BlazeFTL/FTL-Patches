@@ -116,7 +116,12 @@ public final class OldMenu {
     }
 
     public static float bottomPadding(float stock, boolean expanded) {
-        return (stock == 16f || expanded) ? 0f : 48f;
+        if (stock == 16f || expanded) return bottomToolbar ? 0f : 6f;
+        return 48f;
+    }
+
+    public static boolean showBottomDivider() {
+        return bottomToolbar && ModSettings.oldMenu();
     }
 
     private static int modIcon;
