@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.2-dev.4](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.2-dev.4)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;70 patches total
+> **[v1.43.2-dev.5](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.2-dev.5)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;72 patches total
 <details>
 <summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
 <br>
@@ -38,8 +38,8 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 **🎯 Supported versions:**
 
-| 3.1.4 | 3.2.1 | 3.2.2 | 3.2.5 |
-| :---: | :---: | :---: | :---: |
+| 3.3.0 |
+| :---: |
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
@@ -189,6 +189,22 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
 | [Material Colors Upgrade Peach And Purple](#material-colors-upgrade-peach-and-purple) | Updates Accent/Primary/CardBgDark to the newer Material color palette. |  |
+
+</details>
+
+<details>
+<summary>📦 Firefox Nightly&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
+<br>
+
+**🎯 Supported versions:**
+
+| 159.0a1 |
+| :---: |
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Old style 3 dot menu](#old-style-3-dot-menu) | Adds "Mod Settings" to the 3 dot menu to switch between the stock bottom sheet menu and the old style popup menu. |  |
+| [Remember tab scroll position](#remember-tab-scroll-position) | Keeps the tab tray scroll position when it is closed and reopened. |  |
 
 </details>
 
