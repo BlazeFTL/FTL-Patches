@@ -15,6 +15,7 @@ internal const val MOD_SETTINGS = "Lapp/ftl/extension/firefox/ModSettings;"
 internal const val OLD_MENU = "Lapp/ftl/extension/firefox/OldMenu;"
 internal const val MOD_COMPOSE = "Lapp/ftl/extension/firefox/ModCompose;"
 internal const val MOD_LAMBDA = "Lapp/ftl/extension/firefox/ModLambda;"
+internal const val MOD_CLICK = "Lapp/ftl/extension/firefox/ModClick;"
 
 internal const val MENU_PACKAGE = "Lorg/mozilla/fenix/components/menu/"
 internal const val COMPOSE_PACKAGE = "Lorg/mozilla/fenix/components/menu/compose/"

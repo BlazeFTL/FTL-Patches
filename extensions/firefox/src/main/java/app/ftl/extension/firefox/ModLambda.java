@@ -1,14 +1,11 @@
 package app.ftl.extension.firefox;
 
-import android.content.Context;
-
 @SuppressWarnings("unused")
 public final class ModLambda {
 
     private static final int EXTENSIONS_PAGE = 0;
     private static final int LIBRARY_LIST = 1;
     private static final int MOD_ROW = 2;
-    private static final int OPEN_MOD_SETTINGS = 3;
 
     private static Object unit;
 
@@ -38,11 +35,7 @@ public final class ModLambda {
         return new ModLambda(MOD_ROW, null, null, null, null);
     }
 
-    public static ModLambda openModSettings(Context context) {
-        return new ModLambda(OPEN_MOD_SETTINGS, context, null, null, null);
-    }
-
-    private static Object unit() {
+    static Object unit() {
         if (unit == null) {
             try {
                 unit = Class.forName("kotlin.Unit").getField("INSTANCE").get(null);
@@ -50,11 +43,6 @@ public final class ModLambda {
             }
         }
         return unit;
-    }
-
-    public Object invoke() {
-        if (kind == OPEN_MOD_SETTINGS) ModSettings.open((Context) a);
-        return unit();
     }
 
     public Object invoke(Object composer, Object flags) {

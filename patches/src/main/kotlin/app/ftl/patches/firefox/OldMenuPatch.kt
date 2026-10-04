@@ -29,9 +29,12 @@ private const val DIVIDER = "$MOD_COMPOSE->divider(Ljava/lang/Object;)V"
 private const val OBJ5 = "Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;"
 
 private fun BytecodePatchContext.installLambdaInterfaces() {
-    val interfaces = mutableClassDefBy(MOD_LAMBDA).interfaces
-    listOf("Lkotlin/jvm/functions/Function0;", "Lkotlin/jvm/functions/Function2;").forEach {
-        if (it !in interfaces) interfaces.add(it)
+    listOf(
+        MOD_LAMBDA to "Lkotlin/jvm/functions/Function2;",
+        MOD_CLICK to "Lkotlin/jvm/functions/Function0;",
+    ).forEach { (type, function) ->
+        val interfaces = mutableClassDefBy(type).interfaces
+        if (function !in interfaces) interfaces.add(function)
     }
 }
 

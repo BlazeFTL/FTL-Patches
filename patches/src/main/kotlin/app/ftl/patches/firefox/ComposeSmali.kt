@@ -235,7 +235,7 @@ internal val COMPOSE_METHODS = listOf(
             invoke-interface {v1, v0}, Landroidx/compose/runtime/Composer;->consume(Landroidx/compose/runtime/ProvidableCompositionLocal;)Ljava/lang/Object;
             move-result-object v0
             check-cast v0, Landroid/content/Context;
-            invoke-static {v0}, Lapp/ftl/extension/firefox/ModLambda;->openModSettings(Landroid/content/Context;)Lapp/ftl/extension/firefox/ModLambda;
+            invoke-static {v0}, Lapp/ftl/extension/firefox/ModClick;->open(Landroid/content/Context;)Lapp/ftl/extension/firefox/ModClick;
             move-result-object v10
             sget v1, Lmozilla/components/ui/icons/R$drawable;->mozac_ic_settings_24:I
             const/4 v5, 0x0
