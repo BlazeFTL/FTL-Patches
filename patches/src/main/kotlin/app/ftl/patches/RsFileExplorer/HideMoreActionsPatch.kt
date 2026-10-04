@@ -34,7 +34,6 @@ private val HIDDEN_ACTION_IDS = setOf(
  */
 private object MoreActionsMenuFingerprint : Fingerprint(
     returnType = "V",
-    parameters = emptyList(),
     strings = HIDDEN_ACTION_IDS.toList() + "image_edit",
 )
 

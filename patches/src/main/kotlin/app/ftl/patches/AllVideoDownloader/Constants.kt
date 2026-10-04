@@ -16,6 +16,12 @@ internal const val MAIN_ACTIVITY_CLASS =
 internal const val LANGUAGE_ACTIVITY_CLASS =
     "Lvideoplayer/videodownloader/downloader/activity/LanguageActivity;"
 
+internal const val APP_OPEN_MANAGER_CLASS =
+    "Lvideoplayer/videodownloader/downloader/ads/MyAppOpenManager;"
+
+internal const val APP_OPEN_MANAGER_BASE_CLASS =
+    "Landroid/supprot/design/widgit/open_ad/AppOpenManager;"
+
 // Manifest android:name form (dotted, no L/; ) - used for XML matching, not bytecode.
 internal const val WEB_DOWNLOAD_ACTIVITY =
     "videoplayer.videodownloader.downloader.old.activity.WebDownloadActivity"
@@ -27,9 +33,6 @@ internal val COMPATIBILITY_ALL_VIDEO_DOWNLOADER = Compatibility(
     packageName = "videoplayer.videodownloader.downloader",
     name = "All Video Downloader & Ace Player",
     targets = listOf(
-        // versionCode taken from the supplied MT2 diff (info.json), not the shorter
-        // "97" shown in-app - apps often show a truncated build label separate from
-        // the real manifest versionCode.
-        AppTarget(version = "1.9.7", versionCode = 97),
+        AppTarget(version = "1.9.8"),
     ),
 )

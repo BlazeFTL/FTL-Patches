@@ -9,25 +9,15 @@ import app.morphe.patcher.string
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
-import app.morphe.patcher.extensions.InstructionExtensions.removeInstruction
 import app.morphe.patcher.patch.bytecodePatch
-import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
 import app.morphe.patcher.util.smali.ExternalLabel
+import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
 
-/**
- * Matches the branch guarding whether the Recycle Bin tile is added to the Me tab's
- * local-tiles list, in `LocalMePageViewModel` (real, unobfuscated class name - already
- * pinned the same way by [app.ftl.patches.mxplayerad] siblings). Anchored on the real
- * `RecycleBinManager` class type before the flag read and the real `"recycleBin"` tile-key
- * string after it; the flag field itself (`Ljb5;->g:Z` in the sample build) is never
- * pinned since its defining class/name are obfuscated and reshuffle every build - only
- * its primitive `Z` type + opcode shape + position between the two real anchors identify it.
- */
 private object RecycleBinTileFingerprint : Fingerprint(
     definingClass = "Lcom/mxtech/videoplayer/ad/subscriptions/ui/metab/viewmodels/LocalMePageViewModel;",
     filters = listOf(
@@ -47,46 +37,65 @@ private object RecycleBinTileFingerprint : Fingerprint(
 
 val removeRecycleBinPatch = bytecodePatch(
     name = "Remove Recycle Bin",
-    description = "Disables the Recycle Bin and removes it from the Me tab; deleted files are removed permanently.",
+    description = "Deleted files are always removed permanently, whenever this patch is applied - " +
+        "there's no safe way to make that half a runtime switch without the stock (unpatched) " +
+        "delete-dialog code to fall back to. The Me tab tile itself is a Mod Settings switch: " +
+        "off just brings the tile back, it doesn't restore recycling.",
     default = true,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
 
-    execute {
-        // --- Me tab: never add the Recycle Bin tile -------------------------------
-        // Literal mirror of the validated compare diff: only the if-nez -> goto edit,
-        // the dead flag read above it is left untouched, same as the reference build.
-        val tilesMethod = RecycleBinTileFingerprint.method
-        val ifNezIndex = RecycleBinTileFingerprint.instructionMatches[2].index
-        val stringIndex = RecycleBinTileFingerprint.instructionMatches[3].index
-        // string -> invoke-direct -> invoke-virtual(add) -> :cond_3 target.
-        val cond3Target = tilesMethod.getInstruction(stringIndex + 3)
+    dependsOn(modSettingsPatch, modSettingFlagPatch(KEY_ME_HIDE_RECYCLE_BIN))
 
-        tilesMethod.removeInstruction(ifNezIndex)
+    execute {
+        val tilesMethod = RecycleBinTileFingerprint.method
+        val blockStart = RecycleBinTileFingerprint.instructionMatches[0].index
+        val stringIndex = RecycleBinTileFingerprint.instructionMatches[3].index
+        val hideTarget = tilesMethod.getInstruction(stringIndex + 3)
+
         tilesMethod.addInstructionsWithLabels(
-            ifNezIndex,
-            "goto :cond_3",
-            ExternalLabel("cond_3", cond3Target),
+            blockStart + 1,
+            """
+                const-string v1, "$KEY_ME_HIDE_RECYCLE_BIN"
+                invoke-static {v1}, $MOD_SETTINGS_CLASS->get(Ljava/lang/String;)Z
+                move-result v1
+                if-nez v1, :hide
+            """.trimIndent(),
+            ExternalLabel("hide", hideTarget),
         )
 
-        // --- Delete dialog: always delete permanently ------------------------------
-        // The patcher has no API to add a brand-new standalone class outside the
-        // extension/.mpe pipeline, so this folds the reference build's separate
-        // DeleteConfirmOk listener into the dialog class itself (self as listener)
-        // instead of instantiating a second object - same runtime behavior.
-        // Field names `j`/`p` and the androidx `d`/`d$a`/`AlertController$b` names are
-        // this specific build's obfuscated/renamed identifiers (matches the validated
-        // compare build, versionCode 2001003531) - re-check against a fresh compare
-        // zip if this patch ever needs to target a different build.
-        // Real class name is obfuscated ("a" in the sample build, reshuffles every
-        // build) and its only real strings turned out non-unique/wrong-method, so this
-        // resolves it by the Kotlin source file name instead - R8 keeps original
-        // source-file attributes even when it renames the class/members, and combined
-        // with the real androidx superclass it uniquely picks this class out from its
-        // sibling nested classes (a$a/a$b/a$c) that share the same source file.
+        tilesMethod.addInstructions(
+            0,
+            """
+                const-string v0, "${tilesMethod.name}"
+                invoke-static {p0, v0}, $MOD_SETTINGS_CLASS->onTilesOwner(Ljava/lang/Object;Ljava/lang/String;)V
+            """.trimIndent(),
+        )
+
         val dialogClass = mutableClassDefBy { classDef ->
-            classDef.sourceFile == "MediaDeleteConfirmDialog.kt" &&
-                classDef.superclass == "Landroidx/appcompat/app/d;"
+            classDef.superclass?.startsWith("Landroidx/appcompat/app/") == true &&
+                '$' !in classDef.type &&
+                classDef.fields.any { it.type == "Ljava/util/Collection;" } &&
+                classDef.methods.any { method ->
+                    method.name == "<init>" &&
+                        method.parameters.size == 2 &&
+                        method.parameters[0].type.startsWith("Landroidx/fragment/app/") &&
+                        method.parameters[1].type == "Z"
+                }
+        }
+
+        val collectionField = dialogClass.fields.first { it.type == "Ljava/util/Collection;" }
+
+        var callbackMethodName = ""
+        val callbackField = dialogClass.fields.single { field ->
+            val type = classDefByOrNull(field.type) ?: return@single false
+            if (!AccessFlags.INTERFACE.isSet(type.accessFlags)) return@single false
+            val method = type.methods.firstOrNull { m ->
+                m.returnType == "V" &&
+                    m.parameterTypes.map { it.toString() } == listOf("Ljava/util/Collection;", "Z")
+            } ?: return@single false
+            callbackMethodName = method.name
+            true
         }
 
         val onClickListenerType = "Landroid/content/DialogInterface\$OnClickListener;"
@@ -108,6 +117,11 @@ val removeRecycleBinPatch = bytecodePatch(
         showMethod.addInstructions(
             0,
             """
+                const-string v0, "$KEY_ME_HIDE_RECYCLE_BIN"
+                invoke-static {v0}, $MOD_SETTINGS_CLASS->get(Ljava/lang/String;)Z
+                move-result v0
+                if-eqz v0, :stock
+
                 invoke-virtual {p0}, Landroid/app/Dialog;->getContext()Landroid/content/Context;
                 move-result-object v0
 
@@ -148,6 +162,10 @@ val removeRecycleBinPatch = bytecodePatch(
 
                 :cond_end
                 return-void
+
+                :stock
+                invoke-super {p0}, Landroidx/appcompat/app/d;->show()V
+                return-void
             """.trimIndent(),
         )
 
@@ -170,14 +188,14 @@ val removeRecycleBinPatch = bytecodePatch(
         onClickMethod.addInstructions(
             0,
             """
-                iget-object v0, p0, ${dialogClass.type}->j:Ljava/util/Collection;
+                iget-object v0, p0, ${dialogClass.type}->${collectionField.name}:Ljava/util/Collection;
                 if-eqz v0, :cond_0
 
-                iget-object v1, p0, ${dialogClass.type}->p:Lut8;
+                iget-object v1, p0, ${dialogClass.type}->${callbackField.name}:${callbackField.type}
                 if-eqz v1, :cond_0
 
                 const/4 v2, 0x1
-                invoke-interface {v1, v0, v2}, Lut8;->a(Ljava/util/Collection;Z)V
+                invoke-interface {v1, v0, v2}, ${callbackField.type}->$callbackMethodName(Ljava/util/Collection;Z)V
 
                 :cond_0
                 return-void

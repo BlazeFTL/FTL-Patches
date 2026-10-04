@@ -2,54 +2,44 @@ package app.ftl.patches.mxplayerad
 
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.InstructionLocation
-import app.morphe.patcher.extensions.InstructionExtensions.addInstruction
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
-import app.morphe.patcher.extensions.InstructionExtensions.removeInstructions
-import app.morphe.patcher.extensions.InstructionExtensions.replaceInstructions
 import app.morphe.patcher.fieldAccess
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.resourcePatch
 import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.Opcode
-import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction21c
-import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction22c
+import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import org.w3c.dom.Element
 
 // name = null - only reached via cleanMeTabTilesPatch's dependsOn below.
 internal val cleanMeTabMenusPatch = resourcePatch(
     name = null,
-    description = "Removes Add to Playlist, File Transfer, and Private Folder from the " +
-        "per-file \"more\" sheet, and drops Private Folder and File Transfer from the " +
-        "multi-select toolbar overflow.",
+    description = "Adds Mod Settings switches for Add to Playlist, File Transfer, and Private Folder in the " +
+        "per-file \"more\" sheet.",
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
 
-    execute {
-        // fragment_more_bottom_sheet_dialog.xml: static layout, each row a fixed-id
-        // LinearLayout. Code elsewhere still findViewById()s these rows, so hide -
-        // visibility=gone + 0dp - rather than remove from the tree.
-        document("res/layout/fragment_more_bottom_sheet_dialog.xml").use { doc ->
-            for (id in listOf("ll_add_to_playlist", "transfer_share", "option_private_folder")) {
-                doc.byId(id).apply {
-                    setAttribute("android:visibility", "gone")
-                    setAttribute("android:layout_width", "0dp")
-                    setAttribute("android:layout_height", "0dp")
-                }
-            }
-        }
+    dependsOn(
+        modSettingsPatch,
+        modSettingFlagPatch(KEY_HIDE_ADD_TO_PLAYLIST),
+        modSettingFlagPatch(KEY_HIDE_FILE_TRANSFER),
+        modSettingFlagPatch(KEY_HIDE_PRIVATE_FOLDER),
+    )
 
-        // list_action_mode.xml: menu <item>s aren't pre-bound views, so they're
-        // removed outright - matches the reference (items absent from Mod, not
-        // android:visible="false").
-        document("res/menu/list_action_mode.xml").use { doc ->
-            for (id in listOf("option_private_folder", "mx_share")) {
-                doc.byId(id).let { it.parentNode.removeChild(it) }
-            }
+    execute {
+        document("res/layout/fragment_more_bottom_sheet_dialog.xml").use { doc ->
+            doc.byId("ll_add_to_playlist")
+                .addModViewHider(KEY_HIDE_ADD_TO_PLAYLIST, "ll_add_to_playlist", "both")
+            doc.byId("transfer_share")
+                .addModViewHider(KEY_HIDE_FILE_TRANSFER, "transfer_share", "both")
+            doc.byId("option_private_folder")
+                .addModViewHider(KEY_HIDE_PRIVATE_FOLDER, "option_private_folder", "both")
         }
     }
 }
@@ -92,7 +82,7 @@ internal val MediaListActionModeFingerprint = Fingerprint(
             location = InstructionLocation.MatchAfterWithin(4),
         ),
         // Unique, unobfuscated end-of-method anchor - sits immediately after the block
-        // edit 2 replaces.
+        // edit 2 wraps.
         methodCall(smali = "Landroid/view/ViewGroup;->addView(Landroid/view/View;)V"),
     ),
 )
@@ -100,58 +90,86 @@ internal val MediaListActionModeFingerprint = Fingerprint(
 // name = null - only reached via cleanMeTabTilesPatch's dependsOn below.
 internal val cleanMeTabActionModeMenuPatch = bytecodePatch(
     name = null,
-    description = "Removes Add to Playlist from the multi-select overflow menu and " +
-        "hides its button in the split action-mode toolbar.",
+    description = "Adds Mod Settings switches for Add to Playlist, File Transfer, and Private Folder in the " +
+        "multi-select overflow menu and the split action-mode toolbar.",
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
+
+    dependsOn(
+        modSettingsPatch,
+        resolveMeTabMenuIdsPatch,
+        modSettingFlagPatch(KEY_HIDE_ADD_TO_PLAYLIST),
+        modSettingFlagPatch(KEY_HIDE_FILE_TRANSFER),
+        modSettingFlagPatch(KEY_HIDE_PRIVATE_FOLDER),
+    )
 
     execute {
         val matches = MediaListActionModeFingerprint.instructionMatches
         val method = MediaListActionModeFingerprint.method
 
         val inflateIndex = matches[0].index
-        val addToPlaylistIdRef = (matches[1].instruction as ReferenceInstruction).reference
+        val addToPlaylistIdRef = (matches[1].instruction as ReferenceInstruction).reference as FieldReference
         val g0Instruction = matches[2].instruction
-        val g0FieldRef = (g0Instruction as ReferenceInstruction).reference
+        val g0FieldRef = (g0Instruction as ReferenceInstruction).reference as FieldReference
         val thisRegister = (g0Instruction as TwoRegisterInstruction).registerB
         val addViewIndex = matches[3].index
         // Parameter registers are always the method's last N slots; this method has
         // 3 (this, p1, p2), all single-width, so p1 = registerCount - 2. p1 is dead
-        // right after inflate() - the next original instruction overwrites it - and
-        // the reference build confirms it's safe scratch here.
+        // right after inflate() - the next original instruction overwrites it.
         val p1Register = method.implementation!!.registerCount - 2
 
-        // Edit 2 first (higher index) so edit 1's insertion below doesn't shift it.
-        // Stock: a flag check that, when false, makes the split toolbar's Add to
-        // Playlist button (G0) visible and clickable. Mod: unconditionally GONE, no
-        // click listener. The :cond_14d label stays bound to the addView call itself,
-        // so capturing that instruction first is all label-safety needs.
+        val addToPlaylistId =
+            "${addToPlaylistIdRef.definingClass}->${addToPlaylistIdRef.name}:${addToPlaylistIdRef.type}"
+        val g0Field = "${g0FieldRef.definingClass}->${g0FieldRef.name}:${g0FieldRef.type}"
+
+        val stockToolbarBlock = method.getInstruction(addViewIndex - 6)
         val cond14d = method.getInstruction(addViewIndex)
-        method.removeInstructions(addViewIndex - 6, 6)
-        method.addInstruction(
-            addViewIndex - 6,
-            BuilderInstruction22c(Opcode.IGET_OBJECT, 0, thisRegister, g0FieldRef),
-        )
+        val afterInflate = method.getInstruction(inflateIndex + 1)
+
+        // Edit 2 first (higher index) so edit 1's insertion below doesn't shift it.
+        // The six stock instructions stay in place and run when the switch is off.
         method.addInstructionsWithLabels(
-            addViewIndex - 5,
+            addViewIndex - 6,
             """
+                const-string v1, "$KEY_HIDE_ADD_TO_PLAYLIST"
+                invoke-static {v1}, $MOD_SETTINGS_CLASS->get(Ljava/lang/String;)Z
+                move-result v1
+                if-eqz v1, :stock_block
+                iget-object v0, v$thisRegister, $g0Field
                 if-eqz v0, :cond_14d
                 const/16 v1, 0x8
                 invoke-virtual {v0, v1}, Landroid/view/View;->setVisibility(I)V
+                goto :cond_14d
             """.trimIndent(),
+            ExternalLabel("stock_block", stockToolbarBlock),
             ExternalLabel("cond_14d", cond14d),
         )
 
-        // Edit 1: drop "Add to Playlist" from the overflow menu right after inflate,
-        // same as the reference build - reusing the id lookup found above instead of
-        // a fresh hardcoded one.
-        method.addInstruction(
+        method.addInstructionsWithLabels(
             inflateIndex + 1,
-            BuilderInstruction21c(Opcode.SGET, p1Register, addToPlaylistIdRef),
-        )
-        method.addInstructions(
-            inflateIndex + 2,
-            "invoke-interface {p2, v$p1Register}, Landroid/view/Menu;->removeItem(I)V",
+            """
+                const-string v$p1Register, "$KEY_HIDE_ADD_TO_PLAYLIST"
+                invoke-static {v$p1Register}, $MOD_SETTINGS_CLASS->get(Ljava/lang/String;)Z
+                move-result v$p1Register
+                if-eqz v$p1Register, :skip_add_to_playlist
+                sget v$p1Register, $addToPlaylistId
+                invoke-interface {p2, v$p1Register}, Landroid/view/Menu;->removeItem(I)V
+                :skip_add_to_playlist
+                const-string v$p1Register, "$KEY_HIDE_PRIVATE_FOLDER"
+                invoke-static {v$p1Register}, $MOD_SETTINGS_CLASS->get(Ljava/lang/String;)Z
+                move-result v$p1Register
+                if-eqz v$p1Register, :skip_private_folder
+                const v$p1Register, ${"0x%08x".format(privateFolderMenuId)}
+                invoke-interface {p2, v$p1Register}, Landroid/view/Menu;->removeItem(I)V
+                :skip_private_folder
+                const-string v$p1Register, "$KEY_HIDE_FILE_TRANSFER"
+                invoke-static {v$p1Register}, $MOD_SETTINGS_CLASS->get(Ljava/lang/String;)Z
+                move-result v$p1Register
+                if-eqz v$p1Register, :next
+                const v$p1Register, ${"0x%08x".format(mxShareMenuId)}
+                invoke-interface {p2, v$p1Register}, Landroid/view/Menu;->removeItem(I)V
+            """.trimIndent(),
+            ExternalLabel("next", afterInflate),
         )
     }
 }
@@ -160,29 +178,97 @@ internal val cleanMeTabActionModeMenuPatch = bytecodePatch(
 // in via dependsOn, so the user only sees one "Clean Me Tab" toggle.
 internal val cleanMeTabTilesPatch = bytecodePatch(
     name = null,
-    description = "Removes the Music Player and Cloud Drive tiles, and forces the " +
-        "MX Share and Private Folder tiles off.",
+    description = "Adds Mod Settings switches for the Music Player, Cloud Drive, File Transfer and Private " +
+        "Folder tiles, and for swapping Video Playlists for Network Stream.",
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
 
-    // Resource + action-mode edits can't run inside this patch's own execute block
-    // (different context types), so they ride along as dependencies instead. Enabling
-    // this one toggle now also strips Add to Playlist / MX Share / Private Folder from
-    // the per-file "more" sheet, the multi-select overflow menu, and its split toolbar.
-    dependsOn(cleanMeTabMenusPatch, cleanMeTabActionModeMenuPatch)
+    dependsOn(
+        cleanMeTabMenusPatch,
+        cleanMeTabActionModeMenuPatch,
+        resolveNetworkStreamResourcesPatch,
+        modSettingsPatch,
+        modSettingFlagPatch(KEY_ME_HIDE_MUSIC_PLAYER),
+        modSettingFlagPatch(KEY_ME_HIDE_CLOUD_DRIVE),
+        modSettingFlagPatch(KEY_ME_SHOW_NETWORK_STREAM),
+        modSettingFlagPatch(KEY_HIDE_FILE_TRANSFER),
+        modSettingFlagPatch(KEY_HIDE_PRIVATE_FOLDER),
+    )
 
     execute {
         val matches = LocalMeTilesFingerprint.stringMatches
         val mxShareIndex = matches[0].index
         val privateFolderIndex = matches[1].index
+        val videoPlaylistsIndex = matches[2].index
         val musicPlayerIndex = matches[4].index
         val cloudDriveIndex = matches[5].index
         val method = LocalMeTilesFingerprint.method
 
-        method.removeInstructions(cloudDriveIndex - 3, 6)
-        method.removeInstructions(musicPlayerIndex - 3, 6)
+        val cloudNext = method.getInstruction(cloudDriveIndex + 3)
+        val musicNext = method.getInstruction(musicPlayerIndex + 3)
+        val videoStock = method.getInstruction(videoPlaylistsIndex - 2)
+        val videoNext = method.getInstruction(videoPlaylistsIndex + 1)
+        val privateNext = method.getInstruction(privateFolderIndex - 4)
+        val shareNext = method.getInstruction(mxShareIndex - 4)
 
-        method.replaceInstructions(privateFolderIndex - 6, "const/4 v1, 0x0\nnop")
-        method.replaceInstructions(mxShareIndex - 6, "const/4 v1, 0x0\nnop")
+        fun skipTile(index: Int, key: String, next: Instruction) =
+            method.addInstructionsWithLabels(
+                index - 2,
+                """
+                    const-string v2, "$key"
+                    invoke-static {v2}, $MOD_SETTINGS_CLASS->get(Ljava/lang/String;)Z
+                    move-result v2
+                    if-nez v2, :next
+                """.trimIndent(),
+                ExternalLabel("next", next),
+            )
+
+        fun forceFlagOffAfterCompute(index: Int, key: String, consumer: Instruction) =
+            method.addInstructionsWithLabels(
+                index - 4,
+                """
+                    const-string v2, "$key"
+                    invoke-static {v2}, $MOD_SETTINGS_CLASS->get(Ljava/lang/String;)Z
+                    move-result v2
+                    if-eqz v2, :keep
+                    const/4 v1, 0x0
+                """.trimIndent(),
+                ExternalLabel("keep", consumer),
+            )
+
+        // Highest index first so the lower indices computed above stay valid.
+        val edits = listOf(
+            cloudDriveIndex to { skipTile(cloudDriveIndex, KEY_ME_HIDE_CLOUD_DRIVE, cloudNext) },
+            musicPlayerIndex to { skipTile(musicPlayerIndex, KEY_ME_HIDE_MUSIC_PLAYER, musicNext) },
+            videoPlaylistsIndex to {
+                method.addInstructionsWithLabels(
+                    videoPlaylistsIndex - 2,
+                    """
+                        const-string v2, "$KEY_ME_SHOW_NETWORK_STREAM"
+                        invoke-static {v2}, $MOD_SETTINGS_CLASS->get(Ljava/lang/String;)Z
+                        move-result v2
+                        if-eqz v2, :stock
+                        const v2, ${"0x%08x".format(networkStreamIconId)}
+                        const v3, ${"0x%08x".format(networkStreamTitleId)}
+                        const-string v4, "Network Stream"
+                        goto :next
+                    """.trimIndent(),
+                    ExternalLabel("stock", videoStock),
+                    ExternalLabel("next", videoNext),
+                )
+            },
+            privateFolderIndex to { forceFlagOffAfterCompute(privateFolderIndex, KEY_HIDE_PRIVATE_FOLDER, privateNext) },
+            mxShareIndex to { forceFlagOffAfterCompute(mxShareIndex, KEY_HIDE_FILE_TRANSFER, shareNext) },
+        )
+
+        edits.sortedByDescending { it.first }.forEach { it.second() }
+
+        method.addInstructions(
+            0,
+            """
+                const-string v0, "${method.name}"
+                invoke-static {p0, v0}, $MOD_SETTINGS_CLASS->onTilesOwner(Ljava/lang/Object;Ljava/lang/String;)V
+            """.trimIndent(),
+        )
     }
 }
