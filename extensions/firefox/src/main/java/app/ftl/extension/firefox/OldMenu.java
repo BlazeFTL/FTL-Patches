@@ -31,8 +31,9 @@ public final class OldMenu {
     private static final String BEHAVIOR = "com.google.android.material.bottomsheet.BottomSheetBehavior";
     private static final int FLAG_DIM_BEHIND = 2;
 
-    // Read by patched Compose code: true while the extensions page is open.
     public static boolean extensionsActive;
+
+    private static boolean bottomToolbar;
 
     private static WeakReference<Dialog> dialogRef = new WeakReference<>(null);
     private static WeakReference<View> sheetRef = new WeakReference<>(null);
@@ -67,11 +68,11 @@ public final class OldMenu {
         }
     };
 
-    // MenuDialogFragment / MenuFragment onCreateDialog, just before it returns the dialog.
     public static void onCreateDialog(Dialog dialog) {
         try {
             ModSettings.latch(dialog.getContext());
             extensionsActive = false;
+            bottomToolbar = isBottom(dialog.getContext());
             if (!ModSettings.oldMenu()) return;
             Window window = dialog.getWindow();
             if (window == null) return;
@@ -83,18 +84,15 @@ public final class OldMenu {
         }
     }
 
-    // Start of the dialog's OnShowListener.onShow.
     public static void onShowStart(DialogInterface dialog) {
         if (dialog instanceof Dialog) dialogRef = new WeakReference<>((Dialog) dialog);
     }
 
-    // End of the dialog's OnShowListener.onShow, after stock setup ran.
     public static void afterShow() {
         if (!ModSettings.oldMenu()) return;
         apply(dialogRef.get());
     }
 
-    // MenuDialogFragment.onViewCreated: apply the look before the first frame.
     public static void onViewCreated(Dialog dialog) {
         if (!ModSettings.oldMenu() || dialog == null) return;
         dialogRef = new WeakReference<>(dialog);
@@ -103,16 +101,18 @@ public final class OldMenu {
         if (sheet != null) playEnter(sheet);
     }
 
-    // calculateMenuSheetWidth(): fixed width in dp.
     public static int menuWidth(Resources resources, int dp) {
         return (int) (resources.getDisplayMetrics().density * dp);
     }
 
-    // MainMenu: extensions page is open when expanded and opened from the browser.
     public static void setExtensionsActive(Object accessPoint, boolean expanded) {
         boolean browser = accessPoint instanceof Enum && "Browser".equals(((Enum<?>) accessPoint).name());
         extensionsActive = expanded && browser;
         applyWidth(extensionsActive ? 314 : 240);
+    }
+
+    public static float navPadding() {
+        return bottomToolbar ? 9f : 12f;
     }
 
     public static float bottomPadding(float stock, boolean expanded) {
@@ -149,7 +149,6 @@ public final class OldMenu {
         return ModSettings.oldMenu() ? null : stock;
     }
 
-    // Account row subtitle is hidden in the old menu.
     public static String accountSubtitle(String stock) {
         return ModSettings.oldMenu() ? null : stock;
     }

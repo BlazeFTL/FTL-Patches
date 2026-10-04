@@ -10,7 +10,6 @@ import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMuta
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
-import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction22t
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
@@ -28,14 +27,45 @@ private const val LIBRARY_GROUP =
 private const val DIVIDER = "$MOD_COMPOSE->divider(Ljava/lang/Object;)V"
 private const val OBJ5 = "Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;"
 
+private const val EXTENSION_PIN = "Lapp/ftl/extension/firefox/ExtensionPin;"
+private const val PIN_PREFIX = "Lapp/ftl/extension/firefox/"
+private const val FUNCTION0 = "Lkotlin/jvm/functions/Function0;"
+private const val TOOLBAR_EVENT =
+    "Lmozilla/components/compose/browser/toolbar/store/BrowserToolbarInteraction\$BrowserToolbarEvent;"
+
 private fun BytecodePatchContext.installLambdaInterfaces() {
     listOf(
         MOD_LAMBDA to "Lkotlin/jvm/functions/Function2;",
-        MOD_CLICK to "Lkotlin/jvm/functions/Function0;",
+        MOD_CLICK to FUNCTION0,
+        "${PIN_PREFIX}PinObserver;" to "Lkotlin/jvm/functions/Function1;",
+        "${PIN_PREFIX}PinClick;" to FUNCTION0,
+        "${PIN_PREFIX}PinLong;" to FUNCTION0,
+        "${PIN_PREFIX}PinEvent;" to TOOLBAR_EVENT,
+        "${PIN_PREFIX}PinCont;" to "Lkotlin/coroutines/Continuation;",
     ).forEach { (type, function) ->
         val interfaces = mutableClassDefBy(type).interfaces
         if (function !in interfaces) interfaces.add(function)
     }
+
+    val continuation = mutableClassDefBy("${PIN_PREFIX}PinCont;")
+    val context = ImmutableMethod(
+        continuation.type,
+        "getContext",
+        emptyList(),
+        "Lkotlin/coroutines/CoroutineContext;",
+        AccessFlags.PUBLIC.value or AccessFlags.FINAL.value,
+        null,
+        null,
+        MutableMethodImplementation(2),
+    ).toMutable()
+    context.addInstructions(
+        0,
+        """
+            sget-object v0, Lkotlin/coroutines/EmptyCoroutineContext;->INSTANCE:Lkotlin/coroutines/EmptyCoroutineContext;
+            return-object v0
+        """,
+    )
+    continuation.methods.add(context)
 }
 
 private fun BytecodePatchContext.installComposeMethods() {
@@ -63,8 +93,7 @@ private fun MutableMethod.lastReturnObject() =
 private fun MutableMethod.lastReturnVoid() =
     implementation!!.instructions.indexOfLast { it.opcode == Opcode.RETURN_VOID }
 
-private fun MutableMethod.branchTarget(index: Int) =
-    getInstruction<BuilderInstruction22t>(index).target.location.index
+private fun MutableMethod.branchTarget(index: Int) = jumpTarget(index)
 
 private fun BytecodePatchContext.installWindowHooks() {
     listOf(DialogFragmentCreateDialogFingerprint, MenuFragmentCreateDialogFingerprint).forEach {
@@ -136,7 +165,86 @@ private fun BytecodePatchContext.installWindowHooks() {
     }
 }
 
+private fun BytecodePatchContext.installPinHooks() {
+    ToolbarEndActionsFingerprint.let {
+        it.method.applyEdits(
+            insert(
+                it.instructionMatches[1].index + 2,
+                "invoke-static {v0, p0}, $EXTENSION_PIN->addPinned(Ljava/util/ArrayList;Ljava/lang/Object;)V",
+            ),
+        )
+    }
+
+    ToolbarMiddlewareFingerprint.let {
+        val m = it.instructionMatches
+        val menuClicked = m[4].index
+        it.method.applyEdits(
+            insert(
+                m[2].index + 1,
+                "invoke-static {v1, v0}, $EXTENSION_PIN->remember(Ljava/lang/Object;Ljava/lang/Object;)V",
+            ),
+            insert(
+                menuClicked,
+                """
+                    instance-of v4, v3, ${PIN_PREFIX}PinEvent;
+                    if-eqz v4, :ftl_next
+                    invoke-static {v3, v0}, $EXTENSION_PIN->handle(Ljava/lang/Object;Ljava/lang/Object;)V
+                    invoke-interface {v2, v3}, Lkotlin/jvm/functions/Function1;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
+                    goto/16 :ftl_end
+                """,
+                mapOf(
+                    "ftl_next" to { menuClicked },
+                    "ftl_end" to { jumpTarget(menuClicked - 1) },
+                ),
+            ),
+        )
+    }
+
+    WebExtensionMenuItemsPinFingerprint.let {
+        it.method.applyEdits(
+            insert(
+                it.instructionMatches[0].index,
+                """
+                    sget-object v6, Landroidx/compose/ui/platform/AndroidCompositionLocals_androidKt;->LocalContext:Landroidx/compose/runtime/StaticProvidableCompositionLocal;
+                    invoke-virtual {v14, v6}, Landroidx/compose/runtime/GapComposer;->consume(Landroidx/compose/runtime/ProvidableCompositionLocal;)Ljava/lang/Object;
+                    move-result-object v6
+                    check-cast v6, Landroid/content/Context;
+                    invoke-static {v13, v8, v6}, $EXTENSION_PIN->wrap(Ljava/lang/Object;Ljava/lang/Object;Landroid/content/Context;)Ljava/lang/Object;
+                    move-result-object v13
+                    check-cast v13, $FUNCTION0
+                """,
+            ),
+        )
+    }
+
+    IconListItemFingerprint.let {
+        it.method.applyEdits(
+            insert(
+                it.instructionMatches[1].index + 1,
+                """
+                    invoke-static {v15}, $EXTENSION_PIN->longOf(Ljava/lang/Object;)Ljava/lang/Object;
+                    move-result-object v16
+                    check-cast v16, $FUNCTION0
+                """,
+            ),
+        )
+    }
+}
+
 private fun BytecodePatchContext.installMenuTweaks() {
+    MenuNavigationFingerprint.let {
+        it.method.applyEdits(
+            swap(
+                it.instructionMatches[0].index,
+                2,
+                """
+                    invoke-static {}, $OLD_MENU->navPadding()F
+                    move-result v2
+                """,
+            ),
+        )
+    }
+
     BottomSheetHandleFingerprint.method.applyEdits(returnWhenOld(0, 0, "return-void"))
 
     ExtensionsMenuItemFingerprint.let {
@@ -415,8 +523,8 @@ private fun BytecodePatchContext.installMenuTweaks() {
 @Suppress("unused")
 val oldMenuPatch = bytecodePatch(
     name = "Old style 3 dot menu",
-    description = "Adds \"Mod Settings\" to the 3 dot menu to switch between the stock " +
-        "bottom sheet menu and the old style popup menu.",
+    description = "Adds \"Mod Settings\" to the 3 dot menu: switch between the stock bottom sheet " +
+        "menu and the old style popup menu, and pin extensions to the search bar.",
     default = true,
 ) {
     compatibleWith(COMPATIBILITY_FIREFOX_NIGHTLY)
@@ -428,5 +536,6 @@ val oldMenuPatch = bytecodePatch(
         installComposeMethods()
         installWindowHooks()
         installMenuTweaks()
+        installPinHooks()
     }
 }

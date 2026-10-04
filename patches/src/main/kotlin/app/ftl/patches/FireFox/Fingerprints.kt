@@ -312,3 +312,53 @@ internal object MenuFragmentInsetsFingerprint : Fingerprint(
     returnType = INSETS_COMPAT,
     parameters = listOf("Landroid/view/View;", INSETS_COMPAT),
 )
+
+private const val TOOLBAR_MIDDLEWARE = "Lorg/mozilla/fenix/components/toolbar/BrowserToolbarMiddleware;"
+private const val LIST_ITEM_KT = "Lorg/mozilla/fenix/compose/list/ListItemKt;"
+
+internal object MenuNavigationFingerprint : Fingerprint(
+    definingClass = MENU_NAVIGATION_KT,
+    name = "MenuNavigation",
+    filters = listOf(
+        constTo(2, 0x41400000),
+        constTo(11, 0x40800000),
+        methodCall(definingClass = "Landroidx/compose/foundation/layout/PaddingKt;", name = "padding-VpY3zN4"),
+    ),
+)
+
+internal object ToolbarEndActionsFingerprint : Fingerprint(
+    definingClass = TOOLBAR_MIDDLEWARE,
+    name = "buildEndBrowserActions",
+    filters = listOf(
+        methodCall(definingClass = "Lkotlin/collections/ArraysKt___ArraysKt;", name = "filterNotNull"),
+        opcode(Opcode.NEW_INSTANCE),
+    ),
+)
+
+internal object ToolbarMiddlewareFingerprint : Fingerprint(
+    definingClass = TOOLBAR_MIDDLEWARE,
+    name = "invoke",
+    returnType = OBJ,
+    parameters = listOf(OBJ, OBJ, OBJ),
+    filters = listOf(
+        methodCall(definingClass = OBJ, name = "getClass"),
+        methodCall(definingClass = OBJ, name = "getClass"),
+        methodCall(definingClass = OBJ, name = "getClass"),
+        instanceOfType("Lorg/mozilla/fenix/components/toolbar/StartPageActions\$ProxyActivationAnimationFinished;"),
+        instanceOfType("Lorg/mozilla/fenix/components/toolbar/DisplayActions\$MenuClicked;"),
+    ),
+)
+
+internal object WebExtensionMenuItemsPinFingerprint : Fingerprint(
+    definingClass = EXTENSIONS_MENU_ITEM_KT,
+    name = "WebExtensionMenuItems",
+    filters = listOf(
+        fieldAccess(definingClass = ACCESS_POINT, name = "External", opcode = Opcode.SGET_OBJECT),
+    ),
+)
+
+internal object IconListItemFingerprint : Fingerprint(
+    definingClass = LIST_ITEM_KT,
+    custom = { method, _ -> method.name.startsWith("IconListItem") },
+    filters = listOf(constTo(24, 0x2010), constTo(16, 0)),
+)

@@ -4,6 +4,7 @@ import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLa
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import app.morphe.patcher.util.smali.ExternalLabel
+import com.android.tools.smali.dexlib2.builder.BuilderOffsetInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 
@@ -84,3 +85,6 @@ internal fun surface(index: Int) = Edit(index) {
     val b = instruction.registerB
     swapAt(index, if (a == b) a + 1 else a, "iget-wide v$a, v$b, $COLOR_SCHEME->surface:J")
 }
+
+internal fun MutableMethod.jumpTarget(index: Int) =
+    getInstruction<BuilderOffsetInstruction>(index).target.location.index

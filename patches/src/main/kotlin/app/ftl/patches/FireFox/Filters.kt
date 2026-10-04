@@ -10,6 +10,7 @@ import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstructio
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
+import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 
 private fun filter(
@@ -59,6 +60,14 @@ internal fun callInto(
 ) = filter(location) { _, instruction ->
     val reference = (instruction as? ReferenceInstruction)?.reference as? MethodReference
     reference != null && reference.name == name && reference.definingClass.contains(classPart)
+}
+
+internal fun instanceOfType(
+    type: String,
+    location: InstructionLocation = InstructionLocation.MatchAfterAnywhere(),
+) = filter(location) { _, instruction ->
+    instruction.opcode == Opcode.INSTANCE_OF &&
+        ((instruction as ReferenceInstruction).reference as? TypeReference)?.type == type
 }
 
 private fun parameterRegister(method: Method, parameterIndex: Int): Int {

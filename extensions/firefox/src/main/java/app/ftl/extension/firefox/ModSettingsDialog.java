@@ -20,10 +20,12 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.widget.CompoundButton;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.Switch;
 import android.widget.TextView;
 
 final class ModSettingsDialog {
@@ -93,6 +95,9 @@ final class ModSettingsDialog {
             "Firefox default sheet that slides up from the bottom", "Stock");
         root.addView(cards[0]);
         root.addView(cards[1], margins(0, 10, 0, 0));
+
+        root.addView(label("EXTENSIONS"), margins(0, 20, 0, 8));
+        root.addView(pinRow());
 
         hint = new TextView(activity);
         hint.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
@@ -231,6 +236,56 @@ final class ModSettingsDialog {
                     hint.setTextColor(accent);
                     refresh();
                 }
+            }
+        });
+        return row;
+    }
+
+    private View pinRow() {
+        LinearLayout row = new LinearLayout(activity);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(dp(16), dp(12), dp(14), dp(12));
+        row.setBackground(round(card, 18, 1, stroke));
+
+        LinearLayout column = new LinearLayout(activity);
+        column.setOrientation(LinearLayout.VERTICAL);
+        TextView name = new TextView(activity);
+        name.setText("Pin extensions to search bar");
+        name.setTextColor(text);
+        name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15.5f);
+        name.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        TextView desc = new TextView(activity);
+        desc.setText("Long-press an extension in the menu to pin it beside the address bar");
+        desc.setTextColor(textMuted);
+        desc.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
+        desc.setPadding(0, dp(3), 0, 0);
+        column.addView(name);
+        column.addView(desc);
+        LinearLayout.LayoutParams columnParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        columnParams.rightMargin = dp(12);
+        row.addView(column, columnParams);
+
+        final Switch toggle = new Switch(activity);
+        toggle.setChecked(ModSettings.isPinSaved(app));
+        int[][] states = {{android.R.attr.state_checked}, {}};
+        toggle.setThumbTintList(new ColorStateList(states, new int[]{accent, night ? 0xFFBFBFC9 : 0xFF8F8F9D}));
+        toggle.setTrackTintList(new ColorStateList(states,
+            new int[]{withAlpha(accent, 0x66), night ? 0xFF52525E : 0xFFD7D7DB}));
+        toggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton button, boolean checked) {
+                ModSettings.savePin(app, checked);
+                ExtensionPin.applySetting();
+                hint.setText(checked ? "Extension pinning enabled" : "Extension pinning disabled");
+                hint.setTextColor(accent);
+            }
+        });
+        row.addView(toggle);
+        row.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggle.toggle();
             }
         });
         return row;

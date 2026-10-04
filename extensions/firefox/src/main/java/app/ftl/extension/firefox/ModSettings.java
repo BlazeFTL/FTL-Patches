@@ -16,8 +16,11 @@ public final class ModSettings {
     private static final String KEY_OLD_MENU = "old_menu";
 
     private static final boolean DEFAULT_OLD_MENU = true;
+    private static final String KEY_PIN = "pin_ext";
+    private static final boolean DEFAULT_PIN = true;
 
     private static volatile int latched;
+    private static volatile int pinLatched;
     private static volatile boolean fallbackFailed;
 
     private ModSettings() {
@@ -43,6 +46,27 @@ public final class ModSettings {
             }
         }
         return latched == 0 ? DEFAULT_OLD_MENU : latched == 2;
+    }
+
+    public static boolean pinEnabled() {
+        if (pinLatched == 0 && !fallbackFailed) {
+            try {
+                Application app = currentApplication();
+                if (app != null) pinLatched = isPinSaved(app) ? 2 : 1;
+            } catch (Throwable t) {
+                Log.e(TAG, "pin state failed", t);
+            }
+        }
+        return pinLatched == 0 ? DEFAULT_PIN : pinLatched == 2;
+    }
+
+    static boolean isPinSaved(Context context) {
+        return prefs(context).getBoolean(KEY_PIN, DEFAULT_PIN);
+    }
+
+    static void savePin(Context context, boolean enabled) {
+        prefs(context).edit().putBoolean(KEY_PIN, enabled).apply();
+        pinLatched = enabled ? 2 : 1;
     }
 
     public static void open(Context context) {
