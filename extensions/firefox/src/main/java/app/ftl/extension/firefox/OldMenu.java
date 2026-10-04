@@ -115,9 +115,8 @@ public final class OldMenu {
         applyWidth(extensionsActive ? 314 : 240);
     }
 
-    // MainMenu bottom padding: stock is 24 or 84 dp.
     public static float bottomPadding(float stock, boolean expanded) {
-        return (stock == 24f || expanded) ? 0f : 48f;
+        return (stock == 16f || expanded) ? 0f : 48f;
     }
 
     public static Object trailingIcon(Object stock) {

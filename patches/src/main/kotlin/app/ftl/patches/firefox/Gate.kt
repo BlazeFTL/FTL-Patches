@@ -9,6 +9,17 @@ import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 
 internal typealias Target = MutableMethod.() -> Int
 
+private fun MutableMethod.insertAt(index: Int, smali: String, labels: Array<ExternalLabel>) {
+    val original = getInstruction(index)
+    val moved = original.location.labels.toList()
+    addInstructionsWithLabels(index, smali, *labels)
+    val head = getInstruction(index)
+    moved.forEach {
+        original.location.labels.remove(it)
+        head.location.labels.add(it)
+    }
+}
+
 internal class Edit(val index: Int, val apply: MutableMethod.() -> Unit)
 
 internal fun MutableMethod.applyEdits(vararg edits: Edit) {
@@ -27,7 +38,7 @@ internal fun MutableMethod.swapAt(
     val after = getInstruction(index + count)
     val extra = labels.map { (name, target) -> ExternalLabel(name, getInstruction(target())) }
     val skip = if (fallThrough && count > 0) "goto :ftl_after" else ""
-    addInstructionsWithLabels(
+    insertAt(
         index,
         """
             invoke-static {}, $MOD_SETTINGS->oldMenu()Z
@@ -36,9 +47,7 @@ internal fun MutableMethod.swapAt(
             $old
             $skip
         """.trimIndent(),
-        ExternalLabel("ftl_stock", first),
-        ExternalLabel("ftl_after", after),
-        *extra.toTypedArray(),
+        arrayOf(ExternalLabel("ftl_stock", first), ExternalLabel("ftl_after", after), *extra.toTypedArray()),
     )
 }
 
@@ -56,7 +65,7 @@ internal fun returnWhenOld(index: Int, scratch: Int, old: String) =
 
 internal fun insert(index: Int, smali: String, labels: Map<String, Target> = emptyMap()) = Edit(index) {
     val extra = labels.map { (name, target) -> ExternalLabel(name, getInstruction(target())) }
-    addInstructionsWithLabels(index, smali.trimIndent(), *extra.toTypedArray())
+    insertAt(index, smali.trimIndent(), extra.toTypedArray())
 }
 
 internal fun floatTo(index: Int, bits: Int) = Edit(index) {
