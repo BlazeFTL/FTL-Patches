@@ -119,6 +119,32 @@ public final class OldMenu {
         return (stock == 16f || expanded) ? 0f : 48f;
     }
 
+    private static int modIcon;
+
+    public static int modIcon(Context context) {
+        if (modIcon != 0) return modIcon;
+        Resources res = context.getResources();
+        String pkg = context.getPackageName();
+        String[] names = {
+            "mozac_ic_customize_24",
+            "mozac_ic_theme_24",
+            "mozac_ic_experiment_24",
+            "mozac_ic_wrench_24",
+            "mozac_ic_developer_tools_24",
+            "mozac_ic_sparkle_24",
+            "mozac_ic_lightbulb_24",
+            "mozac_ic_settings_24",
+        };
+        for (String name : names) {
+            int id = res.getIdentifier(name, "drawable", pkg);
+            if (id != 0) {
+                modIcon = id;
+                break;
+            }
+        }
+        return modIcon;
+    }
+
     public static Object trailingIcon(Object stock) {
         return ModSettings.oldMenu() ? null : stock;
     }

@@ -1,11 +1,9 @@
 package app.ftl.extension.firefox;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Application;
 import android.content.Context;
 import android.content.ContextWrapper;
-import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.util.Log;
 import android.widget.Toast;
@@ -17,6 +15,8 @@ public final class ModSettings {
     private static final String PREFS = "ftl_mod_settings";
     private static final String KEY_OLD_MENU = "old_menu";
 
+    private static final boolean DEFAULT_OLD_MENU = true;
+
     private static volatile int latched;
     private static volatile boolean fallbackFailed;
 
@@ -25,7 +25,7 @@ public final class ModSettings {
 
     public static void latch(Context context) {
         try {
-            latched = prefs(context).getBoolean(KEY_OLD_MENU, false) ? 2 : 1;
+            latched = isOldMenu(context) ? 2 : 1;
         } catch (Throwable t) {
             Log.e(TAG, "latch failed", t);
         }
@@ -42,7 +42,7 @@ public final class ModSettings {
                 Log.e(TAG, "fallback latch failed", t);
             }
         }
-        return latched == 2;
+        return latched == 0 ? DEFAULT_OLD_MENU : latched == 2;
     }
 
     public static void open(Context context) {
@@ -51,33 +51,21 @@ public final class ModSettings {
                 ? context.getApplicationContext() : context;
             Activity activity = findActivity(context);
             if (activity == null || activity.isFinishing()) {
-                save(app, !prefs(app).getBoolean(KEY_OLD_MENU, false));
+                save(app, !isOldMenu(app));
                 toast(app);
                 return;
             }
-
-            int checked = prefs(app).getBoolean(KEY_OLD_MENU, false) ? 1 : 0;
-            new AlertDialog.Builder(activity)
-                .setTitle("Mod Settings")
-                .setSingleChoiceItems(
-                    new CharSequence[]{"Bottom sheet menu (stock)", "Old style menu"},
-                    checked,
-                    new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            save(app, which == 1);
-                            dialog.dismiss();
-                            toast(app);
-                        }
-                    })
-                .setNegativeButton(android.R.string.cancel, null)
-                .show();
+            ModSettingsDialog.show(activity);
         } catch (Throwable t) {
             Log.e(TAG, "open failed", t);
         }
     }
 
-    private static void save(Context context, boolean oldMenu) {
+    static boolean isOldMenu(Context context) {
+        return prefs(context).getBoolean(KEY_OLD_MENU, DEFAULT_OLD_MENU);
+    }
+
+    static void save(Context context, boolean oldMenu) {
         prefs(context).edit().putBoolean(KEY_OLD_MENU, oldMenu).apply();
     }
 
@@ -85,7 +73,7 @@ public final class ModSettings {
         return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
-    private static void toast(Context context) {
+    static void toast(Context context) {
         Toast.makeText(context, "Saved. Close and reopen the menu to apply.", Toast.LENGTH_SHORT).show();
     }
 
