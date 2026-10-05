@@ -6,10 +6,7 @@ import app.morphe.patcher.patch.Compatibility
 internal val COMPATIBILITY_FIREFOX_NIGHTLY = Compatibility(
     packageName = "org.mozilla.fenix",
     name = "Firefox Nightly",
-    targets = listOf(
-        AppTarget(version = "159.0a1", versionCode = 2016187231),
-        AppTarget(version = "159.0a1", versionCode = 2016188279),
-    ),
+    targets = listOf(AppTarget(version = "159.0a1")),
 )
 
 internal const val MOD_SETTINGS = "Lapp/ftl/extension/firefox/ModSettings;"
