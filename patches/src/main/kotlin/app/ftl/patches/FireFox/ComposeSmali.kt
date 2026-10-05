@@ -180,9 +180,11 @@ internal val COMPOSE_METHODS = listOf(
             sget v5, Lorg/mozilla/fenix/R$string;->library_downloads:I
             sget v6, Lmozilla/components/ui/icons/R$drawable;->mozac_ic_download_24:I
             invoke-static {v0, v5, v6, v3}, Lapp/ftl/extension/firefox/ModCompose;->libraryItem(Ljava/lang/Object;IILjava/lang/Object;)V
+            if-eqz v4, :ftl_nopw
             sget v5, Lorg/mozilla/fenix/R$string;->browser_menu_passwords:I
             sget v6, Lmozilla/components/ui/icons/R$drawable;->mozac_ic_login_24:I
             invoke-static {v0, v5, v6, v4}, Lapp/ftl/extension/firefox/ModCompose;->libraryItem(Ljava/lang/Object;IILjava/lang/Object;)V
+            :ftl_nopw
             return-void
 """,
     ),
@@ -271,5 +273,17 @@ internal val COMPOSE_METHODS = listOf(
             invoke-static/range {v0 .. v20}, Lorg/mozilla/fenix/components/menu/compose/MenuItemKt;->MenuItem(Ljava/lang/String;Landroidx/compose/ui/graphics/painter/Painter;Landroidx/compose/ui/Modifier;Landroidx/compose/ui/Modifier;ZLjava/lang/String;ILjava/lang/String;Lorg/mozilla/fenix/components/menu/compose/MenuItemState;Lorg/mozilla/fenix/components/menu/compose/MenuItemState;Lkotlin/jvm/functions/Function0;ZLandroidx/compose/ui/graphics/painter/Painter;Ljava/lang/String;Landroidx/compose/ui/semantics/CollectionItemInfo;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;III)V
             return-void
 """,
+    ),
+    ComposeMethod(
+        name = "libraryGroupFlagged",
+        parameters = listOf("Z", "Z", OBJ, OBJ, OBJ, OBJ, OBJ),
+        registers = 7,
+        smali = $$$"""
+            if-nez p0, :ftl_keep
+            const/4 p5, 0x0
+            :ftl_keep
+            invoke-static {p2, p3, p4, p5, p6}, Lapp/ftl/extension/firefox/ModCompose;->libraryGroup(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)V
+            return-void
+        """,
     ),
 )

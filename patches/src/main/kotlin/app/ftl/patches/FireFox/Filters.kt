@@ -70,7 +70,7 @@ internal fun instanceOfType(
         ((instruction as ReferenceInstruction).reference as? TypeReference)?.type == type
 }
 
-private fun parameterRegister(method: Method, parameterIndex: Int): Int {
+internal fun parameterRegister(method: Method, parameterIndex: Int): Int {
     val static = AccessFlags.STATIC.isSet(method.accessFlags)
     var total = if (static) 0 else 1
     var offset = total

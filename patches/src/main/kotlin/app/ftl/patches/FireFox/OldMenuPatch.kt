@@ -4,6 +4,7 @@ import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.BytecodePatchContext
+import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
@@ -11,6 +12,13 @@ import java.util.logging.Logger
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
+import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.Instruction
+import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
+import com.android.tools.smali.dexlib2.iface.reference.FieldReference
+import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
@@ -168,12 +176,79 @@ private fun BytecodePatchContext.installWindowHooks() {
 
 private val logger = Logger.getLogger("OldMenuPatch")
 
+private const val LAMBDA_IMPL = "Landroidx/compose/runtime/internal/ComposableLambdaImpl;"
+
+private fun unsupported(what: String): Nothing =
+    throw PatchException("$what differs in this Firefox build. Patch needs an update for it.")
+
+private fun MutableMethod.requireParameters(what: String, expected: List<String>) {
+    if (parameterTypes.map { it.toString() } != expected) unsupported(what)
+}
+
+private fun BytecodePatchContext.requireFields(type: String, expected: Map<String, String>) {
+    val fields = mutableClassDefBy(type).fields.associate { it.name to it.type }
+    expected.forEach { (name, fieldType) -> if (fields[name] != fieldType) unsupported("$type->$name") }
+}
+
 private fun optional(name: String, block: () -> Unit) {
     try {
         block()
     } catch (e: Exception) {
         logger.warning("Skipped $name (stock look kept): ${e.message}")
     }
+}
+
+private class ClonedCall(val start: Int, val scratch: Int, val smali: String)
+
+private fun cloneLibraryCall(
+    method: MutableMethod,
+    callIndex: Int,
+    composer: Int,
+    live: Liveness,
+    insertAt: Int,
+): ClonedCall {
+    val call = method.getInstruction<RegisterRangeInstruction>(callIndex)
+    val reference = (call as ReferenceInstruction).reference as MethodReference
+    val first = call.startRegister
+    val count = call.registerCount
+
+    val loads = HashMap<Int, Instruction>()
+    var start = callIndex
+    while (start > 0) {
+        val previous = method.getInstruction<Instruction>(start - 1)
+        val dest = (previous as? OneRegisterInstruction)?.registerA ?: break
+        val loadOpcode = previous.opcode.name.let { n -> n.startsWith("const") || n.startsWith("iget") }
+        if (!loadOpcode || dest !in first until first + count || dest in loads) break
+        loads[dest] = previous
+        start--
+    }
+
+    val scratch = live.takeLow(1, insertAt, exclude = setOf(0, composer))[0]
+    val base = live.takeRun(count, insertAt, exclude = setOf(0, composer, scratch))
+    val lines = ArrayList<String>()
+    for (register in first until first + count) {
+        val target = base + (register - first)
+        val load = loads[register]
+        when {
+            load == null && register == composer -> lines += "move-object/from16 v$target, v$composer"
+            load == null -> unsupported("LibraryMenuGroup call")
+            load.opcode.name.startsWith("const") ->
+                lines += "const v$target, 0x${Integer.toHexString((load as NarrowLiteralInstruction).narrowLiteral)}"
+            load.opcode.name.startsWith("iget") -> {
+                val field = (load as ReferenceInstruction).reference as FieldReference
+                val ref = "${field.definingClass}->${field.name}:${field.type}"
+                val name = load.opcode.name
+                lines += "$name v$scratch, v0, $ref"
+                lines += if (name == "iget-object") "move-object/from16 v$target, v$scratch"
+                else "move/from16 v$target, v$scratch"
+            }
+            else -> unsupported("LibraryMenuGroup call")
+        }
+    }
+    val params = reference.parameterTypes.joinToString("")
+    lines += "invoke-static/range {v$base .. v${base + count - 1}}, " +
+        "${reference.definingClass}->${reference.name}($params)${reference.returnType}"
+    return ClonedCall(start, scratch, lines.joinToString("\n"))
 }
 
 private fun BytecodePatchContext.installPinHooks() {
@@ -321,18 +396,38 @@ private fun BytecodePatchContext.installMenuTweaks() {
         )
     }
 
-    MainMenuLibraryGroupFingerprint.method.applyEdits(
-        returnWhenOld(
-            0,
-            0,
-            """
-                invoke-static/range {p1 .. p5}, $MOD_COMPOSE->libraryGroup($OBJ5)V
-                return-void
-            """,
-        ),
-    )
+    MainMenuLibraryGroupFingerprint.method.let { method ->
+        val types = method.parameterTypes.map { type -> type.toString() }
+        val composerAt = types.indexOf(COMPOSER)
+        val functionsAt = composerAt - 4
+        if (functionsAt !in 1..2 ||
+            types.subList(functionsAt, composerAt).any { type -> type != FUNCTION0 } ||
+            types.subList(0, functionsAt).any { type -> type != "Z" }
+        ) {
+            unsupported("LibraryMenuGroup")
+        }
+        val flagged = functionsAt == 2
+        val first = if (flagged) 0 else functionsAt
+        val target = if (flagged) {
+            "libraryGroupFlagged(ZZ$OBJ5)V"
+        } else {
+            "libraryGroup($OBJ5)V"
+        }
+        method.applyEdits(
+            returnWhenOld(
+                0,
+                0,
+                """
+                    invoke-static/range {p$first .. p$composerAt}, $MOD_COMPOSE->$target
+                    return-void
+                """,
+            ),
+        )
+    }
 
     MainMenuFingerprint.let {
+        val params = it.method.parameterTypes.map { type -> type.toString() }
+        if (params.getOrNull(0) != ACCESS_POINT || params.getOrNull(7) != "Z") unsupported("MainMenu")
         val m = it.instructionMatches
         it.method.applyEdits(
             zeroTo(m[0].index),
@@ -367,12 +462,13 @@ private fun BytecodePatchContext.installMenuTweaks() {
 
     listOf(MainMenuNavigationLambdaFingerprint, MainMenuDividerLambdaFingerprint).forEach {
         val ifEq = it.instructionMatches[1].index
+        val scratch = Liveness(it.method).takeLow(1, ifEq + 1)[0]
         it.method.applyEdits(
             insert(
                 ifEq + 1,
                 """
-                    sget-boolean p1, $OLD_MENU->extensionsActive:Z
-                    if-nez p1, :ftl_skip
+                    sget-boolean v$scratch, $OLD_MENU->extensionsActive:Z
+                    if-nez v$scratch, :ftl_skip
                 """,
                 mapOf("ftl_skip" to { branchTarget(ifEq) }),
             ),
@@ -381,63 +477,66 @@ private fun BytecodePatchContext.installMenuTweaks() {
 
     MainMenuColumnLambdaFingerprint.let {
         val m = it.instructionMatches
-        val lambda = it.method.definingClass
-        it.method.applyEdits(
+        val method = it.method
+        val lambda = method.definingClass
+        requireFields(
+            lambda,
+            mapOf(
+                "f${'$'}1" to ACCESS_POINT,
+                "f${'$'}10" to "Z",
+                "f${'$'}15" to FUNCTION0,
+                "f${'$'}23" to LAMBDA_IMPL,
+            ),
+        )
+        val composer = method.getInstruction<FiveRegisterInstruction>(m[0].index).registerC
+        val live = Liveness(method)
+        val extensionsAt = m[2].index + 1
+        val libraryAt = m[4].index + 6
+        val libraryCall = m[7].index
+        val (r1, r2, r3) = live.takeLow(3, extensionsAt, exclude = setOf(composer, 0))
+        val library = cloneLibraryCall(method, libraryCall, composer, live, libraryAt)
+        val divider = "invoke-static {v$composer}, $DIVIDER"
+        method.applyEdits(
             swap(
-                m[2].index + 1,
-                1,
+                extensionsAt,
+                r1,
                 """
-                    iget-boolean v1, v0, $lambda->f${'$'}10:Z
-                    if-eqz v1, :ftl_stock
-                    iget-object v2, v0, $lambda->f${'$'}1:$ACCESS_POINT
-                    sget-object v1, $ACCESS_POINT->Browser:$ACCESS_POINT
-                    if-ne v2, v1, :ftl_stock
-                    const v1, 0x6e7a3b10
-                    invoke-interface {v7, v1}, $COMPOSER->startReplaceGroup(I)V
-                    iget-object v2, v0, $lambda->f${'$'}23:Landroidx/compose/runtime/internal/ComposableLambdaImpl;
-                    iget-object v3, v0, $lambda->f${'$'}15:Lkotlin/jvm/functions/Function0;
-                    invoke-static {v2, v3}, $MOD_LAMBDA->extensionsPage(Ljava/lang/Object;Ljava/lang/Object;)$MOD_LAMBDA
-                    move-result-object v1
-                    const v2, 0x6e7a3b11
-                    invoke-static {v2, v1, v7}, $REMEMBER_LAMBDA
-                    move-result-object v1
-                    const/4 v2, 0x6
-                    invoke-static {v1, v7, v2}, $MENU_GROUP
-                    invoke-interface {v7}, $COMPOSER->endReplaceGroup()V
+                    iget-boolean v$r1, v0, $lambda->f${'$'}10:Z
+                    if-eqz v$r1, :ftl_stock
+                    iget-object v$r2, v0, $lambda->f${'$'}1:$ACCESS_POINT
+                    sget-object v$r1, $ACCESS_POINT->Browser:$ACCESS_POINT
+                    if-ne v$r2, v$r1, :ftl_stock
+                    const v$r1, 0x6e7a3b10
+                    invoke-interface {v$composer, v$r1}, $COMPOSER->startReplaceGroup(I)V
+                    iget-object v$r2, v0, $lambda->f${'$'}23:$LAMBDA_IMPL
+                    iget-object v$r3, v0, $lambda->f${'$'}15:$FUNCTION0
+                    invoke-static {v$r2, v$r3}, $MOD_LAMBDA->extensionsPage(Ljava/lang/Object;Ljava/lang/Object;)$MOD_LAMBDA
+                    move-result-object v$r1
+                    const v$r2, 0x6e7a3b11
+                    invoke-static {v$r2, v$r1, v$composer}, $REMEMBER_LAMBDA
+                    move-result-object v$r1
+                    const/4 v$r2, 0x6
+                    invoke-static {v$r1, v$composer, v$r2}, $MENU_GROUP
+                    invoke-interface {v$composer}, $COMPOSER->endReplaceGroup()V
                     goto/16 :ftl_end
                 """,
                 count = 0,
                 fallThrough = false,
                 labels = mapOf("ftl_end" to { implementation!!.instructions.size - 2 }),
             ),
+            swap(libraryAt, library.scratch, "$divider\n${library.smali}", count = 0),
+            swap(m[6].index + 4, live.takeLow(1, m[6].index + 4)[0], divider, count = 0),
             swap(
-                m[4].index + 6,
-                5,
-                """
-                    invoke-static {v7}, $DIVIDER
-                    iget-boolean v5, v0, $lambda->f${'$'}24:Z
-                    iget-object v6, v0, $lambda->f${'$'}25:Lkotlin/jvm/functions/Function0;
-                    iget-object v8, v0, $lambda->f${'$'}26:Lkotlin/jvm/functions/Function0;
-                    iget-object v9, v0, $lambda->f${'$'}27:Lkotlin/jvm/functions/Function0;
-                    iget-object v10, v0, $lambda->f${'$'}28:Lkotlin/jvm/functions/Function0;
-                    move/from16 v15, v5
-                    move-object/from16 v16, v6
-                    move-object/from16 v17, v8
-                    move-object/from16 v18, v9
-                    move-object/from16 v19, v10
-                    move-object/from16 v20, v7
-                    const/16 v21, 0x0
-                    invoke-static/range {v15 .. v21}, $LIBRARY_GROUP
-                """,
-                count = 0,
+                library.start,
+                live.takeLow(1, library.start)[0],
+                divider,
+                count = libraryCall - library.start + 1,
             ),
-            swap(m[6].index + 4, 21, "invoke-static {v7}, $DIVIDER", count = 0),
-            swap(m[7].index - 6, 8, "invoke-static {v7}, $DIVIDER", count = 7),
             insert(
                 m[8].index + 1,
-                "invoke-static {v7}, $MOD_COMPOSE->modRow(Ljava/lang/Object;)V",
+                "invoke-static {v$composer}, $MOD_COMPOSE->modRow(Ljava/lang/Object;)V",
             ),
-            swap(m[9].index - 2, 9, "invoke-static {v7}, $DIVIDER", count = 0),
+            swap(m[9].index - 2, live.takeLow(1, m[9].index - 2)[0], divider, count = 0),
         )
     }
 

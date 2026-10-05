@@ -1,9 +1,5 @@
 package app.ftl.extension.firefox;
 
-/**
- * Bodies are written in smali by OldMenuPatch (Compose calls use Kotlin mangled names
- * that Java cannot express). Only the signatures here matter.
- */
 @SuppressWarnings("unused")
 public final class ModCompose {
 
@@ -27,6 +23,10 @@ public final class ModCompose {
     }
 
     public static void libraryGroup(Object bookmarks, Object history, Object downloads, Object passwords, Object composer) {
+        throw new IllegalStateException("Patch not applied");
+    }
+
+    public static void libraryGroupFlagged(boolean showPasswords, boolean flag, Object bookmarks, Object history, Object downloads, Object passwords, Object composer) {
         throw new IllegalStateException("Patch not applied");
     }
 
