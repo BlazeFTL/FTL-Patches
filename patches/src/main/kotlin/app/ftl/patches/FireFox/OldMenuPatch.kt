@@ -194,7 +194,7 @@ private fun optional(name: String, block: () -> Unit) {
     try {
         block()
     } catch (e: Exception) {
-        logger.warning("Skipped $name (stock look kept): ${e.message}")
+        logger.info("Skipped $name (not present in this build, stock look kept)")
     }
 }
 
@@ -318,6 +318,21 @@ private fun BytecodePatchContext.installPinHooks() {
 }
 
 private fun BytecodePatchContext.installMenuTweaks() {
+    optional("BadgeHide") {
+        BadgeHideFingerprint.method.applyEdits(
+            insert(
+                0,
+                """
+                    invoke-static/range {p0 .. p0}, $OLD_MENU->hideBadge(Ljava/lang/String;)Z
+                    move-result v0
+                    if-eqz v0, :ftl_stock
+                    return-void
+                """,
+                mapOf("ftl_stock" to { 0 }),
+            ),
+        )
+    }
+
     optional("MenuNavigation") {
         MenuNavigationFingerprint.let {
             it.method.applyEdits(
@@ -674,6 +689,8 @@ val oldMenuPatch = bytecodePatch(
     default = true,
 ) {
     compatibleWith(COMPATIBILITY_FIREFOX_NIGHTLY)
+
+    dependsOn(modIconPatch)
 
     extendWith("extensions/firefox.mpe")
 

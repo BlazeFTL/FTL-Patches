@@ -362,3 +362,10 @@ internal object IconListItemFingerprint : Fingerprint(
     custom = { method, _ -> method.name.startsWith("IconListItem") },
     filters = listOf(constTo(24, 0x2010), constTo(16, 0)),
 )
+
+internal object BadgeHideFingerprint : Fingerprint(
+    definingClass = MENU_ITEM_KT,
+    name = "Badge",
+    returnType = "V",
+    parameters = listOf("Ljava/lang/String;", "${COMPOSE_PACKAGE}MenuItemState;", "Landroidx/compose/runtime/Composer;", "I", "I"),
+)

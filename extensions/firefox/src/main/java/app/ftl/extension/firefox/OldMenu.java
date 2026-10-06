@@ -35,6 +35,10 @@ public final class OldMenu {
 
     private static boolean bottomToolbar;
 
+    private static Context appContext;
+
+    private static java.util.Set<String> longBadges;
+
     private static WeakReference<Dialog> dialogRef = new WeakReference<>(null);
     private static WeakReference<View> sheetRef = new WeakReference<>(null);
     private static WeakReference<Object> behaviorRef = new WeakReference<>(null);
@@ -73,6 +77,7 @@ public final class OldMenu {
             ModSettings.latch(dialog.getContext());
             extensionsActive = false;
             bottomToolbar = isBottom(dialog.getContext());
+            appContext = dialog.getContext().getApplicationContext();
             if (!ModSettings.oldMenu()) return;
             Window window = dialog.getWindow();
             if (window == null) return;
@@ -120,6 +125,30 @@ public final class OldMenu {
         return 48f;
     }
 
+    public static boolean hideBadge(String text) {
+        try {
+            if (text == null || !ModSettings.oldMenu() || appContext == null) return false;
+            if (longBadges == null) {
+                java.util.Set<String> set = new java.util.HashSet<>();
+                Resources res = appContext.getResources();
+                String[] names = {
+                    "ip_protection_menu_try_vpn_cta",
+                    "ip_protection_menu_error",
+                    "ip_protection_menu_paused",
+                    "ip_protection_menu_connecting",
+                };
+                for (String name : names) {
+                    int id = res.getIdentifier(name, "string", appContext.getPackageName());
+                    if (id != 0) set.add(res.getString(id));
+                }
+                longBadges = set;
+            }
+            return longBadges.contains(text);
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
     public static boolean showBottomDivider() {
         return bottomToolbar && ModSettings.oldMenu();
     }
@@ -131,13 +160,10 @@ public final class OldMenu {
         Resources res = context.getResources();
         String pkg = context.getPackageName();
         String[] names = {
+            "ftl_ic_mod_settings",
             "mozac_ic_customize_24",
-            "mozac_ic_theme_24",
-            "mozac_ic_experiment_24",
-            "mozac_ic_wrench_24",
-            "mozac_ic_developer_tools_24",
             "mozac_ic_sparkle_24",
-            "mozac_ic_lightbulb_24",
+            "mozac_ic_experiment_24",
             "mozac_ic_settings_24",
         };
         for (String name : names) {
