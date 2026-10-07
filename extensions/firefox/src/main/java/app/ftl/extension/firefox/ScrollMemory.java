@@ -23,6 +23,10 @@ public final class ScrollMemory {
     }
 
     public static synchronized Object pick(Object composer, Object fresh) {
+        if (!ModSettings.scrollMemory()) {
+            STATES.clear();
+            return fresh;
+        }
         try {
             Long key = compositeKey(composer);
             Object stored = STATES.get(key);
@@ -40,7 +44,7 @@ public final class ScrollMemory {
 
     public static synchronized int resolveScrollIndex(
             int index, boolean offsetA, boolean offsetB, Object state) {
-        if (!REUSED.contains(state)) return index;
+        if (!ModSettings.scrollMemory() || !REUSED.contains(state)) return index;
         if (index < 0) return -1;
         int adjusted = index + (offsetA ? 1 : 0) + (offsetB ? 1 : 0);
         try {

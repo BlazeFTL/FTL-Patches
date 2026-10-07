@@ -160,10 +160,13 @@ public final class OldMenu {
         Resources res = context.getResources();
         String pkg = context.getPackageName();
         String[] names = {
-            "ftl_ic_mod_settings",
             "mozac_ic_customize_24",
-            "mozac_ic_sparkle_24",
+            "mozac_ic_theme_24",
             "mozac_ic_experiment_24",
+            "mozac_ic_wrench_24",
+            "mozac_ic_developer_tools_24",
+            "mozac_ic_sparkle_24",
+            "mozac_ic_lightbulb_24",
             "mozac_ic_settings_24",
         };
         for (String name : names) {

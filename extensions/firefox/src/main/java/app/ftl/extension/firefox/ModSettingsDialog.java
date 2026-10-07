@@ -99,6 +99,9 @@ final class ModSettingsDialog {
         root.addView(label("EXTENSIONS"), margins(0, 20, 0, 8));
         root.addView(pinRow());
 
+        root.addView(label("TABS"), margins(0, 20, 0, 8));
+        root.addView(scrollRow());
+
         hint = new TextView(activity);
         hint.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
         hint.setTextColor(textMuted);
@@ -242,6 +245,38 @@ final class ModSettingsDialog {
     }
 
     private View pinRow() {
+        return switchRow(
+            "Pin extensions to search bar",
+            "Long-press an extension in the menu to pin it beside the address bar",
+            ModSettings.isPinSaved(app),
+            new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton button, boolean checked) {
+                    ModSettings.savePin(app, checked);
+                    ExtensionPin.applySetting();
+                    hint.setText(checked ? "Extension pinning enabled" : "Extension pinning disabled");
+                    hint.setTextColor(accent);
+                }
+            });
+    }
+
+    private View scrollRow() {
+        return switchRow(
+            "Remember tab scroll position",
+            "Keep the tab tray scroll position when it is closed and reopened",
+            ModSettings.isScrollSaved(app),
+            new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton button, boolean checked) {
+                    ModSettings.saveScroll(app, checked);
+                    hint.setText(checked ? "Scroll position memory enabled" : "Scroll position memory disabled");
+                    hint.setTextColor(accent);
+                }
+            });
+    }
+
+    private View switchRow(String title, String description, boolean checked,
+                           CompoundButton.OnCheckedChangeListener listener) {
         LinearLayout row = new LinearLayout(activity);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
@@ -251,12 +286,12 @@ final class ModSettingsDialog {
         LinearLayout column = new LinearLayout(activity);
         column.setOrientation(LinearLayout.VERTICAL);
         TextView name = new TextView(activity);
-        name.setText("Pin extensions to search bar");
+        name.setText(title);
         name.setTextColor(text);
         name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15.5f);
         name.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         TextView desc = new TextView(activity);
-        desc.setText("Long-press an extension in the menu to pin it beside the address bar");
+        desc.setText(description);
         desc.setTextColor(textMuted);
         desc.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
         desc.setPadding(0, dp(3), 0, 0);
@@ -267,20 +302,12 @@ final class ModSettingsDialog {
         row.addView(column, columnParams);
 
         final Switch toggle = new Switch(activity);
-        toggle.setChecked(ModSettings.isPinSaved(app));
+        toggle.setChecked(checked);
         int[][] states = {{android.R.attr.state_checked}, {}};
         toggle.setThumbTintList(new ColorStateList(states, new int[]{accent, night ? 0xFFBFBFC9 : 0xFF8F8F9D}));
         toggle.setTrackTintList(new ColorStateList(states,
             new int[]{withAlpha(accent, 0x66), night ? 0xFF52525E : 0xFFD7D7DB}));
-        toggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton button, boolean checked) {
-                ModSettings.savePin(app, checked);
-                ExtensionPin.applySetting();
-                hint.setText(checked ? "Extension pinning enabled" : "Extension pinning disabled");
-                hint.setTextColor(accent);
-            }
-        });
+        toggle.setOnCheckedChangeListener(listener);
         row.addView(toggle);
         row.setOnClickListener(new View.OnClickListener() {
             @Override
