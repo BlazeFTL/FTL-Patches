@@ -8,6 +8,7 @@ import android.content.res.Configuration
 import android.content.res.Resources
 import android.os.Bundle
 import android.util.Log
+import android.view.ViewTreeObserver
 import kotlin.math.roundToInt
 
 object DensityPatch {
@@ -30,12 +31,18 @@ object DensityPatch {
     private val activeActivities =
         java.util.Collections.newSetFromMap(java.util.WeakHashMap<Activity, Boolean>())
 
+    // Watches for density drifting away from targetDpi between lifecycle events (e.g.
+    // system-driven letterbox/size-compat rescaling reasserting its own value mid-session)
+    // and silently re-corrects it. Tracked per-activity so onActivityResumed, which can
+    // fire many times for the same instance, doesn't stack duplicate listeners.
+    private val watchedActivities =
+        java.util.WeakHashMap<Activity, ViewTreeObserver.OnGlobalLayoutListener>()
+
     @JvmStatic
     fun setPercent(value: Int) { percent = value }
 
     @JvmStatic
     fun init(application: Application) {
-        Log.i(TAG, "init(application) called, alreadyInitialized=$initialized")
         if (initialized) return
         try {
             register(application, percent)
@@ -53,7 +60,6 @@ object DensityPatch {
      */
     @JvmStatic
     fun init(activity: Activity) {
-        Log.i(TAG, "init(activity) path used, activity=${activity.javaClass.name}")
         init(activity.application)
         try {
             forceDensity(activity)
@@ -71,28 +77,23 @@ object DensityPatch {
         val scaled = (originalDpi * clampedPercent / 100f).roundToInt()
         targetDpi = scaled.coerceIn(MIN_DPI, MAX_DPI)
 
-        Log.i(TAG, "init originalDpi=$originalDpi percent=$clampedPercent targetDpi=$targetDpi")
-
         if (targetDpi == originalDpi) return
 
         applyTo(application.resources)
 
         application.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityPreCreated(activity: Activity, savedInstanceState: Bundle?) {
-                Log.i(TAG, "preCreated ${activity.javaClass.name} before=${activity.resources.displayMetrics.densityDpi}")
                 forceDensity(activity)
-                Log.i(TAG, "preCreated ${activity.javaClass.name} after=${activity.resources.displayMetrics.densityDpi}")
             }
 
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
                 forceDensity(activity)
                 activeActivities.add(activity)
-                Log.i(TAG, "created ${activity.javaClass.name} dpi=${activity.resources.displayMetrics.densityDpi}")
             }
 
             override fun onActivityStarted(activity: Activity) {}
 
-            // Added in API 29. Fire before the activity's own onStart()/onResume() run,
+            // Added in API 29. Fires before the activity's own onStart()/onResume() run,
             // to beat whatever re-reads real display metrics inside them (observed:
             // FileExplorerActivity resets to the true device dpi on every resume, not
             // just once, so this has to run ahead of it every time, not just react after).
@@ -105,18 +106,15 @@ object DensityPatch {
             }
 
             override fun onActivityResumed(activity: Activity) {
-                Log.i(
-                    TAG,
-                    "resumed ${activity.javaClass.name} raw=" +
-                        "${activity.resources.displayMetrics.densityDpi} target=$targetDpi",
-                )
                 forceDensity(activity)
+                attachWatchdog(activity)
             }
             override fun onActivityPaused(activity: Activity) {}
             override fun onActivityStopped(activity: Activity) {}
             override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
             override fun onActivityDestroyed(activity: Activity) {
                 activeActivities.remove(activity)
+                detachWatchdog(activity)
             }
         })
 
@@ -129,6 +127,35 @@ object DensityPatch {
             override fun onLowMemory() {}
             override fun onTrimMemory(level: Int) {}
         })
+    }
+
+    private fun attachWatchdog(activity: Activity) {
+        if (watchedActivities.containsKey(activity)) return
+        val decorView = try { activity.window?.decorView } catch (t: Throwable) { null } ?: return
+        val listener = ViewTreeObserver.OnGlobalLayoutListener {
+            try {
+                if (activity.resources.displayMetrics.densityDpi != targetDpi) {
+                    forceDensity(activity)
+                }
+            } catch (t: Throwable) {
+                Log.e(TAG, "watchdog failed", t)
+            }
+        }
+        try {
+            decorView.viewTreeObserver.addOnGlobalLayoutListener(listener)
+            watchedActivities[activity] = listener
+        } catch (t: Throwable) {
+            Log.e(TAG, "attachWatchdog failed", t)
+        }
+    }
+
+    private fun detachWatchdog(activity: Activity) {
+        val listener = watchedActivities.remove(activity) ?: return
+        try {
+            activity.window?.decorView?.viewTreeObserver?.removeOnGlobalLayoutListener(listener)
+        } catch (t: Throwable) {
+            Log.e(TAG, "detachWatchdog failed", t)
+        }
     }
 
     private fun forceDensity(activity: Activity) {

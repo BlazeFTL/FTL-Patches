@@ -3,12 +3,11 @@ package app.ftl.patches.mxplayerad
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.InstructionLocation.MatchAfterWithin
-import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.extensions.InstructionExtensions.removeInstructions
 import app.morphe.patcher.fieldAccess
 import app.morphe.patcher.literal
 import app.morphe.patcher.opcode
-import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.bytecodePatch
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
@@ -49,6 +48,8 @@ import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 // left to retry against. The R-class field name is the one thing in that
 // stretch that's both real and unique, so it anchors the second half
 // directly instead.
+private const val SMART_ENHANCE_TOAST_KEY = "smart_enhance_toast"
+
 internal object SmartEnhanceToggleFingerprint : Fingerprint(
     definingClass = "Lcom/mxtech/videoplayer/ActivityScreen;",
     filters = listOf(
@@ -75,19 +76,11 @@ internal object SmartEnhanceToggleFingerprint : Fingerprint(
 
 val configureSmartEnhanceToastPatch = bytecodePatch(
     name = "Configure Smart Enhance",
-    description = "Configures the Smart Enhance intro popup and enable/disable toast.",
+    description = "Removes the Smart Enhance disable toast and adds Mod Settings switches for the intro popup and the enable toast.",
     default = true,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
-    dependsOn(disableSmartEnhancePopupPatch)
-
-    skipPopupOption()
-    val showToast by booleanOption(
-        key = "showToast",
-        default = true,
-        title = "Show toast on enable",
-        description = "On: toast when Smart Enhance turns on. Off: fully silent toggle.",
-    )
+    dependsOn(disableSmartEnhancePopupPatch, modSettingsPatch, modSettingFlagPatch(SMART_ENHANCE_TOAST_KEY))
 
     execute {
         val matches = SmartEnhanceToggleFingerprint.instructionMatches
@@ -113,17 +106,18 @@ val configureSmartEnhanceToastPatch = bytecodePatch(
         // which the verifier would reject at install time.
         method.removeInstructions(matches[7].index, matches[8].index - matches[7].index + 1)
 
-        method.addInstructions(
+        method.addInstructionsWithLabels(
             insertIndex,
-            if (showToast == false) {
-                "return-void"
-            } else {
-                """
-                    sget v4, $enabledIdField
-                    invoke-static {v0, v4, v1}, $toastMethod
-                    return-void
-                """.trimIndent()
-            },
+            """
+                const-string v4, "$SMART_ENHANCE_TOAST_KEY"
+                invoke-static {v4}, $MOD_SETTINGS_CLASS->get(Ljava/lang/String;)Z
+                move-result v4
+                if-eqz v4, :silent
+                sget v4, $enabledIdField
+                invoke-static {v0, v4, v1}, $toastMethod
+                :silent
+                return-void
+            """.trimIndent(),
         )
     }
 }

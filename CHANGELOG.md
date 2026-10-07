@@ -1,3 +1,40 @@
+## [1.43.2-dev.6](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.2-dev.5...v1.43.2-dev.6) (2026-10-04)
+
+### 🐛 Bug Fixes
+
+* Add FireFox Pin Extension To Search Bar ([d81086f](https://github.com/BlazeFTL/FTL-Patches/commit/d81086fddd6f7969f59d50f3d1650a5ee05804b6))
+
+## [1.43.2-dev.5](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.2-dev.4...v1.43.2-dev.5) (2026-10-04)
+
+### 🐛 Bug Fixes
+
+* Up ([6e897ed](https://github.com/BlazeFTL/FTL-Patches/commit/6e897eda8400a16bd14d754bdd9eaf8b0fdb8960))
+
+## [1.43.2-dev.4](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.2-dev.3...v1.43.2-dev.4) (2026-10-02)
+
+### 🐛 Bug Fixes
+
+* Update Remove Analytics Patch Breaking FCM Push ([131db7b](https://github.com/BlazeFTL/FTL-Patches/commit/131db7b176c03435c80e90e62b299b8cc4769d9c))
+
+## [1.43.2-dev.3](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.2-dev.2...v1.43.2-dev.3) (2026-09-29)
+
+### 🐛 Bug Fixes
+
+* up ([caa7706](https://github.com/BlazeFTL/FTL-Patches/commit/caa77068bbce8918733f0e8fe5379d6f409508ff))
+
+## [1.43.2-dev.2](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.2-dev.1...v1.43.2-dev.2) (2026-09-28)
+
+### 🐛 Bug Fixes
+
+* up ([eeabc12](https://github.com/BlazeFTL/FTL-Patches/commit/eeabc125fa1d06ce55afa982b1ca8b8df79b2f0a))
+* Up ([8df0f16](https://github.com/BlazeFTL/FTL-Patches/commit/8df0f1643b1e9dec458cf21cf279ca75b590e0f9))
+
+## [1.43.2-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.1...v1.43.2-dev.1) (2026-09-16)
+
+### 🐛 Bug Fixes
+
+* Up ([7cd0219](https://github.com/BlazeFTL/FTL-Patches/commit/7cd0219588f14bf5cf3d3e4ed5a50e923cb0fa51))
+
 ## [1.43.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.0...v1.43.1) (2026-09-13)
 
 ### 🐛 Bug Fixes

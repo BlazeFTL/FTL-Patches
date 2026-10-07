@@ -3,16 +3,20 @@ package app.ftl.patches.mxplayerad
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
+import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.opcode
-import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.resourcePatch
+import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import org.w3c.dom.Element
+
+private const val SPEEDUP_NO_UI_KEY = "speedup_no_ui"
 
 internal object SpeedUpOverlayFingerprint : Fingerprint(
     filters = listOf(
@@ -49,20 +53,12 @@ internal val fixSpeedUpTipStringPatch = resourcePatch(
 val configureSpeedUpOverlayPatch = bytecodePatch(
     name = "Configure SpeedUp overlay",
     description =
-        "\"2x UI\": keeps the long-press SpeedUp overlay/animation, with the stock " +
-        "leftover-visible-view bug fixed. \"No UI\": the overlay never shows at all - the " +
-        "speed change itself still applies, since that's handled elsewhere.",
+        "Fixes the stock leftover-visible-view bug in the long-press SpeedUp overlay. " +
+        "\"No UI\" is toggled in Me tab > Mod Settings.",
     default = true,
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
-    dependsOn(fixSpeedUpTipStringPatch)
-
-    val noUi by booleanOption(
-        key = "noUi",
-        default = false,
-        title = "No UI",
-        description = "On: the SpeedUp overlay never shows. Off: 2x UI, with the leftover-view bug fixed.",
-    )
+    dependsOn(fixSpeedUpTipStringPatch, modSettingsPatch, modSettingFlagPatch(SPEEDUP_NO_UI_KEY))
 
     execute {
         val method = SpeedUpOverlayFingerprint.method
@@ -73,25 +69,6 @@ val configureSpeedUpOverlayPatch = bytecodePatch(
         val firstField = "${firstFieldRef.definingClass}->${firstFieldRef.name}:${firstFieldRef.type}"
         val secondField = "${secondFieldRef.definingClass}->${secondFieldRef.name}:${secondFieldRef.type}"
 
-        if (noUi == true) {
-            method.addInstructions(
-                0,
-                """
-                const/4 v0, 0x4
-                iget-object v1, p0, $firstField
-                if-eqz v1, :cond_a
-                invoke-virtual {v1, v0}, Landroid/view/View;->setVisibility(I)V
-                :cond_a
-                iget-object v1, p0, $secondField
-                if-eqz v1, :cond_14
-                invoke-virtual {v1, v0}, Landroid/view/View;->setVisibility(I)V
-                :cond_14
-                return-void
-                """.trimIndent(),
-            )
-            return@execute
-        }
-
         val dSetVisibility = matches[1]
         val eSetVisibility = matches[3]
 
@@ -100,5 +77,28 @@ val configureSpeedUpOverlayPatch = bytecodePatch(
 
         method.addInstructions(eSetVisibility.index, "const/4 v$eVisReg, 0x4")
         method.addInstructions(dSetVisibility.index, "const/4 v$dVisReg, 0x0")
+
+        val stockStart = method.getInstruction(0)
+
+        method.addInstructionsWithLabels(
+            0,
+            """
+                const-string v0, "$SPEEDUP_NO_UI_KEY"
+                invoke-static {v0}, $MOD_SETTINGS_CLASS->get(Ljava/lang/String;)Z
+                move-result v0
+                if-eqz v0, :stock
+                const/4 v0, 0x4
+                iget-object v1, p0, $firstField
+                if-eqz v1, :skip_first
+                invoke-virtual {v1, v0}, Landroid/view/View;->setVisibility(I)V
+                :skip_first
+                iget-object v1, p0, $secondField
+                if-eqz v1, :skip_second
+                invoke-virtual {v1, v0}, Landroid/view/View;->setVisibility(I)V
+                :skip_second
+                return-void
+            """.trimIndent(),
+            ExternalLabel("stock", stockStart),
+        )
     }
 }

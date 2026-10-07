@@ -279,6 +279,27 @@ private val FIREBASE_MANIFEST_KEEP = setOf(
     "com.google.firebase.components.ComponentDiscoveryService",
 )
 
+private val FIREBASE_PUSH_ACTIONS = setOf(
+    "com.google.firebase.MESSAGING_EVENT",
+    "com.google.firebase.INSTANCE_ID_EVENT",
+    "com.google.android.c2dm.intent.RECEIVE",
+    "com.google.android.c2dm.intent.REGISTRATION",
+)
+
+private val FIREBASE_PUSH_PACKAGES = listOf(
+    "com.google.firebase.messaging.",
+    "com.google.firebase.iid.",
+)
+
+private fun Element.isFirebasePushComponent(): Boolean {
+    val name = getAttribute("android:name")
+    if (FIREBASE_PUSH_PACKAGES.any { name.startsWith(it) }) return true
+    val actions = getElementsByTagName("action")
+    return (0 until actions.length).any {
+        (actions.item(it) as Element).getAttribute("android:name") in FIREBASE_PUSH_ACTIONS
+    }
+}
+
 // name = null keeps this out of PatchLoader's top-level list (removeAnalyticsPatch
 // pulls it in via dependsOn), so it doesn't show as its own toggle in the UI.
 val stripFirebaseManifestComponentsPatch = resourcePatch(
@@ -293,6 +314,7 @@ val stripFirebaseManifestComponentsPatch = resourcePatch(
 
             for (i in 0 until children.length) {
                 val node = children.item(i) as? Element ?: continue
+                if (node.isFirebasePushComponent()) continue
                 when (node.tagName) {
                     "provider" -> {
                         val name = node.getAttribute("android:name")

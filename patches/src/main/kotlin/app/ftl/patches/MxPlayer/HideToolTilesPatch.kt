@@ -8,15 +8,13 @@ import app.morphe.patcher.opcode
 import app.morphe.patcher.string
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.removeInstruction
+import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.bytecodePatch
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.ThreeRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 
-// definingClass/name deliberately omitted: LKW/I1 are ProGuard-obfuscated and
-// already broke once (Lo/mg -> Lo/sg style rename). Anchored instead on the
-// unobfuscated tile-label strings, in the exact order they're built, ending
-// on the literal 7 (array size) -> new-array pair this patch rewrites.
 internal object ToolTilesArrayFingerprint : Fingerprint(
     filters = listOf(
         string("MX Share"),
@@ -38,18 +36,49 @@ val hideToolTilesPatch = bytecodePatch(
 ) {
     compatibleWith(COMPATIBILITY_MX_PLAYER_PRO)
 
+    val hideFileTransfer by booleanOption(
+        key = "hideFileTransfer",
+        default = true,
+        title = "Hide File Transfer",
+        description = "Removes the File Transfer tile.",
+    )
+    val hidePrivateFolder by booleanOption(
+        key = "hidePrivateFolder",
+        default = true,
+        title = "Hide Private Folder",
+        description = "Removes the Private Folder tile.",
+    )
+    val hideVideoPlaylists by booleanOption(
+        key = "hideVideoPlaylists",
+        default = true,
+        title = "Hide Video Playlists",
+        description = "Removes the Video Playlists tile.",
+    )
+
     execute {
+        val hide = listOf(
+            hideFileTransfer != false,
+            hidePrivateFolder != false,
+            hideVideoPlaylists != false,
+        )
+        if (hide.none { it }) return@execute
+
         ToolTilesArrayFingerprint.let {
-            // literal(7) and NEW_ARRAY are always the last 2 matches, regardless
-            // of how many string filters precede them.
             val startIndex = it.instructionMatches[it.instructionMatches.size - 2].index
             val newArrayIndex = it.instructionMatches.last().index
+            val instructions = it.method.implementation!!.instructions
 
-            // Array element type (originally "[LNW;") is itself obfuscated and
-            // renames between builds, so read it off the matched instruction
-            // instead of hardcoding it.
-            val arrayType = ((it.method.implementation!!.instructions[newArrayIndex]
+            val arrayType = ((instructions[newArrayIndex]
                 as ReferenceInstruction).reference as TypeReference).type
+
+            val values = (startIndex + 2..startIndex + 12)
+                .map { i -> instructions[i] }
+                .filter { i -> i.opcode == Opcode.APUT_OBJECT }
+                .map { i -> (i as ThreeRegisterInstruction).registerA }
+
+            check(values.size == 7) { "Expected 7 array stores, found ${values.size}" }
+
+            val kept = values.filterIndexed { i, _ -> i >= hide.size || !hide[i] }
 
             for (index in startIndex + 12 downTo startIndex) {
                 it.method.removeInstruction(index)
@@ -57,18 +86,14 @@ val hideToolTilesPatch = bytecodePatch(
 
             it.method.addInstructions(
                 startIndex,
-                """
-                    const/4 v5, 0x4
-                    new-array v5, v5, $arrayType
-                    const/4 v4, 0x0
-                    aput-object v11, v5, v4
-                    const/4 v4, 0x1
-                    aput-object v12, v5, v4
-                    const/4 v4, 0x2
-                    aput-object v13, v5, v4
-                    const/4 v4, 0x3
-                    aput-object v1, v5, v4
-                """.trimIndent(),
+                buildString {
+                    appendLine("const/4 v5, 0x${kept.size.toString(16)}")
+                    appendLine("new-array v5, v5, $arrayType")
+                    kept.forEachIndexed { i, reg ->
+                        appendLine("const/4 v4, 0x${i.toString(16)}")
+                        appendLine("aput-object v$reg, v5, v4")
+                    }
+                },
             )
         }
     }

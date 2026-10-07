@@ -164,7 +164,7 @@ val stripAdAnalyticsManifestComponentsPatch = resourcePatch(
 
 val removeAdsAnalyticsPatch = bytecodePatch(
     name = "Remove Analytics New",
-    description = "Corrupts analytics network URLs and split-scheme string obfuscation " +
+    description = "DONT CHOOSE 2 SAME PATCHES...Corrupts analytics network URLs and split-scheme string obfuscation " +
         "inside the code, and strips matching manifest components.",
     default = false,
 ) {
