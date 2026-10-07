@@ -18,9 +18,12 @@ public final class ModSettings {
     private static final boolean DEFAULT_OLD_MENU = true;
     private static final String KEY_PIN = "pin_ext";
     private static final boolean DEFAULT_PIN = true;
+    private static final String KEY_SCROLL = "scroll_memory";
+    private static final boolean DEFAULT_SCROLL = true;
 
     private static volatile int latched;
     private static volatile int pinLatched;
+    private static volatile int scrollLatched;
     private static volatile boolean fallbackFailed;
 
     private ModSettings() {
@@ -58,6 +61,27 @@ public final class ModSettings {
             }
         }
         return pinLatched == 0 ? DEFAULT_PIN : pinLatched == 2;
+    }
+
+    public static boolean scrollMemory() {
+        if (scrollLatched == 0) {
+            try {
+                Application app = currentApplication();
+                if (app != null) scrollLatched = isScrollSaved(app) ? 2 : 1;
+            } catch (Throwable t) {
+                Log.e(TAG, "scroll state failed", t);
+            }
+        }
+        return scrollLatched == 0 ? DEFAULT_SCROLL : scrollLatched == 2;
+    }
+
+    static boolean isScrollSaved(Context context) {
+        return prefs(context).getBoolean(KEY_SCROLL, DEFAULT_SCROLL);
+    }
+
+    static void saveScroll(Context context, boolean enabled) {
+        prefs(context).edit().putBoolean(KEY_SCROLL, enabled).apply();
+        scrollLatched = enabled ? 2 : 1;
     }
 
     static boolean isPinSaved(Context context) {
