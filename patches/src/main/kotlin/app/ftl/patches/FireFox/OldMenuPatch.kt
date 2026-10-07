@@ -690,6 +690,8 @@ val oldMenuPatch = bytecodePatch(
 ) {
     compatibleWith(COMPATIBILITY_FIREFOX_NIGHTLY)
 
+    dependsOn(modIconPatch)
+
     extendWith("extensions/firefox.mpe")
 
     execute {
