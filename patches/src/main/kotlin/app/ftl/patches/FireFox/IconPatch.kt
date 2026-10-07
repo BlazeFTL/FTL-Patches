@@ -10,15 +10,25 @@ private const val MOD_ICON_XML = """<?xml version="1.0" encoding="utf-8"?>
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <group
-        android:pivotX="12"
-        android:pivotY="12"
-        android:scaleX="-1">
-        <path
-            android:fillColor="#FF000000"
-            android:fillType="nonZero"
-            android:pathData="M19,9l1.25,-2.75L23,5l-2.75,-1.25L19,1l-1.25,2.75L15,5l2.75,1.25L19,9z M11.5,9.5L9,4L6.5,9.5L1,12l5.5,2.5L9,20l2.5,-5.5L17,12L11.5,9.5z M9.99,12.99L9,15.17l-0.99,-2.18L5.83,12l2.18,-0.99L9,8.83l0.99,2.18l2.18,0.99L9.99,12.99z M19,15l-1.25,2.75L15,19l2.75,1.25L19,23l1.25,-2.75L23,19l-2.75,-1.25L19,15z" />
-    </group>
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="2"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round"
+        android:pathData="M14.8,5Q16.7,10.1 21.8,12Q16.7,13.9 14.8,19Q12.9,13.9 7.8,12Q12.9,10.1 14.8,5Z" />
+    <path
+        android:fillColor="#FF000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="1"
+        android:strokeLineJoin="round"
+        android:pathData="M3.7,2.3Q4.1,4.3 6.1,4.7Q4.1,5.1 3.7,7.1Q3.3,5.1 1.3,4.7Q3.3,4.3 3.7,2.3Z" />
+    <path
+        android:fillColor="#FF000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="1"
+        android:strokeLineJoin="round"
+        android:pathData="M3.7,18.3Q4.1,20.3 6.1,20.7Q4.1,21.1 3.7,23.1Q3.3,21.1 1.3,20.7Q3.3,20.3 3.7,18.3Z" />
 </vector>
 """
 
