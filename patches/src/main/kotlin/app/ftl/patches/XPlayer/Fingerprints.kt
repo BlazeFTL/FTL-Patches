@@ -8,6 +8,10 @@ import app.morphe.patcher.resourceLiteral
 import app.morphe.patcher.resource.ResourceType
 import app.morphe.patcher.string
 import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.reference.TypeReference
+
+internal const val ADD_WIDGET_ACTIVITY = "Lcom/inshot/xplayer/activities/AddWidgetActivity;"
 
 internal object AdRemovedReadFingerprint : Fingerprint(
     filters = listOf(
@@ -41,7 +45,13 @@ internal object CastMenuFragmentFingerprint : Fingerprint(
             location = InstructionLocation.MatchAfterImmediately()
         ),
         opcode(Opcode.MOVE_RESULT_OBJECT, InstructionLocation.MatchAfterImmediately()),
-        methodCall(smali = "Landroid/view/MenuItem;->setIcon(I)Landroid/view/MenuItem;")
+        methodCall(smali = "Landroid/view/MenuItem;->setIcon(I)Landroid/view/MenuItem;"),
+        methodCall(
+            definingClass = "Landroidx/fragment/app/Fragment;",
+            parameters = listOf("Landroid/view/Menu;"),
+            returnType = "V",
+            opcode = Opcode.INVOKE_SUPER
+        )
     )
 )
 
@@ -58,4 +68,15 @@ internal object CastMenuControlActivityFingerprint : Fingerprint(
         ),
         opcode(Opcode.MOVE_RESULT_OBJECT, InstructionLocation.MatchAfterImmediately())
     )
+)
+
+internal object WidgetMenuClickFingerprint : Fingerprint(
+    returnType = "Z",
+    parameters = listOf("Landroid/view/MenuItem;"),
+    custom = { method, _ ->
+        method.implementation?.instructions?.any {
+            it.opcode == Opcode.CONST_CLASS &&
+                ((it as ReferenceInstruction).reference as? TypeReference)?.type == ADD_WIDGET_ACTIVITY
+        } == true
+    }
 )

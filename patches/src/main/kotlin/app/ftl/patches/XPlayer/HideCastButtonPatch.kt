@@ -1,6 +1,5 @@
 package app.ftl.patches.xplayer
 
-import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
@@ -22,7 +21,7 @@ private fun MutableMethod.localCount() =
 @Suppress("unused")
 val hideCastButtonPatch = bytecodePatch(
     name = "Hide Cast Button",
-    description = "Hides the cast button in the toolbar menus."
+    description = "Hides the cast button in the toolbar menus. Toggle it in Mod Settings."
 ) {
     compatibleWith(
         Compatibility(
@@ -32,10 +31,10 @@ val hideCastButtonPatch = bytecodePatch(
         )
     )
 
-    execute {
-        val fragmentMatches = CastMenuFragmentFingerprint.matchAll()
+    dependsOn(modSettingsPatch)
 
-        fragmentMatches.forEach { match ->
+    execute {
+        CastMenuFragmentFingerprint.matchAll().forEach { match ->
             val method = match.method
             if (method.localCount() < MIN_LOCALS) {
                 throw PatchException("Not enough registers in ${method.definingClass}->${method.name}")
@@ -52,6 +51,11 @@ val hideCastButtonPatch = bytecodePatch(
             method.addInstructionsWithLabels(
                 lastIndex,
                 """
+                    invoke-virtual {p0}, Landroidx/fragment/app/Fragment;->getContext()Landroid/content/Context;
+                    move-result-object v0
+                    invoke-static {v0}, Lapp/ftl/extension/xplayer/ModPrefs;->hideCast(Landroid/content/Context;)Z
+                    move-result v0
+                    if-eqz v0, :skip
                     const v0, 0x${Integer.toHexString(castId)}
                     invoke-interface {p1, v0}, Landroid/view/Menu;->findItem(I)Landroid/view/MenuItem;
                     move-result-object v0
@@ -74,12 +78,17 @@ val hideCastButtonPatch = bytecodePatch(
             throw PatchException("Unexpected item register in ControlActivity.onPrepareOptionsMenu")
         }
 
-        controlMethod.addInstructions(
-            controlMatch.instructionMatches[2].index + 1,
+        val insertIndex = controlMatch.instructionMatches[2].index + 1
+        controlMethod.addInstructionsWithLabels(
+            insertIndex,
             """
+                invoke-static {p0}, Lapp/ftl/extension/xplayer/ModPrefs;->hideCast(Landroid/content/Context;)Z
+                move-result v1
+                if-eqz v1, :skip
                 const/4 v1, 0x0
                 invoke-interface {v0, v1}, Landroid/view/MenuItem;->setVisible(Z)Landroid/view/MenuItem;
-            """
+            """,
+            ExternalLabel("skip", controlMethod.implementation!!.instructions[insertIndex])
         )
     }
 }
