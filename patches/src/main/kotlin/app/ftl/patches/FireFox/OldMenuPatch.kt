@@ -194,7 +194,7 @@ private fun optional(name: String, block: () -> Unit) {
     try {
         block()
     } catch (e: Exception) {
-        logger.info("Skipped $name (not present in this build, stock look kept)")
+        logger.info("Skipped $name: ${e::class.simpleName}: ${e.message?.lineSequence()?.firstOrNull()}")
     }
 }
 
