@@ -53,7 +53,7 @@ internal object IPProtectionBadgeFingerprint : Fingerprint(
     parameters = listOf(OBJ, OBJ),
     filters = listOf(
         methodCall(definingClass = MENU_ITEM_KT, name = "Badge"),
-        constTo(1, 0x41000000),
+        constAny(0x41000000),
     ),
 )
 

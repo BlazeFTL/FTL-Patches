@@ -375,7 +375,7 @@ private fun BytecodePatchContext.installMenuTweaks() {
         IPProtectionBadgeFingerprint.let {
             val badge = it.instructionMatches[0].index
             it.method.applyEdits(
-                swap(badge - 1, 6, "", count = 2),
+                swap(badge, 6, "", count = 1),
                 floatTo(it.instructionMatches[1].index, 0x40000000),
             )
         }
