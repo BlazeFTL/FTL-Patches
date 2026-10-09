@@ -1,0 +1,85 @@
+package app.ftl.patches.xplayer
+
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
+import app.morphe.patcher.patch.AppTarget
+import app.morphe.patcher.patch.Compatibility
+import app.morphe.patcher.patch.PatchException
+import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
+import app.morphe.patcher.util.smali.ExternalLabel
+import com.android.tools.smali.dexlib2.AccessFlags
+import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
+
+private const val MIN_LOCALS = 2
+
+private fun MutableMethod.localCount() =
+    implementation!!.registerCount - parameterTypes.size -
+        if (AccessFlags.STATIC.isSet(accessFlags)) 0 else 1
+
+@Suppress("unused")
+val hideCastButtonPatch = bytecodePatch(
+    name = "Hide Cast Button",
+    description = "Hides the cast button in the toolbar menus."
+) {
+    compatibleWith(
+        Compatibility(
+            name = "XPlayer - Video Player",
+            packageName = "video.player.videoplayer",
+            targets = listOf(AppTarget(version = "2.9.2"))
+        )
+    )
+
+    execute {
+        val fragmentMatches = CastMenuFragmentFingerprint.matchAll()
+
+        fragmentMatches.forEach { match ->
+            val method = match.method
+            if (method.localCount() < MIN_LOCALS) {
+                throw PatchException("Not enough registers in ${method.definingClass}->${method.name}")
+            }
+
+            val lastIndex = method.implementation!!.instructions.size - 1
+            val last = method.implementation!!.instructions[lastIndex]
+            if (last.opcode != Opcode.RETURN_VOID) {
+                throw PatchException("Unexpected end of ${method.definingClass}->${method.name}")
+            }
+
+            val castId = (match.instructionMatches[0].instruction as NarrowLiteralInstruction).narrowLiteral
+
+            method.addInstructionsWithLabels(
+                lastIndex,
+                """
+                    const v0, 0x${Integer.toHexString(castId)}
+                    invoke-interface {p1, v0}, Landroid/view/Menu;->findItem(I)Landroid/view/MenuItem;
+                    move-result-object v0
+                    if-eqz v0, :skip
+                    const/4 v1, 0x0
+                    invoke-interface {v0, v1}, Landroid/view/MenuItem;->setVisible(Z)Landroid/view/MenuItem;
+                """,
+                ExternalLabel("skip", last)
+            )
+        }
+
+        val controlMatch = CastMenuControlActivityFingerprint.match()
+        val controlMethod = controlMatch.method
+        if (controlMethod.localCount() < MIN_LOCALS) {
+            throw PatchException("Not enough registers in ControlActivity.onPrepareOptionsMenu")
+        }
+
+        val itemRegister = (controlMatch.instructionMatches[2].instruction as OneRegisterInstruction).registerA
+        if (itemRegister != 0) {
+            throw PatchException("Unexpected item register in ControlActivity.onPrepareOptionsMenu")
+        }
+
+        controlMethod.addInstructions(
+            controlMatch.instructionMatches[2].index + 1,
+            """
+                const/4 v1, 0x0
+                invoke-interface {v0, v1}, Landroid/view/MenuItem;->setVisible(Z)Landroid/view/MenuItem;
+            """
+        )
+    }
+}
