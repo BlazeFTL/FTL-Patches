@@ -7,7 +7,7 @@ internal val COMPATIBILITY_FIREFOX_NIGHTLY = Compatibility(
     packageName = "org.mozilla.fenix",
     name = "Firefox Nightly",
     targets = listOf(
-        AppTarget(version = "159.0a1", versionCode = 2016187231),
+        AppTarget(version = "159.0a1", versionCode = 2016189151),
     ),
 )
 
