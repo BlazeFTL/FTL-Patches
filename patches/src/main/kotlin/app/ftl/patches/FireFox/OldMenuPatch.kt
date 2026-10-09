@@ -375,7 +375,12 @@ private fun BytecodePatchContext.installMenuTweaks() {
         IPProtectionBadgeFingerprint.let {
             val badge = it.instructionMatches[0].index
             it.method.applyEdits(
-                swap(badge, 6, "", count = 1),
+                swap(
+                    badge,
+                    6,
+                    "invoke-static {v1}, $OLD_MENU->hideBadge(Ljava/lang/String;)Z\nmove-result v6\nif-eqz v6, :ftl_stock",
+                    count = 1,
+                ),
                 floatTo(it.instructionMatches[1].index, 0x40000000),
             )
         }
