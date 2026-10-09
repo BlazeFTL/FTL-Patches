@@ -8,10 +8,6 @@ import app.morphe.patcher.resourceLiteral
 import app.morphe.patcher.resource.ResourceType
 import app.morphe.patcher.string
 import com.android.tools.smali.dexlib2.Opcode
-import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
-import com.android.tools.smali.dexlib2.iface.reference.TypeReference
-
-internal const val ADD_WIDGET_ACTIVITY = "Lcom/inshot/xplayer/activities/AddWidgetActivity;"
 
 internal object AdRemovedReadFingerprint : Fingerprint(
     filters = listOf(
@@ -70,13 +66,26 @@ internal object CastMenuControlActivityFingerprint : Fingerprint(
     )
 )
 
-internal object WidgetMenuClickFingerprint : Fingerprint(
-    returnType = "Z",
-    parameters = listOf("Landroid/view/MenuItem;"),
-    custom = { method, _ ->
-        method.implementation?.instructions?.any {
-            it.opcode == Opcode.CONST_CLASS &&
-                ((it as ReferenceInstruction).reference as? TypeReference)?.type == ADD_WIDGET_ACTIVITY
-        } == true
-    }
+internal object VideoGuideFingerprint : Fingerprint(
+    definingClass = "Lcom/inshot/xplayer/activities/PlayerActivity;",
+    filters = listOf(
+        string("videoGuide"),
+        opcode(Opcode.INVOKE_STATIC, InstructionLocation.MatchAfterImmediately()),
+        opcode(Opcode.MOVE_RESULT, InstructionLocation.MatchAfterImmediately()),
+        opcode(Opcode.IF_EQZ, InstructionLocation.MatchAfterImmediately()),
+        opcode(Opcode.CONST_STRING, InstructionLocation.MatchAfterImmediately()),
+        opcode(Opcode.INVOKE_STATIC, InstructionLocation.MatchAfterImmediately()),
+        opcode(Opcode.MOVE_RESULT, InstructionLocation.MatchAfterImmediately()),
+        opcode(Opcode.IF_EQZ, InstructionLocation.MatchAfterImmediately())
+    )
+)
+
+internal object RateCountFingerprint : Fingerprint(
+    definingClass = "Lcom/inshot/xplayer/activities/PlayerActivity;",
+    returnType = "V",
+    parameters = listOf(),
+    filters = listOf(
+        string("showRateCount"),
+        string("showRateWatchTimeCount")
+    )
 )
