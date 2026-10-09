@@ -32,6 +32,7 @@ private val JUNK_PATTERNS = listOf(
     Regex(""".*user-messaging-platform\.properties$"""),
     Regex(""".*feature-delivery.*\.properties$"""),
     Regex(""".*ads-mobile-sdk\.properties$"""),
+    Regex(""".*app-update-ktx\.properties$"""),
     Regex(""".*\.proto$"""),
     Regex(""".*DebugProbesKt\.bin$"""),
     Regex(""".*\.version$"""),
