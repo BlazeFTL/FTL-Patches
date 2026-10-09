@@ -1,77 +1,94 @@
 package app.ftl.patches.mxplayerad
 
-import app.morphe.patcher.patch.rawResourcePatch
-import java.io.RandomAccessFile
+import app.morphe.patcher.patch.AppTarget
+import app.morphe.patcher.patch.Compatibility
+import app.morphe.patcher.patch.PatchException
+import app.morphe.patcher.patch.resourcePatch
+import java.io.File
 
-/**
- * One native lib to patch: [path] inside the APK, byte [offset] to overwrite, and the
- * replacement machine code ([bytes]). Either an unconditional "branch to self" for that ISA,
- * which hangs the calling thread at that instruction instead of letting the original code run,
- * or an immediate return at a function entry, which turns the whole function into a no-op.
- */
-private data class SoPatch(val path: String, val offset: Long, val bytes: ByteArray)
-
-private val SO_PATCHES = listOf(
-    // arm64-v8a: file offset = vaddr 0x9f2e8 - .text delta 0x4000 (separate PT_LOAD segment).
-    // Lands on a CBZ. AArch64 "b #0" -> word 0x14000000, little-endian.
-    SoPatch(
-        path = "lib/arm64-v8a/libc++_shared.so",
-        offset = 0x0009b2e8L,
-        bytes = byteArrayOf(0x00, 0x00, 0x00, 0x14),
-    ),
-    // armeabi-v7a: file offset = vaddr 0x6aabe - .text delta 0x1000. Lands on a BNE.
-    // Thumb "b ." -> halfword 0xE7FE, little-endian.
-    SoPatch(
-        path = "lib/armeabi-v7a/libc++_shared.so",
-        offset = 0x00069abeL,
-        bytes = byteArrayOf(0xFE.toByte(), 0xE7.toByte()),
-    ),
-    // arm64-v8a libmx-bh.so: function entry (stock "sub sp, sp, #0x180" -> "ret").
-    // AArch64 "ret" -> word 0xD65F03C0, little-endian.
-    SoPatch(
-        path = "lib/arm64-v8a/libmx-bh.so",
-        offset = 0x0002e48cL,
-        bytes = byteArrayOf(0xC0.toByte(), 0x03, 0x5F, 0xD6.toByte()),
-    ),
-    // arm64-v8a libmx-bh.so: function entry (stock "sub sp, sp, #0x30" -> "ret").
-    SoPatch(
-        path = "lib/arm64-v8a/libmx-bh.so",
-        offset = 0x0002f724L,
-        bytes = byteArrayOf(0xC0.toByte(), 0x03, 0x5F, 0xD6.toByte()),
-    ),
-    // armeabi-v7a libmx-bh.so: function entry (stock "push {r4-r11, lr}" -> "bx lr").
-    // ARM "bx lr" -> word 0xE12FFF1E, little-endian.
-    SoPatch(
-        path = "lib/armeabi-v7a/libmx-bh.so",
-        offset = 0x000199f8L,
-        bytes = byteArrayOf(0x1E, 0xFF.toByte(), 0x2F, 0xE1.toByte()),
-    ),
-    // armeabi-v7a libmx-bh.so: function entry (stock "push {r4, r10, r11, lr}" -> "bx lr").
-    SoPatch(
-        path = "lib/armeabi-v7a/libmx-bh.so",
-        offset = 0x0001ac3cL,
-        bytes = byteArrayOf(0x1E, 0xFF.toByte(), 0x2F, 0xE1.toByte()),
-    ),
+private val MX_PLAYER_AD_CPU_COMPAT = Compatibility(
+    packageName = "com.mxtech.videoplayer.ad",
+    name = "MX Player",
+    targets = listOf(AppTarget(version = "3.3.0")),
 )
 
-val disableSignatureVerificationPatch = rawResourcePatch(
-    name = "Disable signature verification",
-    description = "Patches libc++_shared.so (branch-to-self at the signature check call site) and " +
-        "libmx-bh.so (immediate return at two function entries) on arm64-v8a and armeabi-v7a, " +
-        "so signature verification no longer fails the app.",
+private class Hunk(
+    val name: String,
+    before: String,
+    original: String,
+    replacement: String,
+    after: String,
 ) {
-    compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
+    private fun hex(s: String) = s.replace(" ", "").chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+
+    val prefixSize = hex(before).size
+    val replacementBytes = hex(replacement)
+    val stock = hex(before) + hex(original) + hex(after)
+    val patched = hex(before) + replacementBytes + hex(after)
+}
+
+private val ARM64_HUNKS = listOf(
+    Hunk("arm64 flag 1->0", "f31700b9 800000b5", "36008052", "16008052", "0a000014 f5b30094"),
+    Hunk("arm64 bl->nop", "ff4300b9", "21f0ff97", "1f2003d5", "e03b40b9 1f040071"),
+)
+
+private val ARM32_HUNKS = listOf(
+    Hunk("arm32 flag 1->0", "010090e1", "0100a0e3", "0000a0e3", "14008de5 0b00000a"),
+)
+
+private val NATIVE_LIBS = mapOf(
+    "lib/arm64-v8a/libmx-bh.so" to ARM64_HUNKS,
+    "lib/armeabi-v7a/libmx-bh.so" to ARM32_HUNKS,
+)
+
+private fun ByteArray.indicesOf(pattern: ByteArray): List<Int> {
+    val result = ArrayList<Int>()
+    val last = size - pattern.size
+    var i = 0
+    while (i <= last) {
+        var j = 0
+        while (j < pattern.size && this[i + j] == pattern[j]) j++
+        if (j == pattern.size) result.add(i)
+        i++
+    }
+    return result
+}
+
+private fun applyHunks(file: File, libName: String, hunks: List<Hunk>) {
+    val data = file.readBytes()
+    for (hunk in hunks) {
+        val stockAt = data.indicesOf(hunk.stock)
+        when {
+            stockAt.size == 1 ->
+                System.arraycopy(hunk.replacementBytes, 0, data, stockAt[0] + hunk.prefixSize, hunk.replacementBytes.size)
+            stockAt.isEmpty() && data.indicesOf(hunk.patched).size == 1 -> Unit
+            else -> throw PatchException(
+                "$libName: '${hunk.name}' expected exactly 1 stock match, found ${stockAt.size}. " +
+                    "Library is not the stock MX Player 3.3.0 build (replaced by another patch?)."
+            )
+        }
+    }
+    file.writeBytes(data)
+}
+
+@Suppress("unused")
+val fixHighCpuUsagePatch = resourcePatch(
+    name = "Kill Signature Verification",
+    description = "Patches libmx-bh.so to kill signature verification.",
+    default = true,
+) {
+    compatibleWith(MX_PLAYER_AD_CPU_COMPAT)
 
     execute {
-        val apkEntries = listApkEntries("lib/").toSet()
+        val entries = listApkEntries("lib/").toSet()
+        var patchedAny = false
 
-        for ((path, offset, bytes) in SO_PATCHES) {
-            if (path !in apkEntries) continue
-
-            RandomAccessFile(get(path), "rw").use { raf ->
-                raf.seek(offset)
-                raf.write(bytes)
-            }
+        NATIVE_LIBS.forEach { (path, hunks) ->
+            if (path !in entries) return@forEach
+            applyHunks(get(path), path, hunks)
+            patchedAny = true
         }
+
+        if (!patchedAny) throw PatchException("No libmx-bh.so found for arm64-v8a or armeabi-v7a.")
     }
 }
