@@ -20,16 +20,22 @@ public class ModGate extends View {
         super(context, attrs, defStyleAttr);
     }
 
+    void run(ViewGroup scope) {
+        try {
+            Object tag = getTag();
+            if (tag instanceof String) {
+                ModViews.apply((String) tag, scope);
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        try {
-            Object tag = getTag();
-            ViewParent parent = getParent();
-            if (tag instanceof String && parent instanceof ViewGroup) {
-                ModViews.apply((String) tag, (ViewGroup) parent);
-            }
-        } catch (Throwable ignored) {
+        ViewParent parent = getParent();
+        if (parent instanceof ViewGroup) {
+            run((ViewGroup) parent);
         }
     }
 }

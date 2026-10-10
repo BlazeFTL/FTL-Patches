@@ -21,6 +21,10 @@ final class ModViews {
         if (!ModPrefs.get(context, parts[0], true)) {
             return;
         }
+        if ("self".equals(parts[1])) {
+            transform(scope, "zero");
+            return;
+        }
 
         Resources resources = scope.getResources();
         String pkg = packageOf(scope);
@@ -32,7 +36,7 @@ final class ModViews {
         }
     }
 
-    private static String packageOf(ViewGroup scope) {
+    static String packageOf(ViewGroup scope) {
         String cached = resourcePackage;
         if (cached != null) {
             return cached;
