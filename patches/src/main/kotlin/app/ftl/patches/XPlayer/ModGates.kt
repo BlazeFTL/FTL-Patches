@@ -30,6 +30,7 @@ internal object GateMode {
     const val BADGE = "badge"
     const val WIDTH = "width"
     const val SELF = "self"
+    const val UNCHECK = "uncheck"
 }
 
 private fun Element.isMultiChildContainer(): Boolean {
