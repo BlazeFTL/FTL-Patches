@@ -15,6 +15,7 @@ import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 import org.w3c.dom.Element
 
 private const val WIDGET_ITEM_ID = "@id/widget"
+internal const val MOD_SETTINGS_TITLE = "Mod Settings"
 private const val SEARCH_WINDOW = 4
 private const val SHOW_CALL =
     "invoke-static {v%d}, Lapp/ftl/extension/xplayer/ModSettings;->show(Landroid/content/Context;)V"
@@ -61,7 +62,7 @@ private val modSettingsMenuPatch = resourcePatch {
                     .firstOrNull { it.getAttribute("android:id") == WIDGET_ITEM_ID }
                     ?: throw PatchException("Widgets menu item not found in $path")
 
-                widget.setAttribute("android:title", "Mod Settings")
+                widget.setAttribute("android:title", MOD_SETTINGS_TITLE)
                 widget.setAttribute("android:icon", "@drawable/ic_settings")
                 widget.setAttribute("app:iconTint", "?homeMenuIconTint")
                 widget.removeAttribute("android:visible")
