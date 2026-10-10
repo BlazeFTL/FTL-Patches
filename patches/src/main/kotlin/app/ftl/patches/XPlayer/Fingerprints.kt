@@ -74,6 +74,21 @@ internal object CastMenuControlActivityFingerprint : Fingerprint(
     )
 )
 
+internal object SelectModeMenuFingerprint : Fingerprint(
+    returnType = "V",
+    parameters = listOf("Landroid/view/Menu;"),
+    filters = listOf(
+        resourceLiteral(ResourceType.ID, "group_select_mode"),
+        methodCall(smali = "Landroid/view/Menu;->setGroupVisible(IZ)V"),
+        methodCall(
+            definingClass = "Landroidx/fragment/app/Fragment;",
+            parameters = listOf("Landroid/view/Menu;"),
+            returnType = "V",
+            opcode = Opcode.INVOKE_SUPER
+        )
+    )
+)
+
 internal object VideoGuideFingerprint : Fingerprint(
     definingClass = "Lcom/inshot/xplayer/activities/PlayerActivity;",
     filters = listOf(
