@@ -15,6 +15,7 @@ internal object ModKeys {
     const val HIDE_BOTTOM_BAR = "hide_bottom_bar"
     const val HIDE_PLAYER_BUTTONS = "hide_player_buttons"
     const val VOLUME_BOOST = "volume_boost"
+    const val EXTRA_INFO = "extra_info"
 }
 
 internal object GateMode {
