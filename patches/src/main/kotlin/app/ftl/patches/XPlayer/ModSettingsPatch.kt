@@ -19,14 +19,14 @@ private val MENU_FILES = listOf(
     "res/menu/menu_folder_list.xml"
 )
 
-internal val XPLAYER_COMPATIBILITY = Compatibility(
+internal val XPLAYER_TARGET = Compatibility(
     name = "XPlayer - Video Player",
     packageName = "video.player.videoplayer",
     targets = listOf(AppTarget(version = "2.9.2"))
 )
 
 private val modSettingsMenuPatch = resourcePatch {
-    compatibleWith(XPLAYER_COMPATIBILITY)
+    compatibleWith(XPLAYER_TARGET)
 
     execute {
         MENU_FILES.forEach { path ->
@@ -51,7 +51,7 @@ val modSettingsPatch = bytecodePatch(
     name = "Mod Settings",
     description = "Adds a Mod Settings entry in place of Widgets in the home 3-dot menu."
 ) {
-    compatibleWith(XPLAYER_COMPATIBILITY)
+    compatibleWith(XPLAYER_TARGET)
 
     dependsOn(modSettingsMenuPatch)
 

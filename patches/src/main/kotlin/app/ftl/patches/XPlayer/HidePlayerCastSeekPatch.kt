@@ -10,7 +10,7 @@ val hidePlayerCastSeekPatch = resourcePatch(
     name = "Hide Cast FF FB In Player",
     description = "Hides the cast, custom and 10 second forward/backward buttons in the player. Toggle in Mod Settings.",
 ) {
-    compatibleWith(XPLAYER_COMPATIBILITY)
+    compatibleWith(XPLAYER_TARGET)
 
     dependsOn(modSettingsPatch)
 

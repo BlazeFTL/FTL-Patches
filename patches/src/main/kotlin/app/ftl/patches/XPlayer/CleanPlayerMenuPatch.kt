@@ -22,7 +22,7 @@ val cleanPlayerMenuPatch = resourcePatch(
     name = "Player Side Cleaned",
     description = "Cleans the player side menu: audio, subtitle, cast, bookmark, favorite, play mode, brightness and volume. Toggle in Mod Settings.",
 ) {
-    compatibleWith(XPLAYER_COMPATIBILITY)
+    compatibleWith(XPLAYER_TARGET)
 
     dependsOn(modSettingsPatch)
 

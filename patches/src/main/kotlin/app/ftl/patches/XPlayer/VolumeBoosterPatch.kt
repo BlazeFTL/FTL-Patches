@@ -48,7 +48,7 @@ val volumeBoosterPatch = bytecodePatch(
     name = "Volume Booster",
     description = "Raises the volume boost limit in the player and background playback. Toggle in Mod Settings."
 ) {
-    compatibleWith(XPLAYER_COMPATIBILITY)
+    compatibleWith(XPLAYER_TARGET)
 
     dependsOn(modSettingsPatch)
 

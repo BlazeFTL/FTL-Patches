@@ -9,7 +9,7 @@ val hideBottomBarPatch = resourcePatch(
     name = "Hide Bottom Bar",
     description = "Hides the bottom tab bar on the home screen. Toggle in Mod Settings.",
 ) {
-    compatibleWith(XPLAYER_COMPATIBILITY)
+    compatibleWith(XPLAYER_TARGET)
 
     dependsOn(modSettingsPatch)
 

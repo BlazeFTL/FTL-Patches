@@ -12,7 +12,7 @@ val cleanBottomSheetsPatch = resourcePatch(
     name = "Clean 3 Dot Menu",
     description = "Removes Lock and Add to playlist from the video and folder 3-dot bottom sheets. Toggle in Mod Settings.",
 ) {
-    compatibleWith(XPLAYER_COMPATIBILITY)
+    compatibleWith(XPLAYER_TARGET)
 
     dependsOn(modSettingsPatch)
 
