@@ -8,6 +8,8 @@ import android.view.ViewParent;
 
 @SuppressWarnings("unused")
 public class ModGate extends View {
+    private boolean early;
+
     public ModGate(Context context) {
         super(context);
     }
@@ -30,9 +32,17 @@ public class ModGate extends View {
         }
     }
 
+    void runEarly(ViewGroup scope) {
+        early = true;
+        run(scope);
+    }
+
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
+        if (early) {
+            return;
+        }
         ViewParent parent = getParent();
         if (parent instanceof ViewGroup) {
             run((ViewGroup) parent);

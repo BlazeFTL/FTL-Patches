@@ -27,7 +27,7 @@ public class ModConstraintLayout extends ConstraintLayout {
             for (int i = 0; i < getChildCount(); i++) {
                 View child = getChildAt(i);
                 if (child instanceof ModGate) {
-                    ((ModGate) child).run(this);
+                    ((ModGate) child).runEarly(this);
                 }
             }
         } catch (Throwable ignored) {
