@@ -15,6 +15,7 @@ public final class ModPrefs {
     static final String KEY_EXTRA_INFO = "extra_info";
     static final String KEY_HIDE_HOME_TILES = "hide_home_tiles";
     static final String KEY_HIDE_RECENT = "hide_recent";
+    static final String KEY_HIDE_FOLDER_ROWS = "hide_folder_rows";
 
     private static volatile SharedPreferences prefs;
 

@@ -45,7 +45,9 @@ public final class ModSettings {
                     new Entry(ModPrefs.KEY_CLEAN_SHEETS, "Clean 3 dot menus",
                             "Removes Lock and Add to playlist from the video and folder menus.", false),
                     new Entry(ModPrefs.KEY_EXTRA_INFO, "Extra file info",
-                            "Shows resolution, date, size and last played on videos, and count, size and path on folders.", true)
+                            "Shows resolution, date, size and last played on videos, and count, size and path on folders.", true),
+                    new Entry(ModPrefs.KEY_HIDE_FOLDER_ROWS, "Hide Recent Added and Directory",
+                            "Removes the Recent Added and Directory rows from the folder list.", true)
             }),
             new Section("Player", new Entry[]{
                     new Entry(ModPrefs.KEY_CLEAN_PLAYER_MENU, "Clean player side menu",

@@ -28,6 +28,8 @@ public final class ExtraFileInfo {
     private static final String BULLET = " \u2022 ";
     private static final long DAY_MS = 86400000L;
     private static final long MIN_EPOCH_MS = 1000000000000L;
+    private static final int TAG_MIN_HEIGHT = 0x7f7fff02;
+    private static final int TAG_HEIGHT = 0x7f7fff01;
     private static final HashMap<String, String> RESOLUTIONS = new HashMap<>();
 
     private ExtraFileInfo() {
@@ -35,6 +37,10 @@ public final class ExtraFileInfo {
 
     private static boolean enabled(Context context) {
         return ModPrefs.get(context, ModPrefs.KEY_EXTRA_INFO, true);
+    }
+
+    private static boolean hideFolderRows(Context context) {
+        return ModPrefs.get(context, ModPrefs.KEY_HIDE_FOLDER_ROWS, true);
     }
 
     public static void bindVideoRow(TextView f, TextView g, String path, long dateMs, long sizeBytes,
@@ -79,6 +85,8 @@ public final class ExtraFileInfo {
                                      String nameText, String path, int videoCount, String sizeText,
                                      boolean isNew) {
         try {
+            reveal(itemView);
+            reveal(row);
             if (!enabled(name.getContext())) {
                 return;
             }
@@ -115,6 +123,31 @@ public final class ExtraFileInfo {
             int minHeight = (int) (60f * density);
             wrap(itemView, minHeight);
             wrap(row, minHeight);
+        } catch (Throwable ignored) {
+        }
+    }
+
+    public static void recentRow(View itemView, View row, TextView title) {
+        try {
+            restore(itemView);
+            restore(row);
+            title.setLineSpacing(0f, 1f);
+            if (hideFolderRows(itemView.getContext())) {
+                hide(itemView);
+            } else {
+                itemView.setVisibility(View.VISIBLE);
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+
+    public static void directoryRow(View itemView) {
+        try {
+            if (hideFolderRows(itemView.getContext())) {
+                hide(itemView);
+            } else {
+                reveal(itemView);
+            }
         } catch (Throwable ignored) {
         }
     }
@@ -197,14 +230,66 @@ public final class ExtraFileInfo {
         view.setGravity((view.getGravity() & Gravity.VERTICAL_GRAVITY_MASK) | Gravity.END);
     }
 
+    private static void save(View view) {
+        if (view.getTag(TAG_MIN_HEIGHT) != null) {
+            return;
+        }
+        view.setTag(TAG_MIN_HEIGHT, view.getMinimumHeight());
+        ViewGroup.LayoutParams params = view.getLayoutParams();
+        if (params != null) {
+            view.setTag(TAG_HEIGHT, params.height);
+        }
+    }
+
+    private static void setHeight(View view, int height) {
+        ViewGroup.LayoutParams params = view.getLayoutParams();
+        if (params != null && params.height != height) {
+            params.height = height;
+            view.setLayoutParams(params);
+        }
+    }
+
+    private static void restore(View view) {
+        if (view == null) {
+            return;
+        }
+        Object minHeight = view.getTag(TAG_MIN_HEIGHT);
+        if (minHeight instanceof Integer) {
+            view.setMinimumHeight((Integer) minHeight);
+        }
+        Object height = view.getTag(TAG_HEIGHT);
+        if (height instanceof Integer) {
+            setHeight(view, (Integer) height);
+        }
+    }
+
+    private static void reveal(View view) {
+        if (view == null) {
+            return;
+        }
+        restore(view);
+        view.setVisibility(View.VISIBLE);
+    }
+
+    private static void hide(View view) {
+        if (view == null) {
+            return;
+        }
+        save(view);
+        view.setVisibility(View.GONE);
+        setHeight(view, 0);
+        view.setMinimumHeight(0);
+    }
+
     private static void wrap(View view, int minHeight) {
         if (view == null) {
             return;
         }
+        save(view);
+        view.setVisibility(View.VISIBLE);
         ViewGroup.LayoutParams params = view.getLayoutParams();
-        if (params != null && params.height > 0) {
-            params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-            view.setLayoutParams(params);
+        if (params != null && params.height >= 0) {
+            setHeight(view, ViewGroup.LayoutParams.WRAP_CONTENT);
         }
         view.setMinimumHeight(minHeight);
     }
