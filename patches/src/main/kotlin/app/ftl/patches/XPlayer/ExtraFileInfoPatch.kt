@@ -73,10 +73,21 @@ internal fun applyFolder(method: MutableMethod, classDef: MutableClass, anchor: 
     method.addInstructionsAtControlFlowLabel(anchor, callHelper(refs.host, FOLDER_HELPER, folderHelperParams(refs)))
 }
 
+internal fun applyRecent(method: MutableMethod, classDef: MutableClass, index: Int, refs: FolderRefs) {
+    classDef.methods.add(newHelper(refs.host, RECENT_HELPER, folderHelperParams(refs)).apply { fillWith(recentHelperSmali(refs)) })
+    method.addInstructionsAtControlFlowLabel(index, callHelper(refs.host, RECENT_HELPER, folderHelperParams(refs)))
+}
+
+internal fun applyDirectory(method: MutableMethod, classDef: MutableClass, refs: DirectoryRefs, host: String) {
+    val params = listOf(refs.holder)
+    classDef.methods.add(newHelper(host, DIRECTORY_HELPER, params).apply { fillWith(directoryHelperSmali(refs)) })
+    method.addInstructionsAtControlFlowLabel(refs.index, callHelper(host, DIRECTORY_HELPER, params, "p1 .. p1"))
+}
+
 @Suppress("unused")
 val extraFileInfoPatch = bytecodePatch(
     name = "Extra File Info",
-    description = "Shows resolution, date, size and last played on video rows, and video count, size and path on folder rows. Toggle in Mod Settings."
+    description = "Shows resolution, date, size and last played on video rows, and video count, size and path on folder rows. Fixes the gap above Recent Added and adds a Mod Settings option to hide the Recent Added and Directory rows. Toggles in Mod Settings."
 ) {
     compatibleWith(XPLAYER_TARGET)
 
@@ -124,9 +135,14 @@ val extraFileInfoPatch = bytecodePatch(
             video
         )
 
-        (video.log() + folder.log()).forEach { (label, ref) -> logger.info("Extra File Info: $label = $ref") }
+        val recentIndex = resolveRecentHook(folderMethod.implementation!!.instructions, folder.bean, folderAnchor)
+        val directory = resolveDirectory(folderMethod.implementation!!.instructions, lookup, folder.itemView)
+
+        (video.log() + folder.log() + directory.log()).forEach { (label, ref) -> logger.info("Extra File Info: $label = $ref") }
 
         applyVideo(videoMethod, videoMatch.classDef, videoAnchor, video)
         applyFolder(folderMethod, folderMatch.classDef, folderAnchor, folder)
+        applyRecent(folderMethod, folderMatch.classDef, recentIndex, folder)
+        applyDirectory(folderMethod, folderMatch.classDef, directory, folder.host)
     }
 }

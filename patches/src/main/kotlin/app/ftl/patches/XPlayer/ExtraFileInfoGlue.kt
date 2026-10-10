@@ -3,6 +3,8 @@ package app.ftl.patches.xplayer
 internal const val EXTENSION_CLASS = "Lapp/ftl/extension/xplayer/ExtraFileInfo;"
 internal const val VIDEO_HELPER = "ftl\$bindVideoRow"
 internal const val FOLDER_HELPER = "ftl\$bindFolderRow"
+internal const val RECENT_HELPER = "ftl\$recentRow"
+internal const val DIRECTORY_HELPER = "ftl\$directoryRow"
 internal const val HELPER_REGISTERS = 16
 
 internal const val BIND_VIDEO_DESC =
@@ -11,12 +13,14 @@ internal const val BIND_FOLDER_DESC =
     "Landroid/widget/TextView;Landroid/widget/TextView;Landroid/view/View;Landroid/view/View;" +
         "Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Z"
 
+internal const val RECENT_DESC = "Landroid/view/View;Landroid/view/View;Landroid/widget/TextView;"
+
 internal fun videoHelperParams(r: VideoRefs) = listOf(r.host, r.holder, MEDIA_FILE_INFO)
 
 internal fun folderHelperParams(r: FolderRefs) = listOf(r.host, r.holder, r.bean)
 
-internal fun callHelper(host: String, helper: String, params: List<String>) =
-    "invoke-static/range {p0 .. p2}, $host->$helper(${params.joinToString("")})V"
+internal fun callHelper(host: String, helper: String, params: List<String>, registers: String = "p0 .. p2") =
+    "invoke-static/range {$registers}, $host->$helper(${params.joinToString("")})V"
 
 internal fun videoHelperSmali(r: VideoRefs) = """
     iget-object v9, p0, ${r.owner.desc()}
@@ -79,5 +83,19 @@ internal fun folderHelperSmali(r: FolderRefs) = """
     invoke-virtual {p2}, ${r.countGetter.desc()}
     move-result v6
     invoke-static/range {v0 .. v8}, $EXTENSION_CLASS->bindFolderRow($BIND_FOLDER_DESC)V
+    return-void
+"""
+
+internal fun recentHelperSmali(r: FolderRefs) = """
+    iget-object v0, p1, ${r.itemView.desc()}
+    iget-object v1, p1, ${r.row.desc()}
+    iget-object v2, p1, ${r.title.desc()}
+    invoke-static {v0, v1, v2}, $EXTENSION_CLASS->recentRow($RECENT_DESC)V
+    return-void
+"""
+
+internal fun directoryHelperSmali(r: DirectoryRefs) = """
+    iget-object v0, p0, ${r.itemView.desc()}
+    invoke-static {v0}, $EXTENSION_CLASS->directoryRow(Landroid/view/View;)V
     return-void
 """

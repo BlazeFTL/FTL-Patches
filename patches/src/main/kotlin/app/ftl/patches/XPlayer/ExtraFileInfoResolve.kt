@@ -1,6 +1,7 @@
 package app.ftl.patches.xplayer
 
 import app.morphe.patcher.patch.PatchException
+import com.android.tools.smali.dexlib2.builder.BuilderOffsetInstruction
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction
@@ -11,6 +12,7 @@ import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.WideLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
+import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 
 internal const val TEXT_VIEW = "Landroid/widget/TextView;"
 internal const val VIEW = "Landroid/view/View;"
@@ -360,5 +362,64 @@ internal fun resolveFolder(
         itemView = resolveItemView(instructions, holder, lookup, video.itemView),
         sizeField = video.size,
         formatter = video.formatter
+    )
+}
+
+internal class DirectoryRefs(
+    val index: Int,
+    val holder: String,
+    val itemView: FieldReference
+) {
+    fun log() = listOf(
+        "directory holder" to holder,
+        "directory itemView" to itemView.desc()
+    )
+}
+
+internal fun resolveRecentHook(instructions: List<Instruction>, bean: String, folderAnchor: Int): Int {
+    val hit = instructions.windows(4) { w ->
+        val flag = w[0].fieldRef()
+        val added = w[2].fieldRef()
+        w[0].opcode == Opcode.IGET_BOOLEAN && flag != null && flag.definingClass == bean && flag.type == "Z" &&
+            w[1].opcode == Opcode.IF_EQZ && w[1].registerA() == w[0].registerA() &&
+            w[2].opcode == Opcode.IGET && added != null && added.definingClass == bean && added.type == "I" &&
+            w[2].registerB() == w[0].registerB() &&
+            w[3].opcode == Opcode.IF_LEZ && w[3].registerA() == w[2].registerA()
+    }.only("recent added branch")
+    val branch = hit.second[1] as? BuilderOffsetInstruction
+        ?: throw PatchException("recent added branch: test is not a branch instruction")
+    if (branch.target.location.index != folderAnchor) {
+        throw PatchException("recent added branch does not jump to the folder row block")
+    }
+    return hit.first + 2
+}
+
+internal fun resolveDirectory(
+    instructions: List<Instruction>,
+    lookup: ClassLookup,
+    known: FieldReference
+): DirectoryRefs {
+    val hits = instructions.windows(6) { w ->
+        val tested = (w[0] as? ReferenceInstruction)?.reference as? TypeReference
+        val cast = (w[2] as? ReferenceInstruction)?.reference as? TypeReference
+        val view = w[3].fieldRef()
+        w[0].opcode == Opcode.INSTANCE_OF && tested != null &&
+            w[1].opcode == Opcode.IF_EQZ && w[1].registerA() == w[0].registerA() &&
+            w[2].opcode == Opcode.CHECK_CAST && cast != null && cast.type == tested.type &&
+            w[3].opcode == Opcode.IGET_OBJECT && view != null && view.type == VIEW && view.definingClass == cast.type &&
+            w[3].registerB() == w[2].registerA() &&
+            w[4].isCall(Opcode.INVOKE_VIRTUAL, VIEW, "setOnClickListener", params = listOf(CLICK_LISTENER)) &&
+            w[4].callArg(0) == w[3].registerA() &&
+            w[5].opcode == Opcode.RETURN_VOID
+    }
+    if (hits.size != 2) {
+        throw PatchException("directory row: expected 2 click-only footer branches (directory + footer), found ${hits.size}")
+    }
+    val first = hits.first()
+    val holder = (first.second[2] as ReferenceInstruction).reference.let { (it as TypeReference).type }
+    return DirectoryRefs(
+        index = first.first + 3,
+        holder = holder,
+        itemView = resolveItemView(instructions, holder, lookup, known)
     )
 }
