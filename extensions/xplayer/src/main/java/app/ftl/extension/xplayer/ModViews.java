@@ -6,8 +6,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.util.Arrays;
+import java.util.concurrent.ConcurrentHashMap;
+
 final class ModViews {
     private static volatile String resourcePackage;
+    private static final ConcurrentHashMap<String, int[]> RESOLVED = new ConcurrentHashMap<>();
 
     private ModViews() {
     }
@@ -21,18 +25,33 @@ final class ModViews {
         if (!ModPrefs.get(context, parts[0], true)) {
             return;
         }
+        if ("self".equals(parts[1])) {
+            transform(scope, "zero");
+            return;
+        }
 
-        Resources resources = scope.getResources();
-        String pkg = packageOf(scope);
-        for (String name : parts[2].split(",")) {
-            int id = resources.getIdentifier(name, "id", pkg);
-            if (id != 0) {
-                walk(scope, id, parts[1]);
+        int[] ids = RESOLVED.get(spec);
+        if (ids == null) {
+            Resources resources = scope.getResources();
+            String pkg = packageOf(scope);
+            String[] names = parts[2].split(",");
+            int[] found = new int[names.length];
+            int count = 0;
+            for (String name : names) {
+                int id = resources.getIdentifier(name, "id", pkg);
+                if (id != 0) {
+                    found[count++] = id;
+                }
             }
+            ids = Arrays.copyOf(found, count);
+            RESOLVED.put(spec, ids);
+        }
+        if (ids.length > 0) {
+            walk(scope, ids, parts[1]);
         }
     }
 
-    private static String packageOf(ViewGroup scope) {
+    static String packageOf(ViewGroup scope) {
         String cached = resourcePackage;
         if (cached != null) {
             return cached;
@@ -66,14 +85,26 @@ final class ModViews {
         return 0;
     }
 
-    private static void walk(View view, int id, String mode) {
-        if (view.getId() == id) {
+    private static boolean matches(int[] ids, int id) {
+        if (id == View.NO_ID) {
+            return false;
+        }
+        for (int candidate : ids) {
+            if (candidate == id) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void walk(View view, int[] ids, String mode) {
+        if (matches(ids, view.getId())) {
             transform(view, mode);
         }
         if (view instanceof ViewGroup) {
             ViewGroup group = (ViewGroup) view;
             for (int i = 0; i < group.getChildCount(); i++) {
-                walk(group.getChildAt(i), id, mode);
+                walk(group.getChildAt(i), ids, mode);
             }
         }
     }
