@@ -1,37 +1,21 @@
 package app.ftl.patches.xplayer
 
-import app.morphe.patcher.patch.AppTarget
-import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.resourcePatch
-import org.w3c.dom.Element
 
-private const val BOTTOM_TAB_ID = "@id/bottom_tab"
+private const val ACTIVITY_APP = "res/layout/activity_app.xml"
 
 @Suppress("unused")
 val hideBottomBarPatch = resourcePatch(
     name = "Hide Bottom Bar",
-    description = "Hides the bottom tab bar on the home screen.",
+    description = "Hides the bottom tab bar on the home screen. Toggle in Mod Settings.",
 ) {
-    compatibleWith(
-        Compatibility(
-            name = "XPlayer - Video Player",
-            packageName = "video.player.videoplayer",
-            targets = listOf(AppTarget(version = "2.9.2"))
-        )
-    )
+    compatibleWith(XPLAYER_TARGET)
+
+    dependsOn(modSettingsPatch)
 
     execute {
-        document("res/layout/activity_app.xml").use { document ->
-            val layouts = document.getElementsByTagName("LinearLayout")
-
-            val bottomTab = (0 until layouts.length)
-                .map { layouts.item(it) as Element }
-                .firstOrNull { it.getAttribute("android:id") == BOTTOM_TAB_ID }
-                ?: throw PatchException("Bottom tab bar not found in activity_app.xml")
-
-            bottomTab.setAttribute("android:layout_width", "0.0dip")
-            bottomTab.setAttribute("android:layout_height", "0.0dip")
+        document(ACTIVITY_APP).use { document ->
+            document.addGate(ACTIVITY_APP, ModKeys.HIDE_BOTTOM_BAR, GateMode.ZERO, listOf("bottom_tab"))
         }
     }
 }

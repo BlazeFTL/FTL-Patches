@@ -33,7 +33,9 @@ val hideWidgetMenuItemPatch = resourcePatch(
                     .firstOrNull { it.getAttribute("android:id") == "@id/widget" }
                     ?: throw PatchException("Widgets menu item not found in $path")
 
-                widget.setAttribute("android:visible", "false")
+                if (widget.getAttribute("android:title") != MOD_SETTINGS_TITLE) {
+                    widget.setAttribute("android:visible", "false")
+                }
             }
         }
     }
