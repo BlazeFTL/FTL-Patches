@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CompoundButton;
 import android.widget.TextView;
 
 import java.util.Arrays;
@@ -143,6 +144,15 @@ final class ModViews {
                 }
                 break;
             case "gone":
+                view.setAlpha(0f);
+                view.setClickable(false);
+                view.setFocusable(false);
+                view.setVisibility(View.GONE);
+                break;
+            case "uncheck":
+                if (view instanceof CompoundButton) {
+                    ((CompoundButton) view).setChecked(false);
+                }
                 view.setAlpha(0f);
                 view.setClickable(false);
                 view.setFocusable(false);

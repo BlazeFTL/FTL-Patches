@@ -33,7 +33,7 @@ public final class ModSettings {
     private static final Section[] SECTIONS = {
             new Section("Home screen", new Entry[]{
                     new Entry(ModPrefs.KEY_HIDE_HOME_TILES, "Hide top tiles",
-                            "Removes the tile row (All Videos, Downloader, Privacy, Cleaner) at the top of the home page.", true),
+                            "Removes the tile row (All Videos, Downloader, Privacy, Cleaner) at the top of the home page and the Move to Trash option in the delete dialog.", true),
                     new Entry(ModPrefs.KEY_HIDE_RECENT, "Hide recent videos",
                             "Removes the recently played row from the home page.", true),
                     new Entry(ModPrefs.KEY_HIDE_BOTTOM_BAR, "Hide bottom bar",
