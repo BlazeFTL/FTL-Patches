@@ -40,6 +40,7 @@ public final class ModSettings {
             root.addView(toggle(activity, themed, "Hide bottom bar", ModPrefs.KEY_HIDE_BOTTOM_BAR, true, recreate, gap));
             root.addView(toggle(activity, themed, "Hide player cast / FF / FB buttons", ModPrefs.KEY_HIDE_PLAYER_BUTTONS, false, recreate, gap));
             root.addView(toggle(activity, themed, "Volume boost", ModPrefs.KEY_VOLUME_BOOST, false, recreate, gap));
+            root.addView(toggle(activity, themed, "Extra file info", ModPrefs.KEY_EXTRA_INFO, true, recreate, gap));
 
             ScrollView scroll = new ScrollView(themed);
             scroll.addView(root);

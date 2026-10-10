@@ -12,6 +12,7 @@ public final class ModPrefs {
     static final String KEY_HIDE_BOTTOM_BAR = "hide_bottom_bar";
     static final String KEY_HIDE_PLAYER_BUTTONS = "hide_player_buttons";
     static final String KEY_VOLUME_BOOST = "volume_boost";
+    static final String KEY_EXTRA_INFO = "extra_info";
 
     private static volatile SharedPreferences prefs;
 
