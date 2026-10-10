@@ -20,7 +20,7 @@ private val COLLAPSED_MENU_ITEMS = listOf("menu_cast", "menu_bookmark", "menu_fa
 @Suppress("unused")
 val cleanPlayerMenuPatch = resourcePatch(
     name = "Player Side Cleaned",
-    description = "Cleans the player side menu: audio, subtitle, cast, bookmark, favorite, play mode, brightness and volume. Toggle in Mod Settings.",
+    description = "Cleans the player side menu: audio, subtitle, cast, bookmark, favorite, play mode, brightness and volume. Applied while the menu inflates so remaining items stay aligned. Toggle in Mod Settings.",
 ) {
     compatibleWith(XPLAYER_TARGET)
 
@@ -28,13 +28,13 @@ val cleanPlayerMenuPatch = resourcePatch(
 
     execute {
         document(DIALOG).use { document ->
-            document.addGate(DIALOG, ModKeys.CLEAN_PLAYER_MENU, GateMode.GONE, DIALOG_HIDDEN)
+            document.addGate(DIALOG, ModKeys.CLEAN_PLAYER_MENU, GateMode.GONE, DIALOG_HIDDEN, early = true)
         }
 
         document(FRAGMENT).use { document ->
-            document.addGate(FRAGMENT, ModKeys.CLEAN_PLAYER_MENU, GateMode.COLLAPSE, COLLAPSED_MENU_ITEMS)
-            document.addGate(FRAGMENT, ModKeys.CLEAN_PLAYER_MENU, GateMode.BADGE, listOf("menu_favorite"))
-            document.addGate(FRAGMENT, ModKeys.CLEAN_PLAYER_MENU, GateMode.WIDTH, listOf("view_favorite_red"))
+            document.addGate(FRAGMENT, ModKeys.CLEAN_PLAYER_MENU, GateMode.COLLAPSE, COLLAPSED_MENU_ITEMS, early = true)
+            document.addGate(FRAGMENT, ModKeys.CLEAN_PLAYER_MENU, GateMode.BADGE, listOf("menu_favorite"), early = true)
+            document.addGate(FRAGMENT, ModKeys.CLEAN_PLAYER_MENU, GateMode.WIDTH, listOf("view_favorite_red"), early = true)
         }
     }
 }
