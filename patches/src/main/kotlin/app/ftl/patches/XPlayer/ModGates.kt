@@ -109,3 +109,7 @@ internal fun Document.addSelfGate(path: String, key: String, containerId: String
     }
     appendGate(container, key, GateMode.SELF, listOf("self"))
 }
+
+internal fun Document.replaceTagById(path: String, id: String, tag: String) {
+    swapTag(indexById().byId(path, id), tag)
+}
