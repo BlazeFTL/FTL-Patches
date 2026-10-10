@@ -2,6 +2,7 @@ package app.ftl.patches.xplayer
 
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.InstructionLocation
+import app.morphe.patcher.OpcodeFilter
 import app.morphe.patcher.fieldAccess
 import app.morphe.patcher.literal
 import app.morphe.patcher.methodCall
@@ -11,6 +12,10 @@ import app.morphe.patcher.resource.ResourceType
 import app.morphe.patcher.string
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.iface.Method
+import com.android.tools.smali.dexlib2.iface.instruction.Instruction
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 
 internal object AdRemovedReadFingerprint : Fingerprint(
     filters = listOf(
@@ -213,5 +218,37 @@ internal object ServiceVolumeBoostFingerprint : Fingerprint(
         opcode(Opcode.MOVE_RESULT, InstructionLocation.MatchAfterImmediately()),
         opcode(Opcode.IF_NE, InstructionLocation.MatchAfterImmediately()),
         opcode(Opcode.INT_TO_FLOAT, InstructionLocation.MatchAfterWithin(3))
+    )
+)
+
+internal const val ADD_WIDGET_ACTIVITY = "Lcom/inshot/xplayer/activities/AddWidgetActivity;"
+
+private class ConstClassFilter(
+    private val type: String,
+    location: InstructionLocation = InstructionLocation.MatchAfterAnywhere()
+) : OpcodeFilter(Opcode.CONST_CLASS, location) {
+    override fun matches(enclosingMethod: Method, instruction: Instruction) =
+        super.matches(enclosingMethod, instruction) &&
+            ((instruction as ReferenceInstruction).reference as? TypeReference)?.type == type
+}
+
+internal object WidgetMenuClickFingerprint : Fingerprint(
+    returnType = "Z",
+    parameters = listOf("Landroid/view/MenuItem;"),
+    filters = listOf(
+        ConstClassFilter(ADD_WIDGET_ACTIVITY),
+        methodCall(
+            definingClass = "Landroid/content/Intent;",
+            name = "<init>",
+            parameters = listOf("Landroid/content/Context;", "Ljava/lang/Class;"),
+            opcode = Opcode.INVOKE_DIRECT,
+            location = InstructionLocation.MatchAfterWithin(2)
+        ),
+        methodCall(
+            name = "startActivity",
+            parameters = listOf("Landroid/content/Intent;"),
+            opcode = Opcode.INVOKE_VIRTUAL,
+            location = InstructionLocation.MatchAfterWithin(2)
+        )
     )
 )
