@@ -19,7 +19,7 @@ private val MENU_FILES = listOf(
     "res/menu/menu_folder_list.xml"
 )
 
-private val XPLAYER_COMPATIBILITY = Compatibility(
+internal val XPLAYER_COMPATIBILITY = Compatibility(
     name = "XPlayer - Video Player",
     packageName = "video.player.videoplayer",
     targets = listOf(AppTarget(version = "2.9.2"))

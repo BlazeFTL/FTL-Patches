@@ -1,10 +1,9 @@
 package app.ftl.patches.xplayer
 
 import app.morphe.patcher.extensions.InstructionExtensions.addInstruction
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
-import app.morphe.patcher.patch.AppTarget
-import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
@@ -14,66 +13,66 @@ import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstructio
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 
+private const val PREFS = "Lapp/ftl/extension/xplayer/ModPrefs;"
 private const val BOOST_REGISTER = 8
+
+private fun call(helper: String, register: Int) =
+    "invoke-static/range {v$register .. v$register}, $PREFS->$helper(I)I"
 
 private fun <T> List<T>.single(name: String): T =
     if (size == 1) first() else throw PatchException("$name: expected 1 match, found $size")
 
-private fun MutableMethod.replaceWithTriple(index: Int) {
+private fun MutableMethod.boostAt(index: Int) {
     val instruction = implementation!!.instructions[index]
     val registers = instruction as TwoRegisterInstruction
+    val destination = registers.registerA
 
-    when (instruction.opcode) {
-        Opcode.SHL_INT_2ADDR -> replaceInstruction(
-            index, "mul-int/lit8 v${registers.registerA}, v${registers.registerA}, 0x3"
-        )
+    val source = when (instruction.opcode) {
+        Opcode.SHL_INT_2ADDR -> registers.registerA
         Opcode.SHL_INT_LIT8, Opcode.MUL_INT_LIT8 -> {
             val expected = if (instruction.opcode == Opcode.SHL_INT_LIT8) 1 else 2
             if ((instruction as NarrowLiteralInstruction).narrowLiteral != expected) {
                 throw PatchException("Unexpected literal in $definingClass->$name")
             }
-            replaceInstruction(
-                index, "mul-int/lit8 v${registers.registerA}, v${registers.registerB}, 0x3"
-            )
+            registers.registerB
         }
         else -> throw PatchException("Unexpected opcode ${instruction.opcode} in $definingClass->$name")
     }
+
+    replaceInstruction(index, "move-result v$destination")
+    addInstruction(index, call("boostMul", source))
 }
 
 @Suppress("unused")
 val volumeBoosterPatch = bytecodePatch(
     name = "Volume Booster",
-    description = "Raises the volume boost limit in the player and background playback."
+    description = "Raises the volume boost limit in the player and background playback. Toggle in Mod Settings."
 ) {
-    compatibleWith(
-        Compatibility(
-            name = "XPlayer - Video Player",
-            packageName = "video.player.videoplayer",
-            targets = listOf(AppTarget(version = "2.9.2"))
-        )
-    )
+    compatibleWith(XPLAYER_COMPATIBILITY)
+
+    dependsOn(modSettingsPatch)
 
     execute {
         VolumeBarInitFingerprint.matchAll().single("VolumeBarInit").let {
-            it.method.replaceWithTriple(it.instructionMatches[1].index)
+            it.method.boostAt(it.instructionMatches[1].index)
         }
 
         VolumeSwipeFingerprint.matchAll().single("VolumeSwipe").let {
-            it.method.replaceWithTriple(it.instructionMatches[6].index)
-            it.method.replaceWithTriple(it.instructionMatches[3].index)
+            it.method.boostAt(it.instructionMatches[6].index)
+            it.method.boostAt(it.instructionMatches[3].index)
         }
 
         VolumeBarMaxFingerprint.matchAll().single("VolumeBarMax").let {
-            it.method.replaceWithTriple(it.instructionMatches[1].index)
+            it.method.boostAt(it.instructionMatches[1].index)
         }
 
         VolumeKeyFingerprint.matchAll().single("VolumeKey").let {
-            it.method.replaceWithTriple(it.instructionMatches[3].index)
-            it.method.replaceWithTriple(it.instructionMatches[1].index)
+            it.method.boostAt(it.instructionMatches[3].index)
+            it.method.boostAt(it.instructionMatches[1].index)
         }
 
         MaxVolumeFingerprint.matchAll().single("MaxVolume").let {
-            it.method.replaceWithTriple(it.instructionMatches[2].index)
+            it.method.boostAt(it.instructionMatches[2].index)
         }
 
         VolumeSetFingerprint.matchAll().single("VolumeSet").let { match ->
@@ -90,13 +89,20 @@ val volumeBoosterPatch = bytecodePatch(
                 """
                     sub-int v$tempRegister, v$valueRegister, v$maxRegister
                     if-lez v$tempRegister, :skip
-                    mul-int/lit8 v$tempRegister, v$tempRegister, 0x2
+                    ${call("boostExtra", tempRegister)}
+                    move-result v$tempRegister
                     add-int/2addr v$valueRegister, v$tempRegister
                 """,
                 ExternalLabel("skip", method.implementation!!.instructions[afterPut])
             )
-            method.addInstruction(matches[6].index, "shr-int/lit8 v$maxRegister, v$maxRegister, 0x1")
-            method.addInstruction(matches[0].index + 1, "mul-int/lit8 v$maxRegister, v$maxRegister, 0x2")
+            method.addInstructions(
+                matches[6].index,
+                "${call("boostUnscale", maxRegister)}\nmove-result v$maxRegister"
+            )
+            method.addInstructions(
+                matches[0].index + 1,
+                "${call("boostScale", maxRegister)}\nmove-result v$maxRegister"
+            )
         }
 
         ServiceVolumeBoostFingerprint.matchAll().single("ServiceVolumeBoost").let { match ->
@@ -119,7 +125,8 @@ val volumeBoosterPatch = bytecodePatch(
                 """
                     sub-int v$volumeRegister, v$BOOST_REGISTER, v$maxRegister
                     if-lez v$volumeRegister, :skip
-                    mul-int/lit8 v$volumeRegister, v$volumeRegister, 0x2
+                    ${call("boostExtra", volumeRegister)}
+                    move-result v$volumeRegister
                     add-int/2addr v$BOOST_REGISTER, v$volumeRegister
                 """,
                 ExternalLabel("skip", method.implementation!!.instructions[floatIndex])
