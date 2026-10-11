@@ -105,6 +105,28 @@ private val JUNK_ENTRIES = setOf(
     "assets/dtb-m.js",
     "assets/aps-mraid.js",
     "assets/api_key.txt",
+    // APK root build/lib metadata files
+    "car-app-api.level",
+    "builddef.lst",
+    "build-data.properties",
+    "build.properties",
+    "version.txt",
+    "recaptcha.properties",
+    "vision-interfaces.properties",
+    "vision-common.properties",
+    "language-id-common.properties",
+    "language-id.properties",
+    "isoparser-default.properties",
+    "image-labeling-default-common.properties",
+    "image-labeling-common.properties",
+    "image.properties",
+    "googleid.properties",
+    "genai-schema.properties",
+    "genai-prompt.properties",
+    "genai-common.properties",
+    "common.properties",
+    // fabric/ — 1/1 shown
+    "fabric/com.stripe.stripe-android.properties",
 )
 
 // Folder entries shown as junk in screenshots: the folder itself + its interior go.
