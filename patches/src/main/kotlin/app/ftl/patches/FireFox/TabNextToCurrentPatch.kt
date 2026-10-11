@@ -168,42 +168,10 @@ private fun BytecodePatchContext.installTabFab() {
     val normalTabs = fieldRef(TABS_PAGE, "NormalTabs")
     val selectedPage = fieldRef(TABS_TRAY_STATE, "selectedPage")
 
-    val alignEnd = fieldRef("Landroidx/compose/ui/Alignment\$Companion;", "End")
-    val sizeMethods = mutableClassDefBy("Landroidx/compose/foundation/layout/SizeKt;").methods
-    val modifierType = "Landroidx/compose/ui/Modifier;"
-    val horizontalType = "Landroidx/compose/ui/Alignment\$Horizontal;"
-    val wrapFull = sizeMethods.firstOrNull { method ->
-        method.name == "wrapContentWidth" &&
-            method.parameterTypes.map { it.toString() } == listOf(modifierType, horizontalType, "Z")
-    }
-    val wrapDefault = sizeMethods.firstOrNull { method ->
-        method.name == "wrapContentWidth\$default" &&
-            method.parameterTypes.map { it.toString() } ==
-            listOf(modifierType, horizontalType, "Z", "I", "Ljava/lang/Object;")
-    }
-    val wrapWidth = when {
-        wrapFull != null ->
-            "sget-object v2, $alignEnd\n" +
-                "        const/4 v3, 0x1\n" +
-                "        invoke-static {v0, v2, v3}, Landroidx/compose/foundation/layout/SizeKt;->" +
-                "wrapContentWidth($modifierType${horizontalType}Z)$modifierType\n" +
-                "        move-result-object v0"
-        wrapDefault != null ->
-            "sget-object v2, $alignEnd\n" +
-                "        const/4 v3, 0x1\n" +
-                "        const/4 v4, 0x0\n" +
-                "        const/4 v5, 0x0\n" +
-                "        invoke-static {v0, v2, v3, v4, v5}, Landroidx/compose/foundation/layout/SizeKt;->" +
-                "wrapContentWidth\$default($modifierType${horizontalType}ZILjava/lang/Object;)$modifierType\n" +
-                "        move-result-object v0"
-        else -> throw PatchException("SizeKt.wrapContentWidth not found")
-    }
-
     val fabSignature = "(${parameters.joinToString("")})V"
     val rowSmali = $$$"""
         move-object/from16 v12, p5
         sget-object v0, Landroidx/compose/ui/Modifier$Companion;->$$INSTANCE:Landroidx/compose/ui/Modifier$Companion;
-        $$${wrapWidth}
         sget-object v1, $$${arrangementStart}
         sget-object v2, $$${centerVertically}
         const/16 v3, 0x30
@@ -253,7 +221,7 @@ private fun BytecodePatchContext.installTabFab() {
         move-result-object v2
         invoke-static {v2, v12}, $$${TAB_FAB}->fab(Lkotlin/jvm/functions/Function0;Landroidx/compose/runtime/Composer;)V
         sget-object v2, Landroidx/compose/ui/Modifier$Companion;->$$INSTANCE:Landroidx/compose/ui/Modifier$Companion;
-        const/high16 v3, 0x41800000
+        const/high16 v3, 0x41000000
         invoke-static {v2, v3}, Landroidx/compose/foundation/layout/SizeKt;->width-3ABfNKs(Landroidx/compose/ui/Modifier;F)Landroidx/compose/ui/Modifier;
         move-result-object v2
         invoke-static {v12, v2}, Landroidx/compose/foundation/layout/SpacerKt;->Spacer(Landroidx/compose/runtime/Composer;Landroidx/compose/ui/Modifier;)V
@@ -300,6 +268,11 @@ private fun BytecodePatchContext.installTabFab() {
         invoke-static {v3}, Landroidx/compose/material3/FloatingActionButtonDefaults;->elevation-xZ9-QkE(I)Landroidx/compose/material3/FloatingActionButtonElevation;
         move-result-object v3
         sget-object v0, Landroidx/compose/ui/Modifier$Companion;->$$INSTANCE:Landroidx/compose/ui/Modifier$Companion;
+        const/high16 v8, 0x42200000
+        invoke-static {v0, v8}, Landroidx/compose/foundation/layout/SizeKt;->width-3ABfNKs(Landroidx/compose/ui/Modifier;F)Landroidx/compose/ui/Modifier;
+        move-result-object v0
+        invoke-static {v0, v8}, Landroidx/compose/foundation/layout/SizeKt;->height-3ABfNKs(Landroidx/compose/ui/Modifier;F)Landroidx/compose/ui/Modifier;
+        move-result-object v0
         move-object v4, p0
         move-object v5, p1
         const/16 v6, 0x36

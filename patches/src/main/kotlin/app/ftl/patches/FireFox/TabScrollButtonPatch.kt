@@ -113,6 +113,11 @@ private fun BytecodePatchContext.installScrollFab() {
         invoke-static {v3}, Landroidx/compose/material3/FloatingActionButtonDefaults;->elevation-xZ9-QkE(I)Landroidx/compose/material3/FloatingActionButtonElevation;
         move-result-object v3
         sget-object v0, Landroidx/compose/ui/Modifier$Companion;->$$INSTANCE:Landroidx/compose/ui/Modifier$Companion;
+        const/high16 v8, 0x42200000
+        invoke-static {v0, v8}, Landroidx/compose/foundation/layout/SizeKt;->width-3ABfNKs(Landroidx/compose/ui/Modifier;F)Landroidx/compose/ui/Modifier;
+        move-result-object v0
+        invoke-static {v0, v8}, Landroidx/compose/foundation/layout/SizeKt;->height-3ABfNKs(Landroidx/compose/ui/Modifier;F)Landroidx/compose/ui/Modifier;
+        move-result-object v0
         move-object v4, p0
         move-object v5, p1
         const/16 v6, 0x36
@@ -173,7 +178,7 @@ private fun BytecodePatchContext.insertScrollButton() {
         const v4, 0x5a11b0c6
         invoke-static {v2, v12, v3, v4}, $$${SB_TAB_FAB}->scrollFab(Lkotlin/jvm/functions/Function0;Landroidx/compose/runtime/Composer;II)V
         sget-object v2, Landroidx/compose/ui/Modifier$Companion;->$$INSTANCE:Landroidx/compose/ui/Modifier$Companion;
-        const/high16 v3, 0x41800000
+        const/high16 v3, 0x41000000
         invoke-static {v2, v3}, Landroidx/compose/foundation/layout/SizeKt;->width-3ABfNKs(Landroidx/compose/ui/Modifier;F)Landroidx/compose/ui/Modifier;
         move-result-object v2
         invoke-static {v12, v2}, Landroidx/compose/foundation/layout/SpacerKt;->Spacer(Landroidx/compose/runtime/Composer;Landroidx/compose/ui/Modifier;)V
@@ -184,7 +189,7 @@ private fun BytecodePatchContext.insertScrollButton() {
         const v4, 0x5a11b0c7
         invoke-static {v2, v12, v3, v4}, $$${SB_TAB_FAB}->scrollFab(Lkotlin/jvm/functions/Function0;Landroidx/compose/runtime/Composer;II)V
         sget-object v2, Landroidx/compose/ui/Modifier$Companion;->$$INSTANCE:Landroidx/compose/ui/Modifier$Companion;
-        const/high16 v3, 0x41800000
+        const/high16 v3, 0x41000000
         invoke-static {v2, v3}, Landroidx/compose/foundation/layout/SizeKt;->width-3ABfNKs(Landroidx/compose/ui/Modifier;F)Landroidx/compose/ui/Modifier;
         move-result-object v2
         invoke-static {v12, v2}, Landroidx/compose/foundation/layout/SpacerKt;->Spacer(Landroidx/compose/runtime/Composer;Landroidx/compose/ui/Modifier;)V
