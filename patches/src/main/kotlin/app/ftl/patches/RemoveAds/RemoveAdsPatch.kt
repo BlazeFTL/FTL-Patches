@@ -62,7 +62,6 @@ private val SHOW_METHOD_NAMES = setOf(
 private val AD_METHOD_NAMES = ASYNC_LOAD_METHOD_NAMES + SHOW_METHOD_NAMES
 
 private val AD_URL_BLACKLIST = listOf(
-    "ca-app-pub-",
     "doubleclick.net",
     "googleadservices.com",
     "googlesyndication.com",
@@ -83,6 +82,15 @@ private val AD_URL_BLACKLIST = listOf(
     "pubmatic.com",
     "criteo.com",
 )
+
+// Only concrete AdMob app/unit ids. A bare "ca-app-pub-" literal (or its validation regex) is
+// SDK code, often R8-repackaged outside the SDK packages; poisoning it breaks the SDK's own
+// app-id check and crashes MobileAdsInitProvider at launch. The all-zero placeholder id only
+// appears in SDK error messages, so it is left alone too.
+private val AD_UNIT_ID = Regex("ca-app-pub-(?!0{16}[~/]0{10})\\d{16}[~/]\\d{10}")
+
+private fun isAdString(value: String) =
+    AD_URL_BLACKLIST.any { value.contains(it, ignoreCase = true) } || AD_UNIT_ID.containsMatchIn(value)
 
 private fun isAdOwner(owner: String) = AD_SDK_PACKAGE_PREFIXES.any { owner.startsWith(it) }
 
@@ -147,7 +155,7 @@ val universalRemoveAdsPatch = bytecodePatch(
 
                     if (!isAdSdkClass && !needsStringPoison && instruction.opcode == Opcode.CONST_STRING) {
                         val value = (instruction.reference as StringReference).string
-                        if (AD_URL_BLACKLIST.any { value.contains(it, ignoreCase = true) }) {
+                        if (isAdString(value)) {
                             needsStringPoison = true
                         }
                     }
@@ -243,7 +251,7 @@ val universalRemoveAdsPatch = bytecodePatch(
                     (method.instructionsOrNull ?: emptyList()).forEachIndexed { index, instruction ->
                         if (instruction.opcode != Opcode.CONST_STRING) return@forEachIndexed
                         val value = ((instruction as ReferenceInstruction).reference as StringReference).string
-                        if (AD_URL_BLACKLIST.none { value.contains(it, ignoreCase = true) }) return@forEachIndexed
+                        if (!isAdString(value)) return@forEachIndexed
                         val register = (instruction as OneRegisterInstruction).registerA
                         method.replaceInstruction(index, "const-string v$register, \"${randomAdString()}\"")
                     }
