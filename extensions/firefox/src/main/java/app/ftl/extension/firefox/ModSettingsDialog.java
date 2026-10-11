@@ -103,6 +103,7 @@ final class ModSettingsDialog {
         root.addView(scrollRow());
         root.addView(tabNextRow(), margins(0, 10, 0, 0));
         root.addView(tabEndRow(), margins(0, 10, 0, 0));
+        root.addView(closeDuplicatesRow(), margins(0, 10, 0, 0));
 
         hint = new TextView(activity);
         hint.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
@@ -272,6 +273,21 @@ final class ModSettingsDialog {
                 public void onCheckedChanged(CompoundButton button, boolean checked) {
                     ModSettings.saveScroll(app, checked);
                     hint.setText(checked ? "Scroll position memory enabled" : "Scroll position memory disabled");
+                    hint.setTextColor(accent);
+                }
+            });
+    }
+
+    private View closeDuplicatesRow() {
+        return switchRow(
+            "Close duplicate tabs",
+            "Add a Close duplicate tabs option to the tab tray 3 dot menu",
+            ModSettings.isCloseDuplicatesSaved(app),
+            new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton button, boolean checked) {
+                    ModSettings.saveCloseDuplicates(app, checked);
+                    hint.setText(checked ? "Close duplicate tabs on" : "Close duplicate tabs off");
                     hint.setTextColor(accent);
                 }
             });
