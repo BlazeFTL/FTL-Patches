@@ -688,7 +688,7 @@ private fun BytecodePatchContext.installMenuTweaks() {
 
 @Suppress("unused")
 val oldMenuPatch = bytecodePatch(
-    name = "Old style 3 dot menu",
+    name = "Old style 3 dot menu And Extension Pinning",
     description = "Adds \"Mod Settings\" to the 3 dot menu: switch between the stock bottom sheet " +
         "menu and the old style popup menu, and pin extensions to the search bar.",
     default = true,
