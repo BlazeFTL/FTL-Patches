@@ -23,7 +23,7 @@ val tabIconsPatch = resourcePatch {
         mapOf(
             "ftl_ic_scroll_up" to "M12,19L12,5M6,11L12,5L18,11",
             "ftl_ic_scroll_down" to "M12,5L12,19M6,13L12,19L18,13",
-            "ftl_ic_tab_add_end" to "M12,2.5L12,10.5M8,6.5L16,6.5M12,14L12,21.5M8.5,18L12,21.5L15.5,18",
+            "ftl_ic_tab_add_end" to "M12,4L12,12M8,8L16,8M8,16L12,20L16,16",
         ).forEach { (name, path) ->
             get("res/drawable/$name.xml", copy = false).apply {
                 parentFile?.mkdirs()
