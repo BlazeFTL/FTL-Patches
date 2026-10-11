@@ -20,11 +20,17 @@ public final class ModSettings {
     private static final boolean DEFAULT_PIN = true;
     private static final String KEY_SCROLL = "scroll_memory";
     private static final boolean DEFAULT_SCROLL = true;
+    private static final String KEY_TAB_NEXT = "tab_next_to_current";
+    private static final boolean DEFAULT_TAB_NEXT = true;
+    private static final String KEY_TAB_END = "tab_end_button";
+    private static final boolean DEFAULT_TAB_END = true;
 
     private static volatile int latched;
     private static volatile int pinLatched;
     private static volatile int scrollLatched;
     private static volatile boolean fallbackFailed;
+    private static volatile Boolean tabNextCache;
+    private static volatile Boolean tabEndCache;
 
     private ModSettings() {
     }
@@ -73,6 +79,56 @@ public final class ModSettings {
             }
         }
         return scrollLatched == 0 ? DEFAULT_SCROLL : scrollLatched == 2;
+    }
+
+    public static boolean tabNext() {
+        Boolean value = tabNextCache;
+        if (value == null) {
+            try {
+                Application app = currentApplication();
+                if (app != null) {
+                    value = isTabNextSaved(app);
+                    tabNextCache = value;
+                }
+            } catch (Throwable t) {
+                Log.e(TAG, "tab next state failed", t);
+            }
+        }
+        return value != null ? value : DEFAULT_TAB_NEXT;
+    }
+
+    public static boolean tabEnd() {
+        Boolean value = tabEndCache;
+        if (value == null) {
+            try {
+                Application app = currentApplication();
+                if (app != null) {
+                    value = isTabEndSaved(app);
+                    tabEndCache = value;
+                }
+            } catch (Throwable t) {
+                Log.e(TAG, "tab end state failed", t);
+            }
+        }
+        return value != null ? value : DEFAULT_TAB_END;
+    }
+
+    static boolean isTabNextSaved(Context context) {
+        return prefs(context).getBoolean(KEY_TAB_NEXT, DEFAULT_TAB_NEXT);
+    }
+
+    static void saveTabNext(Context context, boolean enabled) {
+        prefs(context).edit().putBoolean(KEY_TAB_NEXT, enabled).apply();
+        tabNextCache = enabled;
+    }
+
+    static boolean isTabEndSaved(Context context) {
+        return prefs(context).getBoolean(KEY_TAB_END, DEFAULT_TAB_END);
+    }
+
+    static void saveTabEnd(Context context, boolean enabled) {
+        prefs(context).edit().putBoolean(KEY_TAB_END, enabled).apply();
+        tabEndCache = enabled;
     }
 
     static boolean isScrollSaved(Context context) {

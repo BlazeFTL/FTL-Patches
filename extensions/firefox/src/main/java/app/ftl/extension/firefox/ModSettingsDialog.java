@@ -101,6 +101,8 @@ final class ModSettingsDialog {
 
         root.addView(label("TABS"), margins(0, 20, 0, 8));
         root.addView(scrollRow());
+        root.addView(tabNextRow(), margins(0, 10, 0, 0));
+        root.addView(tabEndRow(), margins(0, 10, 0, 0));
 
         hint = new TextView(activity);
         hint.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
@@ -270,6 +272,37 @@ final class ModSettingsDialog {
                 public void onCheckedChanged(CompoundButton button, boolean checked) {
                     ModSettings.saveScroll(app, checked);
                     hint.setText(checked ? "Scroll position memory enabled" : "Scroll position memory disabled");
+                    hint.setTextColor(accent);
+                }
+            });
+    }
+
+    private View tabNextRow() {
+        return switchRow(
+            "New tab next to current tab",
+            "Open new tabs right after the current tab instead of at the end",
+            ModSettings.isTabNextSaved(app),
+            new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton button, boolean checked) {
+                    ModSettings.saveTabNext(app, checked);
+                    hint.setText(checked ? "New tabs open next to current tab" : "New tabs open at the end");
+                    hint.setTextColor(accent);
+                }
+            });
+    }
+
+    private View tabEndRow() {
+        return switchRow(
+            "Add-to-end button",
+            "Show a > button beside + that opens a new tab at the end. Needs the option above",
+            ModSettings.isTabEndSaved(app),
+            new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton button, boolean checked) {
+                    ModSettings.saveTabEnd(app, checked);
+                    hint.setText(checked ? "Add-to-end button on. Reopen the tab tray"
+                        : "Add-to-end button off. Reopen the tab tray");
                     hint.setTextColor(accent);
                 }
             });
