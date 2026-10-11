@@ -1,6 +1,6 @@
 # 👋🧩 FTL Patches
 
-Personal collection of my Morphe Patches.
+Personal collection of my Morphe Patches
 
 ## ❓ About
 
@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.2](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.2)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;72 patches total
+> **[v1.43.3-dev.1](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.3-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;90 patches total
 <details>
 <summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
 <br>
@@ -48,7 +48,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Configure Smart Enhance](#configure-smart-enhance) | Removes the Smart Enhance disable toast and adds Mod Settings switches for the intro popup and the enable toast. |  |
 | [Configure SpeedUp overlay](#configure-speedup-overlay) | Fixes the stock leftover-visible-view bug in the long-press SpeedUp overlay. "No UI" is toggled in Me tab > Mod Settings. |  |
 | [Disable Bottom Bar And Add Me Tab To Top](#disable-bottom-bar-and-add-me-tab-to-top) | Adds a permanent Me tab button to the toolbar. Hiding the bottom bar itself is toggled live in Me tab > Mod Settings, not here - the Me tab button always stays wired, on purpose, since Mod Settings lives behind it and turning it off should never be able to lock you out of turning it back on. |  |
-| [Disable signature verification](#disable-signature-verification) | Patches libc++_shared.so (arm64-v8a and armeabi-v7a) to branch-to-self at the signature check call site, hanging that code path instead of letting it fail the app. |  |
+| [Kill Signature Verification](#kill-signature-verification) | Patches libmx-bh.so to kill signature verification. |  |
 | [Remove Recycle Bin](#remove-recycle-bin) | Deleted files are always removed permanently, whenever this patch is applied - there's no safe way to make that half a runtime switch without the stock (unpatched) delete-dialog code to fall back to. The Me tab tile itself is a Mod Settings switch: off just brings the tile back, it doesn't restore recycling. |  |
 | [Replace FFmpeg codec](#replace-ffmpeg-codec) | Replaces libffmpeg.mx.so in every lib/<abi>/ folder present in the APK with the matching file from a selected codec zip (EAC3 support). neon64 -> arm64-v8a, neon -> armeabi-v7a, x86 -> x86, x86_64 -> x86_64. ABI folders missing from the APK or from the zip are skipped. | • FFmpeg codec zip |
 | [Sidebar & Player Defaults](#sidebar-player-defaults) | Cleans the player sidebar and More menu; sets default shortcuts and subtitle view. Configurable in Mod Settings, except the default shortcuts bitmask, still a Morphe option pending its Mod Settings move. | • Change default shortcuts<br>• Default shortcuts bitmask (hex) |
@@ -71,6 +71,35 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Change Cleaner & Media Tab Defaults](#change-cleaner-media-tab-defaults) | Changes first-run defaults: hides the Image, Video, Audio and Cleaner tabs, and shows hidden files by default. Only affects users who have never changed the setting themselves - the preference override still takes priority. |  |
 | [Disable Rate Us Dialog](#disable-rate-us-dialog) | Prevents the in-app rate-us dialog from ever being shown. |  |
 | [Unlock Pro & Skip Splash Screen](#unlock-pro-skip-splash-screen) | Forces the ad-removed/Pro check to always return true, and renames the launcher activity from SplashActivity to MainActivity so the splash screen is skipped. |  |
+
+</details>
+
+<details>
+<summary>📦 XPlayer - Video Player&nbsp;&nbsp;•&nbsp;&nbsp;15 patches</summary>
+<br>
+
+**🎯 Supported versions:**
+
+| 2.9.2 |
+| :---: |
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Clean 3 Dot Menu](#clean-3-dot-menu) | Removes Lock and Add to playlist from the video and folder 3-dot bottom sheets. Toggle in Mod Settings. |  |
+| [Disable Rate Dialog](#disable-rate-dialog) | Disables the rate dialog counters so it never appears. |  |
+| [Extra File Info](#extra-file-info) | Shows resolution, date, size and last played on video rows, and video count, size and path on folder rows. Toggle in Mod Settings. |  |
+| [Hide Bottom Bar](#hide-bottom-bar) | Hides the bottom tab bar on the home screen. Toggle in Mod Settings. |  |
+| [Hide Cast Button](#hide-cast-button) | Hides the cast button in the toolbar menus. Toggle it in Mod Settings. |  |
+| [Hide Cast FF FB In Player](#hide-cast-ff-fb-in-player) | Hides the cast, custom and 10 second forward/backward buttons in the player. Toggle in Mod Settings. |  |
+| [Hide Home Tiles](#hide-home-tiles) | Hides the tile row at the top of the home page (All Videos, Downloader, Privacy, Cleaner...). Toggle in Mod Settings. |  |
+| [Hide Recent Videos](#hide-recent-videos) | Hides the recent videos row on the home page. Toggle in Mod Settings. |  |
+| [Hide Widgets Menu Item](#hide-widgets-menu-item) | Removes Widgets from the home 3-dot menu. |  |
+| [Mod Settings](#mod-settings) | Adds a Mod Settings entry below Settings in the home 3-dot menu. |  |
+| [Player Side Cleaned](#player-side-cleaned) | Cleans the player side menu: audio, subtitle, cast, bookmark, favorite, play mode, brightness and volume. Applied while the menu inflates so remaining items stay aligned. Toggle in Mod Settings. |  |
+| [Remove Tutorial](#remove-tutorial) | Removes the player tutorial. |  |
+| [Skip Splash Screen](#skip-splash-screen) | Launches directly into the file explorer instead of the splash screen. |  |
+| [Unlock Pro](#unlock-pro) | Unlocks all pro features. |  |
+| [Volume Booster](#volume-booster) | Raises the volume boost limit in the player and background playback. Toggle in Mod Settings. |  |
 
 </details>
 
@@ -149,7 +178,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Popup blocker](#popup-blocker) | Blocks popups and popunder redirects with Allow / Block / Always Block prompts. Adds "Manage popup rules" as the last item of the 3-dot menu. |  |
 | [Remove from default browser list](#remove-from-default-browser-list) | Removes http/https <data> entries from MainTabsActivity's so the app stops appearing as a candidate in the system's default browser / "open with" chooser. |  |
 | [Skip splash screen](#skip-splash-screen) | Skips splash screen so the app opens directly to the main screen. |  |
-| [Unlock Pro](#unlock-pro) | Only Use In V2.7.2. Signature verification is spoofed automatically so the purchase check passes without manually applying Spoof app signature. |  |
+| [Unlock Pro](#unlock-pro) | Signature verification is spoofed automatically if this patch is selected the purchase check passes. |  |
 | [Use Your Own Host File For Stronger AdBlock](#use-your-own-host-file-for-stronger-adblock) | Replaces res/raw/hosts.txt with a text/host file you select. | • Host file |
 
 </details>
@@ -179,6 +208,22 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Hide Settings Page UseLess Buttons](#hide-settings-page-useless-buttons) | Collapses the WhatsApp, Legal, and Help entries on the Me tab. | • Hide WhatsApp<br>• Hide Legal<br>• Hide Help |
 | [Hide top tiles](#hide-top-tiles) | Hides the top tiles that appears in top of video folders in homescreen |  |
 | [Skip Splash Screen](#skip-splash-screen) | Skips Splash Screen so the app boots straight past the splash and update screen. |  |
+
+</details>
+
+<details>
+<summary>📦 Video Player&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
+<br>
+
+**🎯 Supported versions:**
+
+| 1.4 |
+| :---: |
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Hide bottom bar](#hide-bottom-bar) | Hides the bottom navigation bar. |  |
+| [Skip splash screen](#skip-splash-screen) | Launches the app directly into the main screen. |  |
 
 </details>
 
@@ -266,6 +311,21 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
 | [Unlock Pro](#unlock-pro) | Forces the purchase check to always return true, unlocking Pro. |  |
+
+</details>
+
+<details>
+<summary>📦 Video to Photo&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<br>
+
+**🎯 Supported versions:**
+
+| 5.0.1 |
+| :---: |
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Unlock Pro](#unlock-pro) | Unlocks Pro features. |  |
 
 </details>
 
