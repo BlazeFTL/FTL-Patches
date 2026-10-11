@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.3-dev.1](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.3-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;90 patches total
+> **[v1.43.3-dev.2](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.3-dev.2)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;94 patches total
 <details>
 <summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
 <br>
@@ -85,13 +85,13 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
-| [Clean 3 Dot Menu](#clean-3-dot-menu) | Removes Lock and Add to playlist from the video and folder 3-dot bottom sheets. Toggle in Mod Settings. |  |
+| [Clean 3 Dot Menu](#clean-3-dot-menu) | Removes Lock and Add to playlist from the video and folder 3-dot bottom sheets and from the selection toolbar menus. Toggle in Mod Settings. |  |
 | [Disable Rate Dialog](#disable-rate-dialog) | Disables the rate dialog counters so it never appears. |  |
-| [Extra File Info](#extra-file-info) | Shows resolution, date, size and last played on video rows, and video count, size and path on folder rows. Toggle in Mod Settings. |  |
+| [Extra File Info](#extra-file-info) | Shows resolution, date, size and last played on video rows, and video count, size and path on folder rows. Fixes the gap above Recent Added and adds a Mod Settings option to hide the Recent Added and Directory rows. Toggles in Mod Settings. |  |
 | [Hide Bottom Bar](#hide-bottom-bar) | Hides the bottom tab bar on the home screen. Toggle in Mod Settings. |  |
 | [Hide Cast Button](#hide-cast-button) | Hides the cast button in the toolbar menus. Toggle it in Mod Settings. |  |
 | [Hide Cast FF FB In Player](#hide-cast-ff-fb-in-player) | Hides the cast, custom and 10 second forward/backward buttons in the player. Toggle in Mod Settings. |  |
-| [Hide Home Tiles](#hide-home-tiles) | Hides the tile row at the top of the home page (All Videos, Downloader, Privacy, Cleaner...). Toggle in Mod Settings. |  |
+| [Hide Home Tiles](#hide-home-tiles) | Hides the tile row at the top of the home page (All Videos, Downloader, Privacy, Cleaner...) and the Move to Trash option in the delete dialog. Toggle in Mod Settings. |  |
 | [Hide Recent Videos](#hide-recent-videos) | Hides the recent videos row on the home page. Toggle in Mod Settings. |  |
 | [Hide Widgets Menu Item](#hide-widgets-menu-item) | Removes Widgets from the home 3-dot menu. |  |
 | [Mod Settings](#mod-settings) | Adds a Mod Settings entry below Settings in the home 3-dot menu. |  |
@@ -155,6 +155,25 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Hide more actions](#hide-more-actions) | Hides Hide, Add to desktop, Encrypt, Decrypt, Add bookmark, Web Search, Copy to, Move to, Transfer, and Playing from the "More actions" menu. |  |
 | [Hide network, tools and bookmarks on home page](#hide-network-tools-and-bookmarks-on-home-page) | Hides the Network, Tools and Bookmarks sections from the home page section list. |  |
 | [Skip splash screen](#skip-splash-screen) | Skips Splash Screen From 2nd App Opening |  |
+
+</details>
+
+<details>
+<summary>📦 Firefox Nightly&nbsp;&nbsp;•&nbsp;&nbsp;5 patches</summary>
+<br>
+
+**🎯 Supported versions:**
+
+| 159.0a1 | 160.0a1 |
+| :---: | :---: |
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Close duplicate tabs](#close-duplicate-tabs) | Adds Close duplicate tabs to the tab tray 3 dot menu. Toggle in Mod Settings. |  |
+| [Hide fullscreen toast](#hide-fullscreen-toast) | Removes the toast shown when a video goes fullscreen. Toggle in Mod Settings. |  |
+| [New tab next to current tab](#new-tab-next-to-current-tab) | Opens new tabs right after the current tab and adds a > button beside + that opens a tab at the end. Both are toggles in Mod Settings. |  |
+| [Old style 3 dot menu And Extension Pinning](#old-style-3-dot-menu-and-extension-pinning) | Adds "Mod Settings" to the 3 dot menu: switch between the stock bottom sheet menu and the old style popup menu, and pin extensions to the search bar. |  |
+| [Remember tab scroll position](#remember-tab-scroll-position) | Keeps the tab tray scroll position when it is closed and reopened. |  |
 
 </details>
 
@@ -238,22 +257,6 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 </details>
 
 <details>
-<summary>📦 Firefox Nightly&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
-<br>
-
-**🎯 Supported versions:**
-
-| 159.0a1 |
-| :---: |
-
-| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
-|----------|----------------|-----------|
-| [Old style 3 dot menu](#old-style-3-dot-menu) | Adds "Mod Settings" to the 3 dot menu: switch between the stock bottom sheet menu and the old style popup menu, and pin extensions to the search bar. |  |
-| [Remember tab scroll position](#remember-tab-scroll-position) | Keeps the tab tray scroll position when it is closed and reopened. |  |
-
-</details>
-
-<details>
 <summary>📦 WPSApp Pro&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
 
@@ -265,6 +268,22 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
 | [Remove License Verification](#remove-license-verification) | Spoofs every PackageManager.getInstallerPackageName() check to report "com.android.vending", so Pro features unlock regardless of install source. |  |
+
+</details>
+
+<details>
+<summary>📦 Video To Photo&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
+<br>
+
+**🎯 Supported versions:**
+
+| 5.0.2 |
+| :---: |
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Skip splash delay](#skip-splash-delay) | Shortens the splash screen waits. |  |
+| [Unlock Pro and skip onboarding](#unlock-pro-and-skip-onboarding) | Unlocks Pro features and skips the onboarding screens. |  |
 
 </details>
 
@@ -311,21 +330,6 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
 | [Unlock Pro](#unlock-pro) | Forces the purchase check to always return true, unlocking Pro. |  |
-
-</details>
-
-<details>
-<summary>📦 Video to Photo&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
-<br>
-
-**🎯 Supported versions:**
-
-| 5.0.1 |
-| :---: |
-
-| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
-|----------|----------------|-----------|
-| [Unlock Pro](#unlock-pro) | Unlocks Pro features. |  |
 
 </details>
 
