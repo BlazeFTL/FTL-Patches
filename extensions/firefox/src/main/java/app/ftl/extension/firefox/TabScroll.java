@@ -45,29 +45,27 @@ public final class TabScroll {
         return ModSettings.tabScroll();
     }
 
-    public static TabScrollClick click() {
-        return TabScrollClick.INSTANCE;
+    public static TabScrollClick up() {
+        return TabScrollClick.UP;
     }
 
-    public static int iconRes() {
-        boolean up = false;
-        try {
-            Object state = current();
-            up = state != null && canScrollBackward(state);
-        } catch (Throwable ignored) {
-        }
-        return resolveIcon(up);
+    public static TabScrollClick down() {
+        return TabScrollClick.DOWN;
     }
 
-    static void toggle() {
+    public static int upIcon() {
+        return resolveIcon(true);
+    }
+
+    public static int downIcon() {
+        return resolveIcon(false);
+    }
+
+    static void go(boolean down) {
         try {
             Object state = current();
             if (state == null) return;
-            if (canScrollBackward(state)) {
-                scrollTo(state, 0);
-            } else {
-                scrollTo(state, Math.max(0, total(state) - 1));
-            }
+            scrollTo(state, down ? Math.max(0, total(state) - 1) : 0);
         } catch (Throwable t) {
             Log.e(TAG, "tab scroll failed", t);
         }
@@ -112,16 +110,6 @@ public final class TabScroll {
     private static int total(Object state) throws Exception {
         Object info = call(state, "getLayoutInfo");
         return ((Number) call(info, "getTotalItemsCount")).intValue();
-    }
-
-    private static boolean canScrollBackward(Object state) throws Exception {
-        try {
-            return Boolean.TRUE.equals(call(state, "getCanScrollBackward"));
-        } catch (NoSuchMethodException e) {
-            int index = ((Number) call(state, "getFirstVisibleItemIndex")).intValue();
-            int offset = ((Number) call(state, "getFirstVisibleItemScrollOffset")).intValue();
-            return index > 0 || offset > 0;
-        }
     }
 
     private static void scrollTo(Object state, int index) throws Exception {

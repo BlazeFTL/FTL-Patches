@@ -249,7 +249,8 @@ private fun BytecodePatchContext.installTabFab() {
         sget v0, Lorg/mozilla/fenix/R$string;->add_tab:I
         invoke-static {v0, p1}, Landroidx/compose/ui/res/StringResources_androidKt;->stringResource(ILandroidx/compose/runtime/Composer;)Ljava/lang/String;
         move-result-object v0
-        sget v1, Lmozilla/components/ui/icons/R$drawable;->mozac_ic_forward_24:I
+        invoke-static {}, $$${TAB_FAB}->endIcon()I
+        move-result v1
         new-instance v2, $$${contentLambda}
         invoke-direct {v2, v1, v0, v6}, $$${contentLambda}-><init>(ILjava/lang/String;Lkotlin/jvm/internal/Ref$ObjectRef;)V
         const v0, 0x5a11b0c3
@@ -309,11 +310,13 @@ private fun BytecodePatchContext.installTabFab() {
 @Suppress("unused")
 val tabNextToCurrentPatch = bytecodePatch(
     name = "New tab next to current tab",
-    description = "Opens new tabs right after the current tab and adds a > button beside + that opens " +
-        "a tab at the end. Both are toggles in Mod Settings.",
+    description = "Opens new tabs right after the current tab and adds an add-to-end button (+ with a " +
+        "down arrow) beside + that opens a tab at the end. Both are toggles in Mod Settings.",
     default = true,
 ) {
     compatibleWith(COMPATIBILITY_FIREFOX_TABS)
+
+    dependsOn(tabIconsPatch)
 
     extendWith("extensions/firefox.mpe")
 

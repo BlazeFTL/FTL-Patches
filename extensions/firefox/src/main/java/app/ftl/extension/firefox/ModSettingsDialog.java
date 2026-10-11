@@ -284,15 +284,15 @@ final class ModSettingsDialog {
 
     private View tabScrollRow() {
         return switchRow(
-            "Scroll button",
-            "Show a button beside + that jumps to the first tab, then to the last tab",
+            "Scroll buttons",
+            "Show up and down buttons beside + that jump to the first and last tab",
             ModSettings.isTabScrollSaved(app),
             new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton button, boolean checked) {
                     ModSettings.saveTabScroll(app, checked);
-                    hint.setText(checked ? "Scroll button on. Reopen the tab tray"
-                        : "Scroll button off. Reopen the tab tray");
+                    hint.setText(checked ? "Scroll buttons on. Reopen the tab tray"
+                        : "Scroll buttons off. Reopen the tab tray");
                     hint.setTextColor(accent);
                 }
             });
@@ -346,7 +346,7 @@ final class ModSettingsDialog {
     private View tabEndRow() {
         return switchRow(
             "Add-to-end button",
-            "Show a > button beside + that opens a new tab at the end. Needs the option above",
+            "Show a + with down arrow button beside + that opens a new tab at the end. Needs the option above",
             ModSettings.isTabEndSaved(app),
             new CompoundButton.OnCheckedChangeListener() {
                 @Override

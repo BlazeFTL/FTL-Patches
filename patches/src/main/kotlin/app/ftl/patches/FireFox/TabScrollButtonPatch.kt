@@ -9,7 +9,6 @@ import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
-import app.morphe.patcher.patch.resourcePatch
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
@@ -44,39 +43,6 @@ private const val SB_TOOLBAR_LAMBDA =
     "Lorg/mozilla/fenix/tabstray/ui/fab/TabManagerFloatingToolbarKt\$\$ExternalSyntheticLambda"
 private const val SB_TABS_TRAY_STATE = "Lorg/mozilla/fenix/tabstray/redux/state/TabsTrayState;"
 private const val SB_TABS_PAGE = "Lorg/mozilla/fenix/tabstray/redux/state/Page;"
-
-private const val SCROLL_UP_ICON = "ftl_ic_scroll_up"
-private const val SCROLL_DOWN_ICON = "ftl_ic_scroll_down"
-
-private fun scrollIconXml(path: String) = """<?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24">
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FF000000"
-        android:strokeWidth="2"
-        android:strokeLineJoin="round"
-        android:strokeLineCap="round"
-        android:pathData="$path" />
-</vector>
-"""
-
-val tabScrollIconPatch = resourcePatch {
-    execute {
-        mapOf(
-            SCROLL_UP_ICON to "M12,19L12,5M6,11L12,5L18,11",
-            SCROLL_DOWN_ICON to "M12,5L12,19M6,13L12,19L18,13",
-        ).forEach { (name, path) ->
-            get("res/drawable/$name.xml", copy = false).apply {
-                parentFile?.mkdirs()
-                writeText(scrollIconXml(path))
-            }
-        }
-    }
-}
 
 private object TabScrollEntryFingerprint : Fingerprint(
     definingClass = SB_TAB_LAYOUT_KT,
@@ -132,7 +98,7 @@ private fun BytecodePatchContext.installScrollFab() {
         move/from16 v1, p2
         new-instance v2, $$${contentLambda}
         invoke-direct {v2, v1, v0, v6}, $$${contentLambda}-><init>(ILjava/lang/String;Lkotlin/jvm/internal/Ref$ObjectRef;)V
-        const v0, 0x5a11b0c6
+        move/from16 v0, p3
         invoke-static {v0, v2, p1}, Landroidx/compose/runtime/internal/ComposableLambdaKt;->rememberComposableLambda(ILkotlin/Function;Landroidx/compose/runtime/Composer;)Landroidx/compose/runtime/internal/ComposableLambdaImpl;
         move-result-object v1
         sget-object v2, Landroidx/compose/material3/ColorSchemeKt;->LocalColorScheme:Landroidx/compose/runtime/StaticProvidableCompositionLocal;
@@ -160,12 +126,12 @@ private fun BytecodePatchContext.installScrollFab() {
     val method = ImmutableMethod(
         SB_TAB_FAB,
         "scrollFab",
-        listOf(SB_FUNCTION0, SB_COMPOSER, "I").map { ImmutableMethodParameter(it, null, null) },
+        listOf(SB_FUNCTION0, SB_COMPOSER, "I", "I").map { ImmutableMethodParameter(it, null, null) },
         "V",
         AccessFlags.PUBLIC.value or AccessFlags.STATIC.value,
         null,
         null,
-        MutableMethodImplementation(17),
+        MutableMethodImplementation(18),
     ).toMutable()
     method.addInstructionsWithLabels(0, smali.trimIndent())
     holder.methods.add(method)
@@ -200,11 +166,23 @@ private fun BytecodePatchContext.insertScrollButton() {
         if-eqz v0, :ftl_s_skip
         const v2, 0x5a11b0c4
         invoke-interface {v12, v2}, Landroidx/compose/runtime/Composer;->startReplaceGroup(I)V
-        invoke-static {}, $$${SB_TAB_SCROLL}->click()$$${SB_TAB_SCROLL_CLICK}
+        invoke-static {}, $$${SB_TAB_SCROLL}->up()$$${SB_TAB_SCROLL_CLICK}
         move-result-object v2
-        invoke-static {}, $$${SB_TAB_SCROLL}->iconRes()I
+        invoke-static {}, $$${SB_TAB_SCROLL}->upIcon()I
         move-result v3
-        invoke-static {v2, v12, v3}, $$${SB_TAB_FAB}->scrollFab(Lkotlin/jvm/functions/Function0;Landroidx/compose/runtime/Composer;I)V
+        const v4, 0x5a11b0c6
+        invoke-static {v2, v12, v3, v4}, $$${SB_TAB_FAB}->scrollFab(Lkotlin/jvm/functions/Function0;Landroidx/compose/runtime/Composer;II)V
+        sget-object v2, Landroidx/compose/ui/Modifier$Companion;->$$INSTANCE:Landroidx/compose/ui/Modifier$Companion;
+        const/high16 v3, 0x41800000
+        invoke-static {v2, v3}, Landroidx/compose/foundation/layout/SizeKt;->width-3ABfNKs(Landroidx/compose/ui/Modifier;F)Landroidx/compose/ui/Modifier;
+        move-result-object v2
+        invoke-static {v12, v2}, Landroidx/compose/foundation/layout/SpacerKt;->Spacer(Landroidx/compose/runtime/Composer;Landroidx/compose/ui/Modifier;)V
+        invoke-static {}, $$${SB_TAB_SCROLL}->down()$$${SB_TAB_SCROLL_CLICK}
+        move-result-object v2
+        invoke-static {}, $$${SB_TAB_SCROLL}->downIcon()I
+        move-result v3
+        const v4, 0x5a11b0c7
+        invoke-static {v2, v12, v3, v4}, $$${SB_TAB_FAB}->scrollFab(Lkotlin/jvm/functions/Function0;Landroidx/compose/runtime/Composer;II)V
         sget-object v2, Landroidx/compose/ui/Modifier$Companion;->$$INSTANCE:Landroidx/compose/ui/Modifier$Companion;
         const/high16 v3, 0x41800000
         invoke-static {v2, v3}, Landroidx/compose/foundation/layout/SizeKt;->width-3ABfNKs(Landroidx/compose/ui/Modifier;F)Landroidx/compose/ui/Modifier;
@@ -226,13 +204,13 @@ private fun BytecodePatchContext.insertScrollButton() {
 @Suppress("unused")
 val tabScrollButtonPatch = bytecodePatch(
     name = "Tab scroll button",
-    description = "Adds a button beside + in the tab tray that jumps to the first tab, then to the last tab. " +
+    description = "Adds up and down buttons beside + in the tab tray that jump to the first and last tab. " +
         "Toggle in Mod Settings.",
     default = true,
 ) {
     compatibleWith(COMPATIBILITY_FIREFOX_SCROLL_BUTTON)
 
-    dependsOn(tabNextToCurrentPatch, tabScrollIconPatch)
+    dependsOn(tabNextToCurrentPatch)
 
     extendWith("extensions/firefox.mpe")
 
