@@ -26,6 +26,8 @@ public final class ModSettings {
     private static final boolean DEFAULT_TAB_END = true;
     private static final String KEY_CLOSE_DUPLICATES = "close_duplicates";
     private static final boolean DEFAULT_CLOSE_DUPLICATES = true;
+    private static final String KEY_HIDE_FULLSCREEN_TOAST = "hide_fullscreen_toast";
+    private static final boolean DEFAULT_HIDE_FULLSCREEN_TOAST = true;
 
     private static volatile int latched;
     private static volatile int pinLatched;
@@ -34,6 +36,7 @@ public final class ModSettings {
     private static volatile Boolean tabNextCache;
     private static volatile Boolean tabEndCache;
     private static volatile Boolean closeDuplicatesCache;
+    private static volatile Boolean hideFullscreenToastCache;
 
     private ModSettings() {
     }
@@ -114,6 +117,31 @@ public final class ModSettings {
             }
         }
         return value != null ? value : DEFAULT_TAB_END;
+    }
+
+    public static boolean hideFullscreenToast() {
+        Boolean value = hideFullscreenToastCache;
+        if (value == null) {
+            try {
+                Application app = currentApplication();
+                if (app != null) {
+                    value = isHideFullscreenToastSaved(app);
+                    hideFullscreenToastCache = value;
+                }
+            } catch (Throwable t) {
+                Log.e(TAG, "fullscreen toast state failed", t);
+            }
+        }
+        return value != null ? value : DEFAULT_HIDE_FULLSCREEN_TOAST;
+    }
+
+    static boolean isHideFullscreenToastSaved(Context context) {
+        return prefs(context).getBoolean(KEY_HIDE_FULLSCREEN_TOAST, DEFAULT_HIDE_FULLSCREEN_TOAST);
+    }
+
+    static void saveHideFullscreenToast(Context context, boolean enabled) {
+        prefs(context).edit().putBoolean(KEY_HIDE_FULLSCREEN_TOAST, enabled).apply();
+        hideFullscreenToastCache = enabled;
     }
 
     public static boolean closeDuplicates() {

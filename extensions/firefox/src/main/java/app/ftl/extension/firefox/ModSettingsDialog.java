@@ -105,6 +105,9 @@ final class ModSettingsDialog {
         root.addView(tabEndRow(), margins(0, 10, 0, 0));
         root.addView(closeDuplicatesRow(), margins(0, 10, 0, 0));
 
+        root.addView(label("VIDEO"), margins(0, 20, 0, 8));
+        root.addView(fullscreenToastRow());
+
         hint = new TextView(activity);
         hint.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
         hint.setTextColor(textMuted);
@@ -273,6 +276,21 @@ final class ModSettingsDialog {
                 public void onCheckedChanged(CompoundButton button, boolean checked) {
                     ModSettings.saveScroll(app, checked);
                     hint.setText(checked ? "Scroll position memory enabled" : "Scroll position memory disabled");
+                    hint.setTextColor(accent);
+                }
+            });
+    }
+
+    private View fullscreenToastRow() {
+        return switchRow(
+            "Hide fullscreen toast",
+            "Do not show the exit fullscreen hint when a video goes fullscreen",
+            ModSettings.isHideFullscreenToastSaved(app),
+            new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton button, boolean checked) {
+                    ModSettings.saveHideFullscreenToast(app, checked);
+                    hint.setText(checked ? "Fullscreen toast hidden" : "Fullscreen toast shown");
                     hint.setTextColor(accent);
                 }
             });
