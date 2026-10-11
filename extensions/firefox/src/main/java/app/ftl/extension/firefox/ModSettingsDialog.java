@@ -103,6 +103,7 @@ final class ModSettingsDialog {
         root.addView(scrollRow());
         root.addView(tabNextRow(), margins(0, 10, 0, 0));
         root.addView(tabEndRow(), margins(0, 10, 0, 0));
+        root.addView(tabScrollRow(), margins(0, 10, 0, 0));
         root.addView(closeDuplicatesRow(), margins(0, 10, 0, 0));
 
         root.addView(label("VIDEO"), margins(0, 20, 0, 8));
@@ -276,6 +277,22 @@ final class ModSettingsDialog {
                 public void onCheckedChanged(CompoundButton button, boolean checked) {
                     ModSettings.saveScroll(app, checked);
                     hint.setText(checked ? "Scroll position memory enabled" : "Scroll position memory disabled");
+                    hint.setTextColor(accent);
+                }
+            });
+    }
+
+    private View tabScrollRow() {
+        return switchRow(
+            "Scroll button",
+            "Show a button beside + that jumps to the first tab, then to the last tab",
+            ModSettings.isTabScrollSaved(app),
+            new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton button, boolean checked) {
+                    ModSettings.saveTabScroll(app, checked);
+                    hint.setText(checked ? "Scroll button on. Reopen the tab tray"
+                        : "Scroll button off. Reopen the tab tray");
                     hint.setTextColor(accent);
                 }
             });
