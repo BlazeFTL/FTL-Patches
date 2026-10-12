@@ -202,7 +202,12 @@ public final class ModSettings {
     }
 
     static void saveTabNext(Context context, boolean enabled) {
-        prefs(context).edit().putBoolean(KEY_TAB_NEXT, enabled).apply();
+        SharedPreferences.Editor editor = prefs(context).edit().putBoolean(KEY_TAB_NEXT, enabled);
+        if (!enabled) {
+            editor.putBoolean(KEY_TAB_END, false);
+            tabEndCache = false;
+        }
+        editor.apply();
         tabNextCache = enabled;
     }
 
@@ -211,7 +216,12 @@ public final class ModSettings {
     }
 
     static void saveTabEnd(Context context, boolean enabled) {
-        prefs(context).edit().putBoolean(KEY_TAB_END, enabled).apply();
+        SharedPreferences.Editor editor = prefs(context).edit().putBoolean(KEY_TAB_END, enabled);
+        if (enabled) {
+            editor.putBoolean(KEY_TAB_NEXT, true);
+            tabNextCache = true;
+        }
+        editor.apply();
         tabEndCache = enabled;
     }
 

@@ -46,6 +46,8 @@ final class ModSettingsDialog {
     private final RadioView[] radios = new RadioView[2];
     private TextView hint;
     private boolean oldSelected;
+    private Switch tabNextSwitch;
+    private Switch tabEndSwitch;
 
     private ModSettingsDialog(Activity activity) {
         this.activity = activity;
@@ -101,8 +103,12 @@ final class ModSettingsDialog {
 
         root.addView(label("TABS"), margins(0, 20, 0, 8));
         root.addView(scrollRow());
-        root.addView(tabNextRow(), margins(0, 10, 0, 0));
-        root.addView(tabEndRow(), margins(0, 10, 0, 0));
+        View tabNext = tabNextRow();
+        tabNextSwitch = (Switch) tabNext.getTag();
+        root.addView(tabNext, margins(0, 10, 0, 0));
+        View tabEnd = tabEndRow();
+        tabEndSwitch = (Switch) tabEnd.getTag();
+        root.addView(tabEnd, margins(0, 10, 0, 0));
         root.addView(tabScrollRow(), margins(0, 10, 0, 0));
         root.addView(closeDuplicatesRow(), margins(0, 10, 0, 0));
 
@@ -337,7 +343,11 @@ final class ModSettingsDialog {
                 @Override
                 public void onCheckedChanged(CompoundButton button, boolean checked) {
                     ModSettings.saveTabNext(app, checked);
-                    hint.setText(checked ? "New tabs open next to current tab" : "New tabs open at the end");
+                    boolean endOff = !checked && tabEndSwitch != null && tabEndSwitch.isChecked();
+                    if (endOff) tabEndSwitch.setChecked(false);
+                    hint.setText(checked ? "New tabs open next to current tab"
+                        : endOff ? "New tabs open at the end. Add-to-end button turned off"
+                        : "New tabs open at the end");
                     hint.setTextColor(accent);
                 }
             });
@@ -347,11 +357,14 @@ final class ModSettingsDialog {
         return switchRow(
             "Add-to-end button",
             "Show a + with down arrow button beside + that opens a new tab at the end. Needs the option above",
-            ModSettings.isTabEndSaved(app),
+            ModSettings.isTabEndSaved(app) && ModSettings.isTabNextSaved(app),
             new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton button, boolean checked) {
                     ModSettings.saveTabEnd(app, checked);
+                    if (checked && tabNextSwitch != null && !tabNextSwitch.isChecked()) {
+                        tabNextSwitch.setChecked(true);
+                    }
                     hint.setText(checked ? "Add-to-end button on. Reopen the tab tray"
                         : "Add-to-end button off. Reopen the tab tray");
                     hint.setTextColor(accent);
@@ -392,6 +405,7 @@ final class ModSettingsDialog {
         toggle.setTrackTintList(new ColorStateList(states,
             new int[]{withAlpha(accent, 0x66), night ? 0xFF52525E : 0xFFD7D7DB}));
         toggle.setOnCheckedChangeListener(listener);
+        row.setTag(toggle);
         row.addView(toggle);
         row.setOnClickListener(new View.OnClickListener() {
             @Override
