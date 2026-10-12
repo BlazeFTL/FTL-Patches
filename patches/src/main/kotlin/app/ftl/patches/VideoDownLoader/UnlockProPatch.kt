@@ -33,8 +33,8 @@ internal object IsPurchaseValidFingerprint : Fingerprint(
 
 val unlockProPatch = bytecodePatch(
     name = "Unlock Pro",
-    description = "Only Use In V2.7.2. Signature verification is spoofed automatically " +
-        "so the purchase check passes without manually applying Spoof app signature.",
+    description = "Signature verification is spoofed automatically if this patch is selected " +
+        "the purchase check passes.",
     default = true,
 ) {
     compatibleWith(COMPATIBILITY_VIDEO_DOWNLOADER_UNLOCK_PRO)

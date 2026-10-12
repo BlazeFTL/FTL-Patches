@@ -46,6 +46,8 @@ final class ModSettingsDialog {
     private final RadioView[] radios = new RadioView[2];
     private TextView hint;
     private boolean oldSelected;
+    private Switch tabNextSwitch;
+    private Switch tabEndSwitch;
 
     private ModSettingsDialog(Activity activity) {
         this.activity = activity;
@@ -101,6 +103,17 @@ final class ModSettingsDialog {
 
         root.addView(label("TABS"), margins(0, 20, 0, 8));
         root.addView(scrollRow());
+        View tabNext = tabNextRow();
+        tabNextSwitch = (Switch) tabNext.getTag();
+        root.addView(tabNext, margins(0, 10, 0, 0));
+        View tabEnd = tabEndRow();
+        tabEndSwitch = (Switch) tabEnd.getTag();
+        root.addView(tabEnd, margins(0, 10, 0, 0));
+        root.addView(tabScrollRow(), margins(0, 10, 0, 0));
+        root.addView(closeDuplicatesRow(), margins(0, 10, 0, 0));
+
+        root.addView(label("VIDEO"), margins(0, 20, 0, 8));
+        root.addView(fullscreenToastRow());
 
         hint = new TextView(activity);
         hint.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
@@ -275,6 +288,90 @@ final class ModSettingsDialog {
             });
     }
 
+    private View tabScrollRow() {
+        return switchRow(
+            "Scroll buttons",
+            "Show up and down buttons beside + that jump to the first and last tab",
+            ModSettings.isTabScrollSaved(app),
+            new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton button, boolean checked) {
+                    ModSettings.saveTabScroll(app, checked);
+                    hint.setText(checked ? "Scroll buttons on. Reopen the tab tray"
+                        : "Scroll buttons off. Reopen the tab tray");
+                    hint.setTextColor(accent);
+                }
+            });
+    }
+
+    private View fullscreenToastRow() {
+        return switchRow(
+            "Hide fullscreen toast",
+            "Do not show the exit fullscreen hint when a video goes fullscreen",
+            ModSettings.isHideFullscreenToastSaved(app),
+            new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton button, boolean checked) {
+                    ModSettings.saveHideFullscreenToast(app, checked);
+                    hint.setText(checked ? "Fullscreen toast hidden" : "Fullscreen toast shown");
+                    hint.setTextColor(accent);
+                }
+            });
+    }
+
+    private View closeDuplicatesRow() {
+        return switchRow(
+            "Close duplicate tabs",
+            "Add a Close duplicate tabs option to the tab tray 3 dot menu",
+            ModSettings.isCloseDuplicatesSaved(app),
+            new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton button, boolean checked) {
+                    ModSettings.saveCloseDuplicates(app, checked);
+                    hint.setText(checked ? "Close duplicate tabs on" : "Close duplicate tabs off");
+                    hint.setTextColor(accent);
+                }
+            });
+    }
+
+    private View tabNextRow() {
+        return switchRow(
+            "New tab next to current tab",
+            "Open new tabs right after the current tab instead of at the end",
+            ModSettings.isTabNextSaved(app),
+            new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton button, boolean checked) {
+                    ModSettings.saveTabNext(app, checked);
+                    boolean endOff = !checked && tabEndSwitch != null && tabEndSwitch.isChecked();
+                    if (endOff) tabEndSwitch.setChecked(false);
+                    hint.setText(checked ? "New tabs open next to current tab"
+                        : endOff ? "New tabs open at the end. Add-to-end button turned off"
+                        : "New tabs open at the end");
+                    hint.setTextColor(accent);
+                }
+            });
+    }
+
+    private View tabEndRow() {
+        return switchRow(
+            "Add-to-end button",
+            "Show a + with down arrow button beside + that opens a new tab at the end. Needs the option above",
+            ModSettings.isTabEndSaved(app) && ModSettings.isTabNextSaved(app),
+            new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton button, boolean checked) {
+                    ModSettings.saveTabEnd(app, checked);
+                    if (checked && tabNextSwitch != null && !tabNextSwitch.isChecked()) {
+                        tabNextSwitch.setChecked(true);
+                    }
+                    hint.setText(checked ? "Add-to-end button on. Reopen the tab tray"
+                        : "Add-to-end button off. Reopen the tab tray");
+                    hint.setTextColor(accent);
+                }
+            });
+    }
+
     private View switchRow(String title, String description, boolean checked,
                            CompoundButton.OnCheckedChangeListener listener) {
         LinearLayout row = new LinearLayout(activity);
@@ -308,6 +405,7 @@ final class ModSettingsDialog {
         toggle.setTrackTintList(new ColorStateList(states,
             new int[]{withAlpha(accent, 0x66), night ? 0xFF52525E : 0xFFD7D7DB}));
         toggle.setOnCheckedChangeListener(listener);
+        row.setTag(toggle);
         row.addView(toggle);
         row.setOnClickListener(new View.OnClickListener() {
             @Override

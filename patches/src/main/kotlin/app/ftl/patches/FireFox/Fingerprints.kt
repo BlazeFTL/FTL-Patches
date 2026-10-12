@@ -53,7 +53,7 @@ internal object IPProtectionBadgeFingerprint : Fingerprint(
     parameters = listOf(OBJ, OBJ),
     filters = listOf(
         methodCall(definingClass = MENU_ITEM_KT, name = "Badge"),
-        constTo(1, 0x41000000),
+        constAny(0x41000000),
     ),
 )
 
@@ -153,13 +153,13 @@ internal object MenuGroupFingerprint : Fingerprint(
 internal object BadgeFingerprint : Fingerprint(
     definingClass = MENU_ITEM_KT,
     name = "Badge",
-    filters = listOf(constTo(5, 0x41800000), constTo(6, 0x41000000)),
+    filters = listOf(constAny(0x41800000), constAny(0x41000000)),
 )
 
 internal object MenuBadgeItemFingerprint : Fingerprint(
     definingClass = MENU_ITEM_KT,
     name = "MenuBadgeItem",
-    filters = listOf(SURFACE_BRIGHT, constTo(12, 0x41000000), constTo(14, 0x41800000)),
+    filters = listOf(SURFACE_BRIGHT, constAny(0x41000000), constAny(0x41800000)),
 )
 
 internal object MenuItemFingerprint : Fingerprint(
@@ -367,5 +367,8 @@ internal object BadgeHideFingerprint : Fingerprint(
     definingClass = MENU_ITEM_KT,
     name = "Badge",
     returnType = "V",
-    parameters = listOf("Ljava/lang/String;", "${COMPOSE_PACKAGE}MenuItemState;", "Landroidx/compose/runtime/Composer;", "I", "I"),
+    custom = { method, _ ->
+        method.parameterTypes.firstOrNull()?.toString() == "Ljava/lang/String;" &&
+            method.parameterTypes.size >= 5
+    },
 )

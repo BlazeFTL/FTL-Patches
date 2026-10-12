@@ -7,15 +7,20 @@ import android.content.ContextWrapper;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.RippleDrawable;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.CompoundButton;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.SeekBar;
@@ -26,6 +31,7 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -306,98 +312,78 @@ public final class ModSettings {
 
     public static void showDialog(final Context host) {
         AlertDialog.Builder builder = new AlertDialog.Builder(host);
-        Context dc = builder.getContext();
+        final Context dc = builder.getContext();
         final Map<String, Boolean> initial = new HashMap<String, Boolean>();
         final boolean[] refreshFailed = {false};
 
+        final int textColor = resolveColor(dc, android.R.attr.textColorPrimary, 0xFF222222);
+        final int accent = resolveColor(dc, android.R.attr.colorControlActivated, 0xFF3D7BF4) | 0xFF000000;
+        final int cardStroke = withAlpha(textColor, 0x26);
+        final int dividerColor = withAlpha(textColor, 0x1A);
+        final int rippleColor = withAlpha(textColor, 0x1F);
+        final int chevronColor = withAlpha(textColor, 0xB0);
+
+        final ScrollView scroll = new ScrollView(dc);
+        scroll.setVerticalScrollBarEnabled(false);
+        scroll.setClipToPadding(false);
+        scroll.setOverScrollMode(View.OVER_SCROLL_NEVER);
+
         LinearLayout list = new LinearLayout(dc);
         list.setOrientation(LinearLayout.VERTICAL);
-        list.setPadding(dp(dc, 24), dp(dc, 8), dp(dc, 24), dp(dc, 8));
+        list.setPadding(dp(dc, 16), dp(dc, 4), dp(dc, 16), dp(dc, 16));
+        scroll.addView(list);
 
-        int shown = 0;
-        Map<String, LinearLayout> groupContent = new LinkedHashMap<String, LinearLayout>();
-        // Populated in the INT_ENTRIES pass below, read from the ENTRIES pass's switch
-        // listeners (constructed first) - safe because both run before .show(), and the
-        // listeners only look the map up lazily on click, once it's fully populated.
+        final Map<String, Group> groups = new LinkedHashMap<String, Group>();
         final Map<String, List<View>> dependentRows = new HashMap<String, List<View>>();
-        int secondaryColor = resolveColor(dc, android.R.attr.textColorSecondary, 0xFF888888);
-        TypedValue ripple = new TypedValue();
-        final boolean hasRipple = dc.getTheme().resolveAttribute(android.R.attr.selectableItemBackground, ripple, true);
-        final int rippleRes = ripple.resourceId;
+        int shown = 0;
 
         for (final Entry entry : ENTRIES) {
             if (!isPatched(dc, entry.key)) continue;
             shown++;
             if (entry.tiles || entry.needsReload) initial.put(entry.key, get(entry.key));
 
-            LinearLayout content = groupContent.get(entry.group);
-            if (content == null) {
-                final LinearLayout newContent = new LinearLayout(dc);
-                newContent.setOrientation(LinearLayout.VERTICAL);
-                newContent.setVisibility(View.GONE);
-                newContent.setPadding(0, dp(dc, 4), 0, dp(dc, 12));
+            final Group group = obtainGroup(dc, list, groups, entry.group, cardStroke, rippleColor,
+                chevronColor, scroll);
+            group.keys.add(entry.key);
 
-                if (!groupContent.isEmpty()) {
-                    View divider = new View(dc);
-                    divider.setBackgroundColor(0x22888888);
-                    list.addView(divider, new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT, dp(dc, 1)));
-                }
+            LinearLayout wrap = new LinearLayout(dc);
+            wrap.setOrientation(LinearLayout.VERTICAL);
+            if (group.content.getChildCount() > 0) wrap.addView(divider(dc, dividerColor));
 
-                final String groupName = entry.group;
-                LinearLayout headerRow = new LinearLayout(dc);
-                headerRow.setOrientation(LinearLayout.HORIZONTAL);
-                headerRow.setGravity(Gravity.CENTER_VERTICAL);
-                headerRow.setPadding(0, dp(dc, 14), 0, dp(dc, 14));
-                headerRow.setClickable(true);
-                headerRow.setFocusable(true);
-                if (hasRipple) headerRow.setBackgroundResource(rippleRes);
+            LinearLayout row = new LinearLayout(dc);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setPadding(dp(dc, 16), dp(dc, 12), dp(dc, 16), dp(dc, 12));
+            row.setClickable(true);
+            row.setFocusable(true);
+            row.setBackground(ripple(dc, rippleColor, 0));
 
-                IconView icon = new IconView(dc, iconFor(groupName), secondaryColor, 1.8f);
-                LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(
-                    dp(dc, 22), dp(dc, 22));
-                iconParams.rightMargin = dp(dc, 14);
-                headerRow.addView(icon, iconParams);
+            LinearLayout texts = new LinearLayout(dc);
+            texts.setOrientation(LinearLayout.VERTICAL);
 
-                TextView title = new TextView(dc);
-                title.setText(groupName);
-                title.setTextSize(16f);
-                title.setTypeface(null, Typeface.BOLD);
-                // No explicit color: inherits the dialog theme's default text color, which
-                // renders correctly (setTextColor(android.R.attr.textColorPrimary)'s resolved
-                // TypedValue.data is a ColorStateList reference, not a raw color - using it
-                // directly made the title invisible).
-                headerRow.addView(title, new LinearLayout.LayoutParams(
-                    0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            TextView title = new TextView(dc);
+            title.setText(entry.title);
+            title.setTextSize(15f);
+            texts.addView(title, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
-                final IconView chevron = new IconView(dc, IconView.ICON_CHEVRON, secondaryColor, 1.8f);
-                LinearLayout.LayoutParams chevronParams = new LinearLayout.LayoutParams(
-                    dp(dc, 18), dp(dc, 18));
-                chevronParams.leftMargin = dp(dc, 8);
-                headerRow.addView(chevron, chevronParams);
-
-                headerRow.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        boolean expand = newContent.getVisibility() != View.VISIBLE;
-                        newContent.setVisibility(expand ? View.VISIBLE : View.GONE);
-                        chevron.setRotation(expand ? 90f : 0f);
-                    }
-                });
-
-                list.addView(headerRow, new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-                list.addView(newContent, new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-
-                groupContent.put(entry.group, newContent);
-                content = newContent;
+            if (entry.summary != null) {
+                TextView summary = new TextView(dc);
+                summary.setText(entry.summary);
+                summary.setTextSize(12.5f);
+                summary.setAlpha(0.65f);
+                summary.setLineSpacing(dp(dc, 2), 1f);
+                LinearLayout.LayoutParams summaryParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                summaryParams.topMargin = dp(dc, 3);
+                texts.addView(summary, summaryParams);
             }
 
-            Switch toggle = new Switch(dc);
-            toggle.setText(entry.title);
+            row.addView(texts, new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+            final Switch toggle = new Switch(dc);
             toggle.setChecked(get(entry.key));
-            toggle.setPadding(0, dp(dc, 10), 0, dp(dc, 2));
             toggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton button, boolean checked) {
@@ -406,44 +392,65 @@ public final class ModSettings {
                     if (entry.needsReload) refreshFailed[0] = true;
                     List<View> dependents = dependentRows.get(entry.key);
                     if (dependents != null) {
-                        for (View row : dependents) row.setVisibility(checked ? View.VISIBLE : View.GONE);
+                        for (View dependent : dependents) {
+                            dependent.setVisibility(checked ? View.VISIBLE : View.GONE);
+                        }
                     }
+                    group.refreshSubtitle();
                 }
             });
-            content.addView(toggle, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+            LinearLayout.LayoutParams toggleParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            toggleParams.leftMargin = dp(dc, 16);
+            row.addView(toggle, toggleParams);
 
-            if (entry.summary != null) {
-                TextView summary = new TextView(dc);
-                summary.setText(entry.summary);
-                summary.setTextSize(13f);
-                summary.setAlpha(0.7f);
-                content.addView(summary, new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-            }
+            row.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    toggle.toggle();
+                }
+            });
+
+            wrap.addView(row, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+            group.content.addView(wrap, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         }
 
         for (final IntEntry entry : INT_ENTRIES) {
             if (!isPatched(dc, entry.key)) continue;
-            LinearLayout content = groupContent.get(entry.group);
-            if (content == null) continue;
+            Group group = groups.get(entry.group);
+            if (group == null) continue;
             shown++;
+
+            LinearLayout wrap = new LinearLayout(dc);
+            wrap.setOrientation(LinearLayout.VERTICAL);
+            wrap.setVisibility(entry.dependsOnKey == null || get(entry.dependsOnKey)
+                ? View.VISIBLE : View.GONE);
+            if (group.content.getChildCount() > 0) wrap.addView(divider(dc, dividerColor));
 
             LinearLayout row = new LinearLayout(dc);
             row.setOrientation(LinearLayout.VERTICAL);
-            row.setPadding(0, dp(dc, 10), 0, dp(dc, 2));
-            row.setVisibility(entry.dependsOnKey == null || get(entry.dependsOnKey) ? View.VISIBLE : View.GONE);
+            row.setPadding(dp(dc, 16), dp(dc, 14), dp(dc, 16), dp(dc, 18));
 
             LinearLayout labelRow = new LinearLayout(dc);
             labelRow.setOrientation(LinearLayout.HORIZONTAL);
+            labelRow.setGravity(Gravity.CENTER_VERTICAL);
+
             TextView title = new TextView(dc);
             title.setText(entry.title);
+            title.setTextSize(15f);
             labelRow.addView(title, new LinearLayout.LayoutParams(
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-            final TextView valueLabel = new TextView(dc);
-            valueLabel.setText(getInt(entry.key) + "%");
-            valueLabel.setAlpha(0.7f);
-            labelRow.addView(valueLabel, new LinearLayout.LayoutParams(
+
+            final TextView valueChip = new TextView(dc);
+            valueChip.setText(getInt(entry.key) + "%");
+            valueChip.setTextSize(12.5f);
+            valueChip.setTypeface(null, Typeface.BOLD);
+            valueChip.setTextColor(accent);
+            valueChip.setPadding(dp(dc, 10), dp(dc, 4), dp(dc, 10), dp(dc, 4));
+            valueChip.setBackground(rounded(dc, withAlpha(accent, 0x26), 12));
+            labelRow.addView(valueChip, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
             row.addView(labelRow, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
@@ -457,7 +464,7 @@ public final class ModSettings {
                     if (!fromUser) return;
                     int value = progress + entry.min;
                     setInt(entry.key, value);
-                    valueLabel.setText(value + "%");
+                    valueChip.setText(value + "%");
                 }
 
                 @Override
@@ -466,19 +473,26 @@ public final class ModSettings {
                 @Override
                 public void onStopTrackingTouch(SeekBar bar) {}
             });
-            row.addView(seekBar, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+            LinearLayout.LayoutParams seekParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            seekParams.topMargin = dp(dc, 10);
+            row.addView(seekBar, seekParams);
 
             if (entry.summary != null) {
                 TextView summary = new TextView(dc);
                 summary.setText(entry.summary);
-                summary.setTextSize(13f);
-                summary.setAlpha(0.7f);
-                row.addView(summary, new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+                summary.setTextSize(12.5f);
+                summary.setAlpha(0.65f);
+                summary.setLineSpacing(dp(dc, 2), 1f);
+                LinearLayout.LayoutParams summaryParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                summaryParams.topMargin = dp(dc, 14);
+                row.addView(summary, summaryParams);
             }
 
-            content.addView(row, new LinearLayout.LayoutParams(
+            wrap.addView(row, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+            group.content.addView(wrap, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
             if (entry.dependsOnKey != null) {
@@ -487,21 +501,37 @@ public final class ModSettings {
                     dependents = new ArrayList<View>();
                     dependentRows.put(entry.dependsOnKey, dependents);
                 }
-                dependents.add(row);
+                dependents.add(wrap);
             }
         }
+
+        for (Group group : groups.values()) group.refreshSubtitle();
 
         if (shown == 0) {
             TextView empty = new TextView(dc);
             empty.setText("No configurable mods in this build.");
-            empty.setPadding(0, dp(dc, 12), 0, dp(dc, 12));
+            empty.setPadding(dp(dc, 8), dp(dc, 16), dp(dc, 8), dp(dc, 16));
             list.addView(empty);
         }
 
-        ScrollView scroll = new ScrollView(dc);
-        scroll.addView(list);
+        LinearLayout header = new LinearLayout(dc);
+        header.setOrientation(LinearLayout.VERTICAL);
+        header.setPadding(dp(dc, 24), dp(dc, 22), dp(dc, 24), dp(dc, 10));
+        TextView headerTitle = new TextView(dc);
+        headerTitle.setText("Mod Settings");
+        headerTitle.setTextSize(22f);
+        headerTitle.setTypeface(null, Typeface.BOLD);
+        header.addView(headerTitle);
+        TextView headerHint = new TextView(dc);
+        headerHint.setText("Tap a section to expand");
+        headerHint.setTextSize(13f);
+        headerHint.setAlpha(0.6f);
+        LinearLayout.LayoutParams hintParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        hintParams.topMargin = dp(dc, 2);
+        header.addView(headerHint, hintParams);
 
-        builder.setTitle("Mod Settings")
+        builder.setCustomTitle(header)
             .setView(scroll)
             .setPositiveButton(android.R.string.ok, null)
             .setOnDismissListener(new DialogInterface.OnDismissListener() {
@@ -517,6 +547,165 @@ public final class ModSettings {
                 }
             })
             .show();
+    }
+
+    private static Group obtainGroup(
+        final Context dc, LinearLayout list, final Map<String, Group> groups, String name,
+        int cardStroke, int rippleColor, int chevronColor, final ScrollView scroll
+    ) {
+        Group existing = groups.get(name);
+        if (existing != null) return existing;
+
+        int hue = hueFor(name);
+
+        LinearLayout card = new LinearLayout(dc);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setBackground(outlined(dc, cardStroke, 18));
+        card.setClipToOutline(true);
+
+        LinearLayout header = new LinearLayout(dc);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        header.setMinimumHeight(dp(dc, 72));
+        header.setPadding(dp(dc, 16), dp(dc, 12), dp(dc, 16), dp(dc, 12));
+        header.setClickable(true);
+        header.setFocusable(true);
+        header.setBackground(ripple(dc, rippleColor, 18));
+
+        FrameLayout tile = new FrameLayout(dc);
+        tile.setBackground(rounded(dc, withAlpha(hue, 0x2E), 14));
+        IconView icon = new IconView(dc, iconFor(name), hue, 1.8f);
+        FrameLayout.LayoutParams iconParams = new FrameLayout.LayoutParams(dp(dc, 24), dp(dc, 24));
+        iconParams.gravity = Gravity.CENTER;
+        tile.addView(icon, iconParams);
+        header.addView(tile, new LinearLayout.LayoutParams(dp(dc, 44), dp(dc, 44)));
+
+        LinearLayout texts = new LinearLayout(dc);
+        texts.setOrientation(LinearLayout.VERTICAL);
+        TextView title = new TextView(dc);
+        title.setText(name);
+        title.setTextSize(16f);
+        title.setTypeface(null, Typeface.BOLD);
+        texts.addView(title);
+        TextView subtitle = new TextView(dc);
+        subtitle.setTextSize(12.5f);
+        subtitle.setAlpha(0.65f);
+        LinearLayout.LayoutParams subtitleParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        subtitleParams.topMargin = dp(dc, 1);
+        texts.addView(subtitle, subtitleParams);
+        LinearLayout.LayoutParams textsParams = new LinearLayout.LayoutParams(
+            0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        textsParams.leftMargin = dp(dc, 14);
+        header.addView(texts, textsParams);
+
+        IconView chevron = new IconView(dc, IconView.ICON_CHEVRON, chevronColor, 1.8f);
+        LinearLayout.LayoutParams chevronParams = new LinearLayout.LayoutParams(dp(dc, 22), dp(dc, 22));
+        chevronParams.leftMargin = dp(dc, 8);
+        header.addView(chevron, chevronParams);
+
+        LinearLayout content = new LinearLayout(dc);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setVisibility(View.GONE);
+
+        card.addView(header, new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        card.addView(content, new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        cardParams.topMargin = dp(dc, 5);
+        cardParams.bottomMargin = dp(dc, 5);
+        list.addView(card, cardParams);
+
+        final Group group = new Group(card, content, chevron, subtitle);
+        header.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                selectGroup(group, groups.values(), scroll);
+            }
+        });
+        groups.put(name, group);
+        return group;
+    }
+
+    private static void selectGroup(final Group target, Collection<Group> all, final ScrollView scroll) {
+        boolean expand = !target.expanded;
+        for (Group other : all) {
+            if (other != target && other.expanded) setExpanded(other, false);
+        }
+        setExpanded(target, expand);
+        if (expand) {
+            scroll.post(new Runnable() {
+                @Override
+                public void run() {
+                    scroll.smoothScrollTo(0, Math.max(0, target.card.getTop() - dp(scroll.getContext(), 8)));
+                }
+            });
+        }
+    }
+
+    private static void setExpanded(Group group, boolean expand) {
+        if (group.expanded == expand) return;
+        group.expanded = expand;
+        group.chevron.animate().rotation(expand ? 180f : 0f).setDuration(160).start();
+        View content = group.content;
+        content.animate().cancel();
+        if (expand) {
+            content.setAlpha(0f);
+            content.setVisibility(View.VISIBLE);
+            content.animate().alpha(1f).setDuration(180).start();
+        } else {
+            content.setVisibility(View.GONE);
+            content.setAlpha(1f);
+        }
+    }
+
+    private static View divider(Context dc, int color) {
+        View divider = new View(dc);
+        divider.setBackgroundColor(color);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, Math.max(1, dp(dc, 1) / 2));
+        params.leftMargin = dp(dc, 16);
+        params.rightMargin = dp(dc, 16);
+        divider.setLayoutParams(params);
+        return divider;
+    }
+
+    private static GradientDrawable outlined(Context context, int strokeColor, int radiusDp) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setColor(0x00000000);
+        drawable.setStroke(Math.max(1, dp(context, 1)), strokeColor);
+        drawable.setCornerRadius(dp(context, radiusDp));
+        return drawable;
+    }
+
+    private static GradientDrawable rounded(Context context, int color, int radiusDp) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setColor(color);
+        drawable.setCornerRadius(dp(context, radiusDp));
+        return drawable;
+    }
+
+    private static Drawable ripple(Context context, int color, int radiusDp) {
+        GradientDrawable mask = new GradientDrawable();
+        mask.setColor(0xFF000000);
+        mask.setCornerRadius(dp(context, radiusDp));
+        return new RippleDrawable(ColorStateList.valueOf(color), null, mask);
+    }
+
+    private static int withAlpha(int color, int alpha) {
+        return (color & 0x00FFFFFF) | (alpha << 24);
+    }
+
+    private static int hueFor(String groupName) {
+        if ("SpeedUp overlay".equals(groupName)) return 0xFFFF9800;
+        if ("Smart Enhance".equals(groupName)) return 0xFF9C6BFF;
+        if ("Home screen".equals(groupName)) return 0xFF3D7BF4;
+        if ("Me tab".equals(groupName)) return 0xFF22B573;
+        if ("Sidebar".equals(groupName)) return 0xFF00ACC1;
+        return 0xFF3D7BF4;
     }
 
     private static int iconFor(String groupName) {
@@ -666,54 +855,102 @@ public final class ModSettings {
         }
 
         private void drawSpeed(Canvas canvas) {
-            canvas.drawCircle(12f, 13f, 8f, paint);
-            canvas.drawLine(12f, 3.5f, 12f, 5.5f, paint);
-            canvas.drawLine(12f, 13f, 16f, 8.5f, paint);
+            canvas.drawArc(new RectF(3f, 4f, 21f, 22f), 150f, 240f, false, paint);
+            canvas.drawLine(12f, 5.8f, 12f, 7.4f, paint);
+            canvas.drawLine(4.8f, 13f, 6.4f, 13f, paint);
+            canvas.drawLine(17.6f, 13f, 19.2f, 13f, paint);
+            canvas.drawLine(12f, 13f, 16.2f, 8.8f, paint);
+            Paint.Style style = paint.getStyle();
+            paint.setStyle(Paint.Style.FILL_AND_STROKE);
+            canvas.drawCircle(12f, 13f, 1.4f, paint);
+            paint.setStyle(style);
         }
 
         private void drawEnhance(Canvas canvas) {
+            drawStar(canvas, 10.5f, 13.5f, 8.5f, 1.4f);
+            Paint.Style style = paint.getStyle();
+            paint.setStyle(Paint.Style.FILL_AND_STROKE);
+            drawStar(canvas, 19f, 5.5f, 3.3f, 0.7f);
+            paint.setStyle(style);
+        }
+
+        private void drawStar(Canvas canvas, float cx, float cy, float r, float k) {
             Path path = new Path();
-            path.moveTo(12f, 2f);
-            path.lineTo(14.2f, 9.8f);
-            path.lineTo(22f, 12f);
-            path.lineTo(14.2f, 14.2f);
-            path.lineTo(12f, 22f);
-            path.lineTo(9.8f, 14.2f);
-            path.lineTo(2f, 12f);
-            path.lineTo(9.8f, 9.8f);
+            path.moveTo(cx, cy - r);
+            path.quadTo(cx + k, cy - k, cx + r, cy);
+            path.quadTo(cx + k, cy + k, cx, cy + r);
+            path.quadTo(cx - k, cy + k, cx - r, cy);
+            path.quadTo(cx - k, cy - k, cx, cy - r);
             path.close();
             canvas.drawPath(path, paint);
         }
 
         private void drawHome(Canvas canvas) {
             Path roof = new Path();
-            roof.moveTo(4f, 12f);
-            roof.lineTo(12f, 4.5f);
-            roof.lineTo(20f, 12f);
+            roof.moveTo(3.5f, 11f);
+            roof.lineTo(12f, 3.8f);
+            roof.lineTo(20.5f, 11f);
             canvas.drawPath(roof, paint);
-            canvas.drawLine(6.5f, 11f, 6.5f, 20f, paint);
-            canvas.drawLine(17.5f, 11f, 17.5f, 20f, paint);
-            canvas.drawLine(6.5f, 20f, 17.5f, 20f, paint);
+            Path body = new Path();
+            body.moveTo(5.5f, 9.8f);
+            body.lineTo(5.5f, 20f);
+            body.lineTo(10f, 20f);
+            body.lineTo(10f, 14.5f);
+            body.lineTo(14f, 14.5f);
+            body.lineTo(14f, 20f);
+            body.lineTo(18.5f, 20f);
+            body.lineTo(18.5f, 9.8f);
+            canvas.drawPath(body, paint);
         }
 
         private void drawPerson(Canvas canvas) {
-            canvas.drawCircle(12f, 8f, 4f, paint);
-            RectF oval = new RectF(4.5f, 15f, 19.5f, 27f);
-            canvas.drawArc(oval, 180f, 180f, false, paint);
+            canvas.drawCircle(12f, 8f, 3.8f, paint);
+            Path shoulders = new Path();
+            shoulders.moveTo(5f, 20.5f);
+            shoulders.cubicTo(5f, 16.5f, 8f, 15f, 12f, 15f);
+            shoulders.cubicTo(16f, 15f, 19f, 16.5f, 19f, 20.5f);
+            canvas.drawPath(shoulders, paint);
         }
 
         private void drawSidebar(Canvas canvas) {
-            canvas.drawLine(4f, 7f, 20f, 7f, paint);
-            canvas.drawLine(4f, 12f, 20f, 12f, paint);
-            canvas.drawLine(4f, 17f, 20f, 17f, paint);
+            canvas.drawRoundRect(new RectF(3.5f, 4.5f, 20.5f, 19.5f), 3f, 3f, paint);
+            canvas.drawLine(14.5f, 4.5f, 14.5f, 19.5f, paint);
+            canvas.drawLine(7f, 9.5f, 11f, 9.5f, paint);
+            canvas.drawLine(7f, 13f, 11f, 13f, paint);
         }
 
         private void drawChevron(Canvas canvas) {
             Path path = new Path();
-            path.moveTo(9f, 5f);
-            path.lineTo(16f, 12f);
-            path.lineTo(9f, 19f);
+            path.moveTo(6.5f, 9.5f);
+            path.lineTo(12f, 15f);
+            path.lineTo(17.5f, 9.5f);
             canvas.drawPath(path, paint);
+        }
+    }
+
+    private static final class Group {
+        final LinearLayout card;
+        final LinearLayout content;
+        final IconView chevron;
+        final TextView subtitle;
+        final List<String> keys = new ArrayList<String>();
+        boolean expanded;
+
+        Group(LinearLayout card, LinearLayout content, IconView chevron, TextView subtitle) {
+            this.card = card;
+            this.content = content;
+            this.chevron = chevron;
+            this.subtitle = subtitle;
+        }
+
+        void refreshSubtitle() {
+            int on = 0;
+            for (String key : keys) if (get(key)) on++;
+            if (keys.size() == 1) {
+                subtitle.setText(on == 1 ? "On" : "Off");
+            } else {
+                subtitle.setText(on + " of " + keys.size() + " on");
+            }
         }
     }
 

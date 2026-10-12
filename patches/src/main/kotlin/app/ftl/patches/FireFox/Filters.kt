@@ -33,6 +33,15 @@ internal fun constTo(
         instruction.narrowLiteral == value
 }
 
+internal fun constAny(
+    value: Int,
+    location: InstructionLocation = InstructionLocation.MatchAfterAnywhere(),
+) = filter(location) { _, instruction ->
+    instruction is NarrowLiteralInstruction &&
+        instruction is OneRegisterInstruction &&
+        instruction.narrowLiteral == value
+}
+
 internal fun moveObject(
     dest: Int,
     src: Int,

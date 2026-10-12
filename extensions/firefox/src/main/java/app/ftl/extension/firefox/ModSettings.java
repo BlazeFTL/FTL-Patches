@@ -20,11 +20,26 @@ public final class ModSettings {
     private static final boolean DEFAULT_PIN = true;
     private static final String KEY_SCROLL = "scroll_memory";
     private static final boolean DEFAULT_SCROLL = true;
+    private static final String KEY_TAB_NEXT = "tab_next_to_current";
+    private static final boolean DEFAULT_TAB_NEXT = true;
+    private static final String KEY_TAB_END = "tab_end_button";
+    private static final boolean DEFAULT_TAB_END = true;
+    private static final String KEY_CLOSE_DUPLICATES = "close_duplicates";
+    private static final boolean DEFAULT_CLOSE_DUPLICATES = true;
+    private static final String KEY_TAB_SCROLL = "tab_scroll_button";
+    private static final boolean DEFAULT_TAB_SCROLL = true;
+    private static final String KEY_HIDE_FULLSCREEN_TOAST = "hide_fullscreen_toast";
+    private static final boolean DEFAULT_HIDE_FULLSCREEN_TOAST = true;
 
     private static volatile int latched;
     private static volatile int pinLatched;
     private static volatile int scrollLatched;
     private static volatile boolean fallbackFailed;
+    private static volatile Boolean tabNextCache;
+    private static volatile Boolean tabEndCache;
+    private static volatile Boolean closeDuplicatesCache;
+    private static volatile Boolean tabScrollCache;
+    private static volatile Boolean hideFullscreenToastCache;
 
     private ModSettings() {
     }
@@ -73,6 +88,141 @@ public final class ModSettings {
             }
         }
         return scrollLatched == 0 ? DEFAULT_SCROLL : scrollLatched == 2;
+    }
+
+    public static boolean tabNext() {
+        Boolean value = tabNextCache;
+        if (value == null) {
+            try {
+                Application app = currentApplication();
+                if (app != null) {
+                    value = isTabNextSaved(app);
+                    tabNextCache = value;
+                }
+            } catch (Throwable t) {
+                Log.e(TAG, "tab next state failed", t);
+            }
+        }
+        return value != null ? value : DEFAULT_TAB_NEXT;
+    }
+
+    public static boolean tabEnd() {
+        Boolean value = tabEndCache;
+        if (value == null) {
+            try {
+                Application app = currentApplication();
+                if (app != null) {
+                    value = isTabEndSaved(app);
+                    tabEndCache = value;
+                }
+            } catch (Throwable t) {
+                Log.e(TAG, "tab end state failed", t);
+            }
+        }
+        return value != null ? value : DEFAULT_TAB_END;
+    }
+
+    public static boolean tabScroll() {
+        Boolean value = tabScrollCache;
+        if (value == null) {
+            try {
+                Application app = currentApplication();
+                if (app != null) {
+                    value = isTabScrollSaved(app);
+                    tabScrollCache = value;
+                }
+            } catch (Throwable t) {
+                Log.e(TAG, "tab scroll state failed", t);
+            }
+        }
+        return value != null ? value : DEFAULT_TAB_SCROLL;
+    }
+
+    static boolean isTabScrollSaved(Context context) {
+        return prefs(context).getBoolean(KEY_TAB_SCROLL, DEFAULT_TAB_SCROLL);
+    }
+
+    static void saveTabScroll(Context context, boolean enabled) {
+        prefs(context).edit().putBoolean(KEY_TAB_SCROLL, enabled).apply();
+        tabScrollCache = enabled;
+    }
+
+    public static boolean hideFullscreenToast() {
+        Boolean value = hideFullscreenToastCache;
+        if (value == null) {
+            try {
+                Application app = currentApplication();
+                if (app != null) {
+                    value = isHideFullscreenToastSaved(app);
+                    hideFullscreenToastCache = value;
+                }
+            } catch (Throwable t) {
+                Log.e(TAG, "fullscreen toast state failed", t);
+            }
+        }
+        return value != null ? value : DEFAULT_HIDE_FULLSCREEN_TOAST;
+    }
+
+    static boolean isHideFullscreenToastSaved(Context context) {
+        return prefs(context).getBoolean(KEY_HIDE_FULLSCREEN_TOAST, DEFAULT_HIDE_FULLSCREEN_TOAST);
+    }
+
+    static void saveHideFullscreenToast(Context context, boolean enabled) {
+        prefs(context).edit().putBoolean(KEY_HIDE_FULLSCREEN_TOAST, enabled).apply();
+        hideFullscreenToastCache = enabled;
+    }
+
+    public static boolean closeDuplicates() {
+        Boolean value = closeDuplicatesCache;
+        if (value == null) {
+            try {
+                Application app = currentApplication();
+                if (app != null) {
+                    value = isCloseDuplicatesSaved(app);
+                    closeDuplicatesCache = value;
+                }
+            } catch (Throwable t) {
+                Log.e(TAG, "close duplicates state failed", t);
+            }
+        }
+        return value != null ? value : DEFAULT_CLOSE_DUPLICATES;
+    }
+
+    static boolean isCloseDuplicatesSaved(Context context) {
+        return prefs(context).getBoolean(KEY_CLOSE_DUPLICATES, DEFAULT_CLOSE_DUPLICATES);
+    }
+
+    static void saveCloseDuplicates(Context context, boolean enabled) {
+        prefs(context).edit().putBoolean(KEY_CLOSE_DUPLICATES, enabled).apply();
+        closeDuplicatesCache = enabled;
+    }
+
+    static boolean isTabNextSaved(Context context) {
+        return prefs(context).getBoolean(KEY_TAB_NEXT, DEFAULT_TAB_NEXT);
+    }
+
+    static void saveTabNext(Context context, boolean enabled) {
+        SharedPreferences.Editor editor = prefs(context).edit().putBoolean(KEY_TAB_NEXT, enabled);
+        if (!enabled) {
+            editor.putBoolean(KEY_TAB_END, false);
+            tabEndCache = false;
+        }
+        editor.apply();
+        tabNextCache = enabled;
+    }
+
+    static boolean isTabEndSaved(Context context) {
+        return prefs(context).getBoolean(KEY_TAB_END, DEFAULT_TAB_END);
+    }
+
+    static void saveTabEnd(Context context, boolean enabled) {
+        SharedPreferences.Editor editor = prefs(context).edit().putBoolean(KEY_TAB_END, enabled);
+        if (enabled) {
+            editor.putBoolean(KEY_TAB_NEXT, true);
+            tabNextCache = true;
+        }
+        editor.apply();
+        tabEndCache = enabled;
     }
 
     static boolean isScrollSaved(Context context) {

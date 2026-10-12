@@ -194,7 +194,7 @@ private fun optional(name: String, block: () -> Unit) {
     try {
         block()
     } catch (e: Exception) {
-        logger.info("Skipped $name (not present in this build, stock look kept)")
+        logger.info("Skipped $name: ${e::class.simpleName}: ${e.message?.lineSequence()?.firstOrNull()}")
     }
 }
 
@@ -375,7 +375,12 @@ private fun BytecodePatchContext.installMenuTweaks() {
         IPProtectionBadgeFingerprint.let {
             val badge = it.instructionMatches[0].index
             it.method.applyEdits(
-                swap(badge - 1, 6, "", count = 2),
+                swap(
+                    badge,
+                    6,
+                    "invoke-static {v1}, $OLD_MENU->hideBadge(Ljava/lang/String;)Z\nmove-result v6\nif-eqz v6, :ftl_stock",
+                    count = 1,
+                ),
                 floatTo(it.instructionMatches[1].index, 0x40000000),
             )
         }
@@ -683,7 +688,7 @@ private fun BytecodePatchContext.installMenuTweaks() {
 
 @Suppress("unused")
 val oldMenuPatch = bytecodePatch(
-    name = "Old style 3 dot menu",
+    name = "Old style 3 dot menu And Extension Pinning",
     description = "Adds \"Mod Settings\" to the 3 dot menu: switch between the stock bottom sheet " +
         "menu and the old style popup menu, and pin extensions to the search bar.",
     default = true,
