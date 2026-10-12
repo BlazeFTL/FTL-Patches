@@ -26,6 +26,8 @@ public final class ModSettings {
     private static final boolean DEFAULT_TAB_END = true;
     private static final String KEY_CLOSE_DUPLICATES = "close_duplicates";
     private static final boolean DEFAULT_CLOSE_DUPLICATES = true;
+    private static final String KEY_TAB_SCROLL = "tab_scroll_button";
+    private static final boolean DEFAULT_TAB_SCROLL = true;
     private static final String KEY_HIDE_FULLSCREEN_TOAST = "hide_fullscreen_toast";
     private static final boolean DEFAULT_HIDE_FULLSCREEN_TOAST = true;
 
@@ -36,6 +38,7 @@ public final class ModSettings {
     private static volatile Boolean tabNextCache;
     private static volatile Boolean tabEndCache;
     private static volatile Boolean closeDuplicatesCache;
+    private static volatile Boolean tabScrollCache;
     private static volatile Boolean hideFullscreenToastCache;
 
     private ModSettings() {
@@ -117,6 +120,31 @@ public final class ModSettings {
             }
         }
         return value != null ? value : DEFAULT_TAB_END;
+    }
+
+    public static boolean tabScroll() {
+        Boolean value = tabScrollCache;
+        if (value == null) {
+            try {
+                Application app = currentApplication();
+                if (app != null) {
+                    value = isTabScrollSaved(app);
+                    tabScrollCache = value;
+                }
+            } catch (Throwable t) {
+                Log.e(TAG, "tab scroll state failed", t);
+            }
+        }
+        return value != null ? value : DEFAULT_TAB_SCROLL;
+    }
+
+    static boolean isTabScrollSaved(Context context) {
+        return prefs(context).getBoolean(KEY_TAB_SCROLL, DEFAULT_TAB_SCROLL);
+    }
+
+    static void saveTabScroll(Context context, boolean enabled) {
+        prefs(context).edit().putBoolean(KEY_TAB_SCROLL, enabled).apply();
+        tabScrollCache = enabled;
     }
 
     public static boolean hideFullscreenToast() {

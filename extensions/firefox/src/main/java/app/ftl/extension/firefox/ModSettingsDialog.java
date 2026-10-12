@@ -103,6 +103,7 @@ final class ModSettingsDialog {
         root.addView(scrollRow());
         root.addView(tabNextRow(), margins(0, 10, 0, 0));
         root.addView(tabEndRow(), margins(0, 10, 0, 0));
+        root.addView(tabScrollRow(), margins(0, 10, 0, 0));
         root.addView(closeDuplicatesRow(), margins(0, 10, 0, 0));
 
         root.addView(label("VIDEO"), margins(0, 20, 0, 8));
@@ -281,6 +282,22 @@ final class ModSettingsDialog {
             });
     }
 
+    private View tabScrollRow() {
+        return switchRow(
+            "Scroll buttons",
+            "Show up and down buttons beside + that jump to the first and last tab",
+            ModSettings.isTabScrollSaved(app),
+            new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton button, boolean checked) {
+                    ModSettings.saveTabScroll(app, checked);
+                    hint.setText(checked ? "Scroll buttons on. Reopen the tab tray"
+                        : "Scroll buttons off. Reopen the tab tray");
+                    hint.setTextColor(accent);
+                }
+            });
+    }
+
     private View fullscreenToastRow() {
         return switchRow(
             "Hide fullscreen toast",
@@ -329,7 +346,7 @@ final class ModSettingsDialog {
     private View tabEndRow() {
         return switchRow(
             "Add-to-end button",
-            "Show a > button beside + that opens a new tab at the end. Needs the option above",
+            "Show a + with down arrow button beside + that opens a new tab at the end. Needs the option above",
             ModSettings.isTabEndSaved(app),
             new CompoundButton.OnCheckedChangeListener() {
                 @Override

@@ -18,6 +18,7 @@ import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
@@ -168,6 +169,26 @@ private fun BytecodePatchContext.installTabFab() {
     val normalTabs = fieldRef(TABS_PAGE, "NormalTabs")
     val selectedPage = fieldRef(TABS_TRAY_STATE, "selectedPage")
 
+    val lambdaInstructions = callMethod.implementation!!.instructions
+    val centerEnd = lambdaInstructions.indexOfFirst { instruction ->
+        val field = (instruction as? ReferenceInstruction)?.reference as? FieldReference
+        instruction.opcode == Opcode.SGET_OBJECT && field != null && field.name == "CenterEnd"
+    }
+    if (centerEnd < 0 || centerEnd > callIndex) throw PatchException("FAB box alignment (CenterEnd) not found")
+    var weightIndex = -1
+    for (i in centerEnd - 1 downTo 0) {
+        val instruction = lambdaInstructions[i]
+        if (instruction.opcode == Opcode.CONST_HIGH16 &&
+            (instruction as NarrowLiteralInstruction).narrowLiteral == 0x3f800000
+        ) {
+            weightIndex = i
+            break
+        }
+    }
+    if (weightIndex < 0) throw PatchException("FAB box weight not found")
+    val weightRegister = callMethod.getInstruction<OneRegisterInstruction>(weightIndex).registerA
+    callMethod.replaceInstruction(weightIndex, "const/high16 v$weightRegister, 0x40000000")
+
     val fabSignature = "(${parameters.joinToString("")})V"
     val rowSmali = $$$"""
         move-object/from16 v12, p5
@@ -249,7 +270,8 @@ private fun BytecodePatchContext.installTabFab() {
         sget v0, Lorg/mozilla/fenix/R$string;->add_tab:I
         invoke-static {v0, p1}, Landroidx/compose/ui/res/StringResources_androidKt;->stringResource(ILandroidx/compose/runtime/Composer;)Ljava/lang/String;
         move-result-object v0
-        sget v1, Lmozilla/components/ui/icons/R$drawable;->mozac_ic_forward_24:I
+        invoke-static {}, $$${TAB_FAB}->endIcon()I
+        move-result v1
         new-instance v2, $$${contentLambda}
         invoke-direct {v2, v1, v0, v6}, $$${contentLambda}-><init>(ILjava/lang/String;Lkotlin/jvm/internal/Ref$ObjectRef;)V
         const v0, 0x5a11b0c3
@@ -309,11 +331,13 @@ private fun BytecodePatchContext.installTabFab() {
 @Suppress("unused")
 val tabNextToCurrentPatch = bytecodePatch(
     name = "New tab next to current tab",
-    description = "Opens new tabs right after the current tab and adds a > button beside + that opens " +
-        "a tab at the end. Both are toggles in Mod Settings.",
+    description = "Opens new tabs right after the current tab and adds an add-to-end button (+ with a " +
+        "down arrow) beside + that opens a tab at the end. Both are toggles in Mod Settings.",
     default = true,
 ) {
     compatibleWith(COMPATIBILITY_FIREFOX_TABS)
+
+    dependsOn(tabIconsPatch)
 
     extendWith("extensions/firefox.mpe")
 
