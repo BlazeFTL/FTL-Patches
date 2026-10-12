@@ -3,14 +3,24 @@ package app.ftl.patches.calendar
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
 
-// The MT2 diff (info.json) carried versionCode 24011893 - the exact same
-// value already used for an unrelated app elsewhere in this repo, so it's a
-// stale/reused field from the compare tool session, not this app's real
-// manifest versionCode. Using the versionCode given directly (34) instead.
-internal val COMPATIBILITY_CALENDAR_PLANNER = Compatibility(
+internal val COMPATIBILITY_CALENDAR = Compatibility(
     packageName = "calendar.agenda.schedule.event.advance.calendar.planner",
     name = "Calendar",
-    targets = listOf(
-        AppTarget(version = "1.0.34", versionCode = 34),
-    ),
+    targets = listOf(AppTarget(version = "1.0.35")),
 )
+
+internal const val CAL_PKG = "Lcalendar/agenda/schedule/event/advance/calendar/planner"
+internal const val BASE_ACT = "$CAL_PKG/BaseAct;"
+internal const val SPLASH_ACTIVITY = "$CAL_PKG/activity/SplashActivity;"
+internal const val LANGUAGE_ACTIVITY = "$CAL_PKG/activity/goal/LanguageActivity;"
+internal const val PERMISSION_ACTIVITY = "$CAL_PKG/activity/PermissionActivity;"
+internal const val AFTER_CALL_ACTIVITY = "$CAL_PKG/activity/AfterCallFeatureActivity;"
+internal const val SETTING_ACTIVITY = "$CAL_PKG/activity/SettingActivity;"
+internal const val SETTING_BINDING = "$CAL_PKG/databinding/ActivitySettingBinding;"
+internal const val DASHBOARD_ACTIVITY = "$CAL_PKG/activity/CalendarDashboardActivity;"
+internal const val RATE_US_FEEDBACK_ACTIVITY = "$CAL_PKG/activity/RateUsFeedbackActivity;"
+internal const val RATE_US_MANAGER = "$CAL_PKG/utils/RateUsManager;"
+internal const val ADS_UTILITY = "Lplugin/adsdk/service/AdsUtility;"
+internal const val ANDROID_CONTEXT = "Landroid/content/Context;"
+internal const val ANDROID_BUNDLE = "Landroid/os/Bundle;"
+internal const val ANDROID_INTENT = "Landroid/content/Intent;"
