@@ -1,8 +1,5 @@
 package app.ftl.extension.mxplayerad;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -22,8 +19,6 @@ import android.graphics.drawable.RippleDrawable;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.animation.DecelerateInterpolator;
 import android.widget.CompoundButton;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -328,7 +323,7 @@ public final class ModSettings {
         final int rippleColor = withAlpha(textColor, 0x1F);
         final int chevronColor = withAlpha(textColor, 0xB0);
 
-        final FixedScrollView scroll = new FixedScrollView(dc);
+        final ScrollView scroll = new ScrollView(dc);
         scroll.setVerticalScrollBarEnabled(false);
         scroll.setClipToPadding(false);
         scroll.setOverScrollMode(View.OVER_SCROLL_NEVER);
@@ -519,22 +514,6 @@ public final class ModSettings {
             list.addView(empty);
         }
 
-        if (!groups.isEmpty()) {
-            android.util.DisplayMetrics metrics = dc.getResources().getDisplayMetrics();
-            int listWidth = Math.min((int) (metrics.widthPixels * 0.89f), dp(dc, 560));
-            int cardWidth = listWidth - dp(dc, 32);
-            int unspecified = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
-            list.measure(View.MeasureSpec.makeMeasureSpec(listWidth, View.MeasureSpec.EXACTLY), unspecified);
-            int tallest = 0;
-            for (Group group : groups.values()) {
-                group.content.measure(
-                    View.MeasureSpec.makeMeasureSpec(cardWidth, View.MeasureSpec.EXACTLY), unspecified);
-                tallest = Math.max(tallest, group.content.getMeasuredHeight());
-            }
-            int wanted = list.getMeasuredHeight() + tallest;
-            scroll.fixedHeight = Math.max(dp(dc, 160), Math.min(wanted, (int) (metrics.heightPixels * 0.66f)));
-        }
-
         LinearLayout header = new LinearLayout(dc);
         header.setOrientation(LinearLayout.VERTICAL);
         header.setPadding(dp(dc, 24), dp(dc, 22), dp(dc, 24), dp(dc, 10));
@@ -651,69 +630,36 @@ public final class ModSettings {
         return group;
     }
 
-    private static void selectGroup(Group target, Collection<Group> all, ScrollView scroll) {
+    private static void selectGroup(final Group target, Collection<Group> all, final ScrollView scroll) {
         boolean expand = !target.expanded;
         for (Group other : all) {
-            if (other != target && other.expanded) setExpanded(other, false, scroll);
+            if (other != target && other.expanded) setExpanded(other, false);
         }
-        setExpanded(target, expand, scroll);
+        setExpanded(target, expand);
+        if (expand) {
+            scroll.post(new Runnable() {
+                @Override
+                public void run() {
+                    scroll.smoothScrollTo(0, Math.max(0, target.card.getTop() - dp(scroll.getContext(), 8)));
+                }
+            });
+        }
     }
 
-    private static void setExpanded(final Group group, final boolean expand, final ScrollView scroll) {
-        if (group.expanded == expand && group.animator == null) return;
+    private static void setExpanded(Group group, boolean expand) {
+        if (group.expanded == expand) return;
         group.expanded = expand;
-        if (group.animator != null) group.animator.cancel();
-
-        final View content = group.content;
-        final ViewGroup.LayoutParams params = content.getLayoutParams();
-        final int from = content.getVisibility() == View.VISIBLE ? content.getHeight() : 0;
-        int to = 0;
+        group.chevron.animate().rotation(expand ? 180f : 0f).setDuration(160).start();
+        View content = group.content;
+        content.animate().cancel();
         if (expand) {
-            content.measure(
-                View.MeasureSpec.makeMeasureSpec(Math.max(group.card.getWidth(), 1), View.MeasureSpec.EXACTLY),
-                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
-            to = content.getMeasuredHeight();
+            content.setAlpha(0f);
+            content.setVisibility(View.VISIBLE);
+            content.animate().alpha(1f).setDuration(180).start();
+        } else {
+            content.setVisibility(View.GONE);
+            content.setAlpha(1f);
         }
-
-        params.height = from;
-        content.setLayoutParams(params);
-        content.setVisibility(View.VISIBLE);
-
-        group.chevron.animate().rotation(expand ? 180f : 0f).setDuration(200).start();
-
-        ValueAnimator animator = ValueAnimator.ofInt(from, to);
-        animator.setDuration(200);
-        animator.setInterpolator(new DecelerateInterpolator());
-        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                params.height = (Integer) animation.getAnimatedValue();
-                content.setLayoutParams(params);
-            }
-        });
-        animator.addListener(new AnimatorListenerAdapter() {
-            private boolean canceled;
-
-            @Override
-            public void onAnimationCancel(Animator animation) {
-                canceled = true;
-            }
-
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                if (canceled) return;
-                params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-                content.setLayoutParams(params);
-                group.animator = null;
-                if (expand) {
-                    scroll.smoothScrollTo(0, Math.max(0, group.card.getTop() - dp(content.getContext(), 8)));
-                } else {
-                    content.setVisibility(View.GONE);
-                }
-            }
-        });
-        group.animator = animator;
-        animator.start();
     }
 
     private static View divider(Context dc, int color) {
@@ -982,27 +928,6 @@ public final class ModSettings {
         }
     }
 
-    private static final class FixedScrollView extends ScrollView {
-        int fixedHeight;
-
-        FixedScrollView(Context context) {
-            super(context);
-        }
-
-        @Override
-        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-            if (fixedHeight <= 0) {
-                super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-                return;
-            }
-            int mode = View.MeasureSpec.getMode(heightMeasureSpec);
-            int available = View.MeasureSpec.getSize(heightMeasureSpec);
-            int height = mode == View.MeasureSpec.UNSPECIFIED ? fixedHeight : Math.min(fixedHeight, available);
-            super.onMeasure(widthMeasureSpec,
-                View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY));
-        }
-    }
-
     private static final class Group {
         final LinearLayout card;
         final LinearLayout content;
@@ -1010,7 +935,6 @@ public final class ModSettings {
         final TextView subtitle;
         final List<String> keys = new ArrayList<String>();
         boolean expanded;
-        ValueAnimator animator;
 
         Group(LinearLayout card, LinearLayout content, IconView chevron, TextView subtitle) {
             this.card = card;
