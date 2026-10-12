@@ -323,14 +323,15 @@ public final class ModSettings {
 
         final int textColor = resolveColor(dc, android.R.attr.textColorPrimary, 0xFF222222);
         final int accent = resolveColor(dc, android.R.attr.colorControlActivated, 0xFF3D7BF4) | 0xFF000000;
-        final int cardColor = withAlpha(textColor, 0x0F);
+        final int cardStroke = withAlpha(textColor, 0x26);
         final int dividerColor = withAlpha(textColor, 0x1A);
         final int rippleColor = withAlpha(textColor, 0x1F);
         final int chevronColor = withAlpha(textColor, 0xB0);
 
-        final ScrollView scroll = new ScrollView(dc);
+        final FixedScrollView scroll = new FixedScrollView(dc);
         scroll.setVerticalScrollBarEnabled(false);
         scroll.setClipToPadding(false);
+        scroll.setOverScrollMode(View.OVER_SCROLL_NEVER);
 
         LinearLayout list = new LinearLayout(dc);
         list.setOrientation(LinearLayout.VERTICAL);
@@ -346,7 +347,7 @@ public final class ModSettings {
             shown++;
             if (entry.tiles || entry.needsReload) initial.put(entry.key, get(entry.key));
 
-            final Group group = obtainGroup(dc, list, groups, entry.group, cardColor, rippleColor,
+            final Group group = obtainGroup(dc, list, groups, entry.group, cardStroke, rippleColor,
                 chevronColor, scroll);
             group.keys.add(entry.key);
 
@@ -435,7 +436,7 @@ public final class ModSettings {
 
             LinearLayout row = new LinearLayout(dc);
             row.setOrientation(LinearLayout.VERTICAL);
-            row.setPadding(dp(dc, 16), dp(dc, 12), dp(dc, 16), dp(dc, 12));
+            row.setPadding(dp(dc, 16), dp(dc, 14), dp(dc, 16), dp(dc, 18));
 
             LinearLayout labelRow = new LinearLayout(dc);
             labelRow.setOrientation(LinearLayout.HORIZONTAL);
@@ -479,7 +480,7 @@ public final class ModSettings {
             });
             LinearLayout.LayoutParams seekParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            seekParams.topMargin = dp(dc, 6);
+            seekParams.topMargin = dp(dc, 10);
             row.addView(seekBar, seekParams);
 
             if (entry.summary != null) {
@@ -490,7 +491,7 @@ public final class ModSettings {
                 summary.setLineSpacing(dp(dc, 2), 1f);
                 LinearLayout.LayoutParams summaryParams = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                summaryParams.topMargin = dp(dc, 4);
+                summaryParams.topMargin = dp(dc, 14);
                 row.addView(summary, summaryParams);
             }
 
@@ -516,6 +517,22 @@ public final class ModSettings {
             empty.setText("No configurable mods in this build.");
             empty.setPadding(dp(dc, 8), dp(dc, 16), dp(dc, 8), dp(dc, 16));
             list.addView(empty);
+        }
+
+        if (!groups.isEmpty()) {
+            android.util.DisplayMetrics metrics = dc.getResources().getDisplayMetrics();
+            int listWidth = Math.min((int) (metrics.widthPixels * 0.89f), dp(dc, 560));
+            int cardWidth = listWidth - dp(dc, 32);
+            int unspecified = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+            list.measure(View.MeasureSpec.makeMeasureSpec(listWidth, View.MeasureSpec.EXACTLY), unspecified);
+            int tallest = 0;
+            for (Group group : groups.values()) {
+                group.content.measure(
+                    View.MeasureSpec.makeMeasureSpec(cardWidth, View.MeasureSpec.EXACTLY), unspecified);
+                tallest = Math.max(tallest, group.content.getMeasuredHeight());
+            }
+            int wanted = list.getMeasuredHeight() + tallest;
+            scroll.fixedHeight = Math.max(dp(dc, 160), Math.min(wanted, (int) (metrics.heightPixels * 0.66f)));
         }
 
         LinearLayout header = new LinearLayout(dc);
@@ -555,7 +572,7 @@ public final class ModSettings {
 
     private static Group obtainGroup(
         final Context dc, LinearLayout list, final Map<String, Group> groups, String name,
-        int cardColor, int rippleColor, int chevronColor, final ScrollView scroll
+        int cardStroke, int rippleColor, int chevronColor, final ScrollView scroll
     ) {
         Group existing = groups.get(name);
         if (existing != null) return existing;
@@ -564,7 +581,7 @@ public final class ModSettings {
 
         LinearLayout card = new LinearLayout(dc);
         card.setOrientation(LinearLayout.VERTICAL);
-        card.setBackground(rounded(dc, cardColor, 18));
+        card.setBackground(outlined(dc, cardStroke, 18));
         card.setClipToOutline(true);
 
         LinearLayout header = new LinearLayout(dc);
@@ -662,18 +679,16 @@ public final class ModSettings {
         content.setLayoutParams(params);
         content.setVisibility(View.VISIBLE);
 
-        group.chevron.animate().rotation(expand ? 180f : 0f).setDuration(220).start();
+        group.chevron.animate().rotation(expand ? 180f : 0f).setDuration(200).start();
 
         ValueAnimator animator = ValueAnimator.ofInt(from, to);
-        animator.setDuration(220);
+        animator.setDuration(200);
         animator.setInterpolator(new DecelerateInterpolator());
         animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
                 params.height = (Integer) animation.getAnimatedValue();
                 content.setLayoutParams(params);
-                float fraction = animation.getAnimatedFraction();
-                content.setAlpha(expand ? fraction : 1f - fraction);
             }
         });
         animator.addListener(new AnimatorListenerAdapter() {
@@ -689,7 +704,6 @@ public final class ModSettings {
                 if (canceled) return;
                 params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
                 content.setLayoutParams(params);
-                content.setAlpha(1f);
                 group.animator = null;
                 if (expand) {
                     scroll.smoothScrollTo(0, Math.max(0, group.card.getTop() - dp(content.getContext(), 8)));
@@ -711,6 +725,14 @@ public final class ModSettings {
         params.rightMargin = dp(dc, 16);
         divider.setLayoutParams(params);
         return divider;
+    }
+
+    private static GradientDrawable outlined(Context context, int strokeColor, int radiusDp) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setColor(0x00000000);
+        drawable.setStroke(Math.max(1, dp(context, 1)), strokeColor);
+        drawable.setCornerRadius(dp(context, radiusDp));
+        return drawable;
     }
 
     private static GradientDrawable rounded(Context context, int color, int radiusDp) {
@@ -957,6 +979,27 @@ public final class ModSettings {
             path.lineTo(12f, 15f);
             path.lineTo(17.5f, 9.5f);
             canvas.drawPath(path, paint);
+        }
+    }
+
+    private static final class FixedScrollView extends ScrollView {
+        int fixedHeight;
+
+        FixedScrollView(Context context) {
+            super(context);
+        }
+
+        @Override
+        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+            if (fixedHeight <= 0) {
+                super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+                return;
+            }
+            int mode = View.MeasureSpec.getMode(heightMeasureSpec);
+            int available = View.MeasureSpec.getSize(heightMeasureSpec);
+            int height = mode == View.MeasureSpec.UNSPECIFIED ? fixedHeight : Math.min(fixedHeight, available);
+            super.onMeasure(widthMeasureSpec,
+                View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY));
         }
     }
 
