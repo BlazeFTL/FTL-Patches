@@ -18,6 +18,7 @@ import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
@@ -168,6 +169,26 @@ private fun BytecodePatchContext.installTabFab() {
     val normalTabs = fieldRef(TABS_PAGE, "NormalTabs")
     val selectedPage = fieldRef(TABS_TRAY_STATE, "selectedPage")
 
+    val lambdaInstructions = callMethod.implementation!!.instructions
+    val centerEnd = lambdaInstructions.indexOfFirst { instruction ->
+        val field = (instruction as? ReferenceInstruction)?.reference as? FieldReference
+        instruction.opcode == Opcode.SGET_OBJECT && field != null && field.name == "CenterEnd"
+    }
+    if (centerEnd < 0 || centerEnd > callIndex) throw PatchException("FAB box alignment (CenterEnd) not found")
+    var weightIndex = -1
+    for (i in centerEnd - 1 downTo 0) {
+        val instruction = lambdaInstructions[i]
+        if (instruction.opcode == Opcode.CONST_HIGH16 &&
+            (instruction as NarrowLiteralInstruction).narrowLiteral == 0x3f800000
+        ) {
+            weightIndex = i
+            break
+        }
+    }
+    if (weightIndex < 0) throw PatchException("FAB box weight not found")
+    val weightRegister = callMethod.getInstruction<OneRegisterInstruction>(weightIndex).registerA
+    callMethod.replaceInstruction(weightIndex, "const/high16 v$weightRegister, 0x40000000")
+
     val fabSignature = "(${parameters.joinToString("")})V"
     val rowSmali = $$$"""
         move-object/from16 v12, p5
@@ -221,7 +242,7 @@ private fun BytecodePatchContext.installTabFab() {
         move-result-object v2
         invoke-static {v2, v12}, $$${TAB_FAB}->fab(Lkotlin/jvm/functions/Function0;Landroidx/compose/runtime/Composer;)V
         sget-object v2, Landroidx/compose/ui/Modifier$Companion;->$$INSTANCE:Landroidx/compose/ui/Modifier$Companion;
-        const/high16 v3, 0x41000000
+        const/high16 v3, 0x41800000
         invoke-static {v2, v3}, Landroidx/compose/foundation/layout/SizeKt;->width-3ABfNKs(Landroidx/compose/ui/Modifier;F)Landroidx/compose/ui/Modifier;
         move-result-object v2
         invoke-static {v12, v2}, Landroidx/compose/foundation/layout/SpacerKt;->Spacer(Landroidx/compose/runtime/Composer;Landroidx/compose/ui/Modifier;)V
@@ -268,11 +289,6 @@ private fun BytecodePatchContext.installTabFab() {
         invoke-static {v3}, Landroidx/compose/material3/FloatingActionButtonDefaults;->elevation-xZ9-QkE(I)Landroidx/compose/material3/FloatingActionButtonElevation;
         move-result-object v3
         sget-object v0, Landroidx/compose/ui/Modifier$Companion;->$$INSTANCE:Landroidx/compose/ui/Modifier$Companion;
-        const/high16 v8, 0x42200000
-        invoke-static {v0, v8}, Landroidx/compose/foundation/layout/SizeKt;->width-3ABfNKs(Landroidx/compose/ui/Modifier;F)Landroidx/compose/ui/Modifier;
-        move-result-object v0
-        invoke-static {v0, v8}, Landroidx/compose/foundation/layout/SizeKt;->height-3ABfNKs(Landroidx/compose/ui/Modifier;F)Landroidx/compose/ui/Modifier;
-        move-result-object v0
         move-object v4, p0
         move-object v5, p1
         const/16 v6, 0x36
