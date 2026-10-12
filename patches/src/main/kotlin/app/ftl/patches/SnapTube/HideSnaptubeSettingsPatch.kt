@@ -3,6 +3,7 @@ package app.ftl.patches.snaptube
 import app.ftl.util.getFreeRegisterProvider
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.methodCall
+import app.morphe.patcher.opcode
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import com.android.tools.smali.dexlib2.Opcode
@@ -43,7 +44,7 @@ internal object SettingsOnViewCreatedFingerprint : Fingerprint(
     parameters = listOf("Landroid/view/View;", "Landroid/os/Bundle;"),
     filters = listOf(
         methodCall(smali = "Landroidx/preference/PreferenceFragmentCompat;->onViewCreated(Landroid/view/View;Landroid/os/Bundle;)V"),
-        methodCall(smali = "Lcom/snaptube/premium/settings/SettingsPreferenceFragment;->E3()V"),
+        opcode(Opcode.RETURN_VOID),
     ),
 )
 
@@ -77,12 +78,10 @@ val hideSnaptubeSettingsPatch = bytecodePatch(
 
         SettingsOnViewCreatedFingerprint.let {
             val superCallIndex = it.instructionMatches[0].index
-            val e3CallIndex = it.instructionMatches[1].index
+            val returnIndex = it.instructionMatches[1].index
 
-            // Run after super and again after the normal setup so both early and late
-            // preference inflation paths are covered without touching p0/register types.
+            it.method.addInstructions(returnIndex, "invoke-static {p0}, $EXTENSION_HIDE_PREFERENCES")
             it.method.addInstructions(superCallIndex + 1, "invoke-static {p0}, $EXTENSION_HIDE_PREFERENCES")
-            it.method.addInstructions(e3CallIndex + 1, "invoke-static {p0}, $EXTENSION_HIDE_PREFERENCES")
         }
     }
 }
