@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.3-dev.2](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.3-dev.2)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;94 patches total
+> **[v1.43.3](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.3)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;106 patches total
 <details>
 <summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
 <br>
@@ -54,6 +54,47 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Sidebar & Player Defaults](#sidebar-player-defaults) | Cleans the player sidebar and More menu; sets default shortcuts and subtitle view. Configurable in Mod Settings, except the default shortcuts bitmask, still a Morphe option pending its Mod Settings move. | • Change default shortcuts<br>• Default shortcuts bitmask (hex) |
 | [Smart Enhance Always On](#smart-enhance-always-on) | Applies Smart Enhance to every video at a level set in Mod Settings, and keeps it after lock/unlock. |  |
 | [Smart Enhance Slider](#smart-enhance-slider) | Replaces the Smart Enhance toggle with a 0-100% popup slider and keeps the level after lock/unlock. |  |
+
+</details>
+
+<details>
+<summary>📦 Calendar 2026&nbsp;&nbsp;•&nbsp;&nbsp;6 patches</summary>
+<br>
+
+**🎯 Supported versions:**
+
+| 2.1 |
+| :---: |
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Boost splash](#boost-splash) | Removes the splash screen delay. |  |
+| [Disable caller related features](#disable-caller-related-features) | Disables caller ID features, the phone state receiver and the permission settings entry. |  |
+| [Skip consent form](#skip-consent-form) | Skips the consent form request on launch and continues the splash flow directly. |  |
+| [Skip initial setup pages](#skip-initial-setup-pages) | Skips the phone, overlay and notification permission pages in the initial setup. |  |
+| [Stop hiding navigation keys](#stop-hiding-navigation-keys) | Stops the app from hiding the system navigation bar. |  |
+| [Unlock purchased state](#unlock-purchased-state) | Makes the app treat itself as purchased. |  |
+
+</details>
+
+<details>
+<summary>📦 Calendar&nbsp;&nbsp;•&nbsp;&nbsp;7 patches</summary>
+<br>
+
+**🎯 Supported versions:**
+
+| 1.0.35 |
+| :---: |
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Boost splash screen](#boost-splash-screen) | Skips splash ads and the consent request and opens the app immediately. |  |
+| [Disable caller features](#disable-caller-features) | Disables the after call screen and hides its entry in settings. |  |
+| [Disable rate us prompts](#disable-rate-us-prompts) | Disables the rate us feedback screen and the periodic rate us prompt. |  |
+| [Remove battery optimization prompt](#remove-battery-optimization-prompt) | Removes the battery optimization request on the dashboard. |  |
+| [Skip initial setup pages](#skip-initial-setup-pages) | Skips the permission and call setup pages shown after the language selection. |  |
+| [Stop hiding navigation keys](#stop-hiding-navigation-keys) | Keeps the system navigation keys visible. |  |
+| [Unlock premium](#unlock-premium) | Unlocks premium features and hides the premium entry in settings. |  |
 
 </details>
 
@@ -159,7 +200,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 </details>
 
 <details>
-<summary>📦 Firefox Nightly&nbsp;&nbsp;•&nbsp;&nbsp;5 patches</summary>
+<summary>📦 Firefox Nightly&nbsp;&nbsp;•&nbsp;&nbsp;6 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -171,9 +212,10 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 |----------|----------------|-----------|
 | [Close duplicate tabs](#close-duplicate-tabs) | Adds Close duplicate tabs to the tab tray 3 dot menu. Toggle in Mod Settings. |  |
 | [Hide fullscreen toast](#hide-fullscreen-toast) | Removes the toast shown when a video goes fullscreen. Toggle in Mod Settings. |  |
-| [New tab next to current tab](#new-tab-next-to-current-tab) | Opens new tabs right after the current tab and adds a > button beside + that opens a tab at the end. Both are toggles in Mod Settings. |  |
+| [New tab next to current tab](#new-tab-next-to-current-tab) | Opens new tabs right after the current tab and adds an add-to-end button (+ with a down arrow) beside + that opens a tab at the end. Both are toggles in Mod Settings. |  |
 | [Old style 3 dot menu And Extension Pinning](#old-style-3-dot-menu-and-extension-pinning) | Adds "Mod Settings" to the 3 dot menu: switch between the stock bottom sheet menu and the old style popup menu, and pin extensions to the search bar. |  |
 | [Remember tab scroll position](#remember-tab-scroll-position) | Keeps the tab tray scroll position when it is closed and reopened. |  |
+| [Tab scroll button](#tab-scroll-button) | Adds up and down buttons beside + in the tab tray that jump to the first and last tab. Toggle in Mod Settings. |  |
 
 </details>
 
@@ -284,22 +326,6 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 |----------|----------------|-----------|
 | [Skip splash delay](#skip-splash-delay) | Shortens the splash screen waits. |  |
 | [Unlock Pro and skip onboarding](#unlock-pro-and-skip-onboarding) | Unlocks Pro features and skips the onboarding screens. |  |
-
-</details>
-
-<details>
-<summary>📦 Calendar&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
-<br>
-
-**🎯 Supported versions:**
-
-| 1.0.34 |
-| :---: |
-
-| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
-|----------|----------------|-----------|
-| [Skip/Boost splash screen](#skip-boost-splash-screen) | By default, skips the splash screen entirely on launch. Turn on "Boost splash" to instead keep it briefly on screen (configurable delay) Useless To Boost Splash Screen If You Select Unlock Premium Patch Too Use If You Want To Skip Splash Screen Entirely | • Boost splash instead of skipping<br>• Boost delay (ms) |
-| [Unlock premium](#unlock-premium) | Unlocks premium features and removes ads. |  |
 
 </details>
 
