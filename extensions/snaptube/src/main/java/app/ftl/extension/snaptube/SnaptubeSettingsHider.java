@@ -82,12 +82,7 @@ public final class SnaptubeSettingsHider {
     public static void hidePreferences(PreferenceFragmentCompat fragment) {
         if (fragment == null) return;
         try {
-            // Newer SnapTube builds use x1; older builds used w1.
-            Method findPref = findMethod(
-                PreferenceFragmentCompat.class,
-                new String[]{"x1", "w1", "findPreference"},
-                CharSequence.class
-            );
+            Method findPref = findPreferenceMethod();
             Method setVisible = findMethod(
                 Preference.class,
                 new String[]{"x0", "setVisible"},
@@ -101,6 +96,18 @@ public final class SnaptubeSettingsHider {
         } catch (Throwable t) {
             Log.e(TAG, "hidePreferences failed; target methods may have changed", t);
         }
+    }
+
+    private static Method findPreferenceMethod() throws NoSuchMethodException {
+        for (Method method : PreferenceFragmentCompat.class.getMethods()) {
+            Class<?>[] params = method.getParameterTypes();
+            if (params.length == 1
+                && params[0] == CharSequence.class
+                && Preference.class.isAssignableFrom(method.getReturnType())) {
+                return method;
+            }
+        }
+        throw new NoSuchMethodException("findPreference");
     }
 
     private static Method findMethod(Class<?> owner, String[] names, Class<?>... parameterTypes)
