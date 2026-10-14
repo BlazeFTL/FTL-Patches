@@ -9,7 +9,6 @@ import android.content.res.Resources
 import android.os.Bundle
 import android.util.Log
 import android.view.ViewTreeObserver
-import kotlin.math.roundToInt
 
 object DensityPatch {
     private const val TAG = "MorpheDpi"
@@ -74,8 +73,8 @@ object DensityPatch {
 
         val clampedPercent = if (percent in MIN_PERCENT..MAX_PERCENT) percent else DEFAULT_PERCENT
         val originalDpi = application.resources.displayMetrics.densityDpi
-        val scaled = (originalDpi * clampedPercent / 100f).roundToInt()
-        targetDpi = scaled.coerceIn(MIN_DPI, MAX_DPI)
+        val scaled = Math.round(originalDpi * clampedPercent / 100f)
+        targetDpi = Math.max(MIN_DPI, Math.min(MAX_DPI, scaled))
 
         if (targetDpi == originalDpi) return
 
@@ -121,7 +120,7 @@ object DensityPatch {
         application.registerComponentCallbacks(object : ComponentCallbacks2 {
             override fun onConfigurationChanged(newConfig: Configuration) {
                 applyTo(application.resources)
-                activeActivities.toList().forEach { forceDensity(it) }
+                for (a in activeActivities) forceDensity(a)
             }
 
             override fun onLowMemory() {}
@@ -143,7 +142,7 @@ object DensityPatch {
         }
         try {
             decorView.viewTreeObserver.addOnGlobalLayoutListener(listener)
-            watchedActivities[activity] = listener
+            watchedActivities.put(activity, listener)
         } catch (t: Throwable) {
             Log.e(TAG, "attachWatchdog failed", t)
         }
