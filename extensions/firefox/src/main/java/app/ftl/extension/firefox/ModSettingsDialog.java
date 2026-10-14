@@ -111,6 +111,7 @@ final class ModSettingsDialog {
         root.addView(tabEnd, margins(0, 10, 0, 0));
         root.addView(tabScrollRow(), margins(0, 10, 0, 0));
         root.addView(closeDuplicatesRow(), margins(0, 10, 0, 0));
+        root.addView(rangeSelectRow(), margins(0, 10, 0, 0));
 
         root.addView(label("VIDEO"), margins(0, 20, 0, 8));
         root.addView(fullscreenToastRow());
@@ -314,6 +315,21 @@ final class ModSettingsDialog {
                 public void onCheckedChanged(CompoundButton button, boolean checked) {
                     ModSettings.saveHideFullscreenToast(app, checked);
                     hint.setText(checked ? "Fullscreen toast hidden" : "Fullscreen toast shown");
+                    hint.setTextColor(accent);
+                }
+            });
+    }
+
+    private View rangeSelectRow() {
+        return switchRow(
+            "Long press to select range",
+            "In tab selection mode, long press a second tab to select every tab between",
+            ModSettings.isRangeSelectSaved(app),
+            new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton button, boolean checked) {
+                    ModSettings.saveRangeSelect(app, checked);
+                    hint.setText(checked ? "Range select on" : "Range select off");
                     hint.setTextColor(accent);
                 }
             });
