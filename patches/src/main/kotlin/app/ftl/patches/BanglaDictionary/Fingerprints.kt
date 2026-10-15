@@ -1,19 +1,25 @@
 package app.ftl.patches.bangladictionary
 
 import app.morphe.patcher.Fingerprint
-import com.android.tools.smali.dexlib2.AccessFlags
+import app.morphe.patcher.InstructionLocation
+import app.morphe.patcher.fieldAccess
+import app.morphe.patcher.methodCall
+import app.morphe.patcher.opcode
+import com.android.tools.smali.dexlib2.Opcode
 
-/**
- * The purchase-status getter, read by the app to decide whether Pro is
- * unlocked. The whole app ships without obfuscation - class name, method
- * name, and the SharedPreferences key it reads back are all real, stable
- * app code - so the method is pinned directly by signature instead of
- * needing an instruction-based fingerprint.
- */
 internal object IsPurchasedFingerprint : Fingerprint(
-    definingClass = "Lcom/bappi/utils/Utils;",
-    name = "isPurchased",
-    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.STATIC, AccessFlags.FINAL),
+    isStatic = true,
     returnType = "Z",
     parameters = listOf("Landroid/content/SharedPreferences;"),
+    filters = listOf(
+        fieldAccess(opcode = Opcode.SGET_OBJECT, type = "Ljava/lang/String;"),
+        opcode(Opcode.CONST_4, InstructionLocation.MatchAfterImmediately()),
+        methodCall(
+            smali = "Landroid/content/SharedPreferences;->getBoolean(Ljava/lang/String;Z)Z",
+            opcode = Opcode.INVOKE_INTERFACE,
+            location = InstructionLocation.MatchAfterImmediately(),
+        ),
+        opcode(Opcode.MOVE_RESULT, InstructionLocation.MatchAfterImmediately()),
+        opcode(Opcode.RETURN, InstructionLocation.MatchAfterImmediately()),
+    ),
 )
