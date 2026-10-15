@@ -16,8 +16,10 @@ public final class ModPrefs {
     static final String KEY_HIDE_HOME_TILES = "hide_home_tiles";
     static final String KEY_HIDE_RECENT = "hide_recent";
     static final String KEY_HIDE_FOLDER_ROWS = "hide_folder_rows";
+    static final String KEY_FAST_ENHANCER = "fast_enhancer";
 
     private static volatile SharedPreferences prefs;
+    private static volatile boolean enhancerPending;
 
     private ModPrefs() {
     }
@@ -98,5 +100,25 @@ public final class ModPrefs {
 
     public static int boostUnscale(int value) {
         return boostOn() ? value >> 1 : value;
+    }
+
+    private static boolean fastEnhancerOn() {
+        return get(null, KEY_FAST_ENHANCER, true);
+    }
+
+    public static boolean enhancerFast() {
+        return fastEnhancerOn();
+    }
+
+    public static int enhancerAnim(int wasOff) {
+        return fastEnhancerOn() ? 0 : wasOff;
+    }
+
+    public static boolean enhancerPending() {
+        return enhancerPending;
+    }
+
+    public static void setEnhancerPending(boolean value) {
+        enhancerPending = value;
     }
 }

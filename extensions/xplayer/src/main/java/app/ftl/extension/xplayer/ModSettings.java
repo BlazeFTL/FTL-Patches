@@ -55,7 +55,9 @@ public final class ModSettings {
                     new Entry(ModPrefs.KEY_HIDE_PLAYER_BUTTONS, "Hide cast / FF / FB buttons",
                             "Removes the cast and custom buttons from the top bar and the 10 second skip buttons.", false),
                     new Entry(ModPrefs.KEY_VOLUME_BOOST, "Volume boost",
-                            "Raises the volume boost limit in the player and background playback.", false)
+                            "Raises the volume boost limit in the player and background playback.", false),
+                    new Entry(ModPrefs.KEY_FAST_ENHANCER, "Remove enhancer animation",
+                            "Skips the video enhancer enable animation and applies the effect instantly without reloading the video.", false)
             })
     };
 
