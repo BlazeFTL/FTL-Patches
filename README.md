@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.3](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.3)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;106 patches total
+> **[v1.43.4](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.4)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;110 patches total
 <details>
 <summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
 <br>
@@ -116,7 +116,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 </details>
 
 <details>
-<summary>📦 XPlayer - Video Player&nbsp;&nbsp;•&nbsp;&nbsp;15 patches</summary>
+<summary>📦 XPlayer - Video Player&nbsp;&nbsp;•&nbsp;&nbsp;16 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -138,6 +138,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | [Mod Settings](#mod-settings) | Adds a Mod Settings entry below Settings in the home 3-dot menu. |  |
 | [Player Side Cleaned](#player-side-cleaned) | Cleans the player side menu: audio, subtitle, cast, bookmark, favorite, play mode, brightness and volume. Applied while the menu inflates so remaining items stay aligned. Toggle in Mod Settings. |  |
 | [Remove Tutorial](#remove-tutorial) | Removes the player tutorial. |  |
+| [Remove Video Enhancer Animation](#remove-video-enhancer-animation) | Skips the Visual Enhancer enable animation and applies effects instantly without reloading the video. Toggle in Mod Settings. |  |
 | [Skip Splash Screen](#skip-splash-screen) | Launches directly into the file explorer instead of the splash screen. |  |
 | [Unlock Pro](#unlock-pro) | Unlocks all pro features. |  |
 | [Volume Booster](#volume-booster) | Raises the volume boost limit in the player and background playback. Toggle in Mod Settings. |  |
@@ -150,12 +151,12 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 **🎯 Supported versions:**
 
-| 7.64.0.76450210 |
-| :---: |
+| 7.64.0.76450210 | 7.68.1.76801201 |
+| :---: | :---: |
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
-| [Clean SnapTube Settings Page](#clean-snaptube-settings-page) | Removes the Download tools and Phone clean categories, and their sub-items, from Settings. |  |
+| [Clean SnapTube Settings Page](#clean-snaptube-settings-page) | Hides the Download tools and Phone clean categories, and their sub-items, from Settings. |  |
 | [Disable Annoying Snaptube Notifications](#disable-annoying-snaptube-notifications) | Turns off the Toolbar, Recommended contents, and Tool notifications channels by default. |  |
 | [Remove Watch Ad To Download](#remove-watch-ad-to-download) | Removes the requirement to watch a rewarded ad before a download starts. |  |
 | [Remove from default browser list](#remove-from-default-browser-list) | Strips the LinkHandleActivity alias's unscoped so the app stops appearing as a candidate in the system's default browser / "open with" chooser. |  |
@@ -200,7 +201,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 </details>
 
 <details>
-<summary>📦 Firefox Nightly&nbsp;&nbsp;•&nbsp;&nbsp;6 patches</summary>
+<summary>📦 Firefox Nightly&nbsp;&nbsp;•&nbsp;&nbsp;7 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -212,6 +213,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 |----------|----------------|-----------|
 | [Close duplicate tabs](#close-duplicate-tabs) | Adds Close duplicate tabs to the tab tray 3 dot menu. Toggle in Mod Settings. |  |
 | [Hide fullscreen toast](#hide-fullscreen-toast) | Removes the toast shown when a video goes fullscreen. Toggle in Mod Settings. |  |
+| [Long press to select tab range](#long-press-to-select-tab-range) | In tab tray selection mode, long press a second tab to select every tab between. Toggle in Mod Settings. |  |
 | [New tab next to current tab](#new-tab-next-to-current-tab) | Opens new tabs right after the current tab and adds an add-to-end button (+ with a down arrow) beside + that opens a tab at the end. Both are toggles in Mod Settings. |  |
 | [Old style 3 dot menu And Extension Pinning](#old-style-3-dot-menu-and-extension-pinning) | Adds "Mod Settings" to the 3 dot menu: switch between the stock bottom sheet menu and the old style popup menu, and pin extensions to the search bar. |  |
 | [Remember tab scroll position](#remember-tab-scroll-position) | Keeps the tab tray scroll position when it is closed and reopened. |  |
@@ -230,17 +232,34 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 </details>
 
 <details>
-<summary>📦 Video Downloader&nbsp;&nbsp;•&nbsp;&nbsp;6 patches</summary>
+<summary>📦 Video Downloader&nbsp;&nbsp;•&nbsp;&nbsp;7 patches</summary>
 <br>
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
 | [Disable downloader from download menu](#disable-downloader-from-download-menu) | Removes the http/https <data> entries from BrowserDownloaderActivity's so the app stops offering itself in the system "Download file with" chooser for ordinary web downloads. |  |
+| [Fix HLS seek playback](#fix-hls-seek-playback) | Remuxes classic MPEG-TS HLS downloads to MP4 so seeking in players has no dark frames. |  |
 | [Popup blocker](#popup-blocker) | Blocks popups and popunder redirects with Allow / Block / Always Block prompts. Adds "Manage popup rules" as the last item of the 3-dot menu. |  |
 | [Remove from default browser list](#remove-from-default-browser-list) | Removes http/https <data> entries from MainTabsActivity's so the app stops appearing as a candidate in the system's default browser / "open with" chooser. |  |
 | [Skip splash screen](#skip-splash-screen) | Skips splash screen so the app opens directly to the main screen. |  |
 | [Unlock Pro](#unlock-pro) | Signature verification is spoofed automatically if this patch is selected the purchase check passes. |  |
 | [Use Your Own Host File For Stronger AdBlock](#use-your-own-host-file-for-stronger-adblock) | Replaces res/raw/hosts.txt with a text/host file you select. | • Host file |
+
+</details>
+
+<details>
+<summary>📦 Bangla Dictionary&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
+<br>
+
+**🎯 Supported versions:**
+
+| 11.5.9 |
+| :---: |
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Disable pronunciation nag](#disable-pronunciation-nag) | Removes the "device doesn't support pronunciation" toast and install-TTS dialog, and hides the pronunciation button when no usable TTS engine/language is available. |  |
+| [Unlock Pro](#unlock-pro) | Forces the purchase check to always return true, unlocking Pro. |  |
 
 </details>
 
@@ -341,21 +360,6 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
 | [Unlock Premium](#unlock-premium) | Forces SecurityTracker.isPremium() to always return true, so every feature gated by the "st_01" premium flag stays unlocked. |  |
-
-</details>
-
-<details>
-<summary>📦 Bangla Dictionary&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
-<br>
-
-**🎯 Supported versions:**
-
-| 11.5.1 |
-| :---: |
-
-| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
-|----------|----------------|-----------|
-| [Unlock Pro](#unlock-pro) | Forces the purchase check to always return true, unlocking Pro. |  |
 
 </details>
 
