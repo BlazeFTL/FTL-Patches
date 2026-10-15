@@ -30,6 +30,8 @@ public final class ModSettings {
     private static final boolean DEFAULT_TAB_SCROLL = true;
     private static final String KEY_HIDE_FULLSCREEN_TOAST = "hide_fullscreen_toast";
     private static final boolean DEFAULT_HIDE_FULLSCREEN_TOAST = true;
+    private static final String KEY_RANGE_SELECT = "range_select";
+    private static final boolean DEFAULT_RANGE_SELECT = true;
 
     private static volatile int latched;
     private static volatile int pinLatched;
@@ -40,6 +42,7 @@ public final class ModSettings {
     private static volatile Boolean closeDuplicatesCache;
     private static volatile Boolean tabScrollCache;
     private static volatile Boolean hideFullscreenToastCache;
+    private static volatile Boolean rangeSelectCache;
 
     private ModSettings() {
     }
@@ -170,6 +173,31 @@ public final class ModSettings {
     static void saveHideFullscreenToast(Context context, boolean enabled) {
         prefs(context).edit().putBoolean(KEY_HIDE_FULLSCREEN_TOAST, enabled).apply();
         hideFullscreenToastCache = enabled;
+    }
+
+    public static boolean rangeSelect() {
+        Boolean value = rangeSelectCache;
+        if (value == null) {
+            try {
+                Application app = currentApplication();
+                if (app != null) {
+                    value = isRangeSelectSaved(app);
+                    rangeSelectCache = value;
+                }
+            } catch (Throwable t) {
+                Log.e(TAG, "range select state failed", t);
+            }
+        }
+        return value != null ? value : DEFAULT_RANGE_SELECT;
+    }
+
+    static boolean isRangeSelectSaved(Context context) {
+        return prefs(context).getBoolean(KEY_RANGE_SELECT, DEFAULT_RANGE_SELECT);
+    }
+
+    static void saveRangeSelect(Context context, boolean enabled) {
+        prefs(context).edit().putBoolean(KEY_RANGE_SELECT, enabled).apply();
+        rangeSelectCache = enabled;
     }
 
     public static boolean closeDuplicates() {

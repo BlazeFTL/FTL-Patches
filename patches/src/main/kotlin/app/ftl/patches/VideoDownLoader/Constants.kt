@@ -21,5 +21,5 @@ internal val COMPATIBILITY_VIDEO_DOWNLOADER = Compatibility(
 internal val COMPATIBILITY_VIDEO_DOWNLOADER_UNLOCK_PRO = Compatibility(
     packageName = "video.downloader.videodownloader",
     name = "Video Downloader",
-    targets = listOf(AppTarget(version = "2.7.2", versionCode = 172)),
+    targets = listOf(AppTarget(version = "2.7.3", versionCode = 173)),
 )
