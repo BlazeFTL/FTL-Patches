@@ -10,7 +10,6 @@ import app.morphe.patcher.string
 import com.android.tools.smali.dexlib2.Opcode
 
 internal object IsPurchasedFingerprint : Fingerprint(
-    isStatic = true,
     returnType = "Z",
     parameters = listOf("Landroid/content/SharedPreferences;"),
     filters = listOf(
@@ -30,7 +29,6 @@ internal object TtsInitFingerprint : Fingerprint(
     name = "onInit",
     returnType = "V",
     parameters = listOf("I"),
-    interfaces = listOf("Landroid/speech/tts/TextToSpeech\$OnInitListener;"),
     filters = listOf(
         fieldAccess(opcode = Opcode.IPUT_BOOLEAN),
         fieldAccess(opcode = Opcode.IPUT_BOOLEAN, location = InstructionLocation.MatchAfterWithin(6)),

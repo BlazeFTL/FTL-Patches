@@ -1,27 +1,25 @@
 package app.ftl.patches.bangladictionary
 
-import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstruction
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.extensions.InstructionExtensions.removeInstruction
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
-import app.morphe.patcher.util.findFreeRegister
-import app.morphe.patcher.util.p0Register
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
-import app.morphe.patcher.util.registersUsed
 import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
+import com.android.tools.smali.dexlib2.iface.instruction.Instruction
+import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 
 private const val UPDATE_VISIBILITY_METHOD = "updatePronunciationVisibility"
 
-private fun Fingerprint.InstructionMatch.fieldSmali(): String {
+private fun fieldSmali(instruction: Instruction): String {
     val reference = (instruction as ReferenceInstruction).reference as FieldReference
     return "${reference.definingClass}->${reference.name}:${reference.type}"
 }
@@ -36,26 +34,29 @@ val disablePronunciationNagPatch = bytecodePatch(
 
     execute {
         val initMatches = TtsInitFingerprint.instructionMatches
-        val flagA = initMatches[0].fieldSmali()
-        val flagB = initMatches[1].fieldSmali()
+        val flagA = fieldSmali(initMatches[0].instruction)
+        val flagB = fieldSmali(initMatches[1].instruction)
 
         TtsEngineCheckFingerprint.let {
             it.method.removeInstruction(it.instructionMatches.last().index)
         }
 
         TtsSpeakFingerprint.let { fingerprint ->
-            val dialogCalls = fingerprint.instructionMatches.take(2)
+            val invokeIndices = fingerprint.instructionMatches.take(2).map { it.index }
 
             fingerprint.method.apply {
-                val thisRegister = p0Register
+                invokeIndices.asReversed().forEach { invokeIndex ->
+                    var newInstanceIndex = invokeIndex
+                    while (newInstanceIndex >= 0 && getInstruction(newInstanceIndex).opcode != Opcode.NEW_INSTANCE) {
+                        newInstanceIndex--
+                    }
+                    if (newInstanceIndex < 0) throw PatchException("Install dialog listener not found")
 
-                dialogCalls.asReversed().forEach { call ->
-                    val index = call.index
-                    val scratch = findFreeRegister(index, call.instruction.registersUsed + thisRegister)
-                    val skipTarget = getInstruction(index + 1)
+                    val scratch = getInstruction<OneRegisterInstruction>(newInstanceIndex).registerA
+                    val skipTarget = getInstruction(invokeIndex + 1)
 
                     addInstructionsWithLabels(
-                        index,
+                        newInstanceIndex,
                         """
                             iget-boolean v$scratch, p0, $flagA
                             if-nez v$scratch, :show_dialog
@@ -71,13 +72,13 @@ val disablePronunciationNagPatch = bytecodePatch(
         }
 
         val setupMatches = PronunciationSetupFingerprint.instructionMatches
-        val rowId = setupMatches[2].fieldSmali()
-        val rootView = setupMatches[1].fieldSmali()
-        val buttonField = PronunciationButtonBindFingerprint.instructionMatches[1].fieldSmali()
+        val rootView = fieldSmali(setupMatches[1].instruction)
+        val rowId = fieldSmali(setupMatches[2].instruction)
+        val buttonField = fieldSmali(PronunciationButtonBindFingerprint.instructionMatches[1].instruction)
 
         val prefMatches = TtsInitTimePrefChangedFingerprint.instructionMatches
-        val activityField = prefMatches[1].fieldSmali()
-        val ttsField = prefMatches[2].fieldSmali()
+        val activityField = fieldSmali(prefMatches[1].instruction)
+        val ttsField = fieldSmali(prefMatches[2].instruction)
         val afterVisibilityIndex = prefMatches[3].index + 1
 
         val uiClass = PronunciationSetupFingerprint.originalClassDef.type
