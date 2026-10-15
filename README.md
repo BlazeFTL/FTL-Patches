@@ -1,6 +1,6 @@
-# 👋🧩 FTL Patches
+# 👋🧩 BlazeFTL Patches
 
-Personal collection of my Morphe Patches
+Personal collection of my Morphe Patches.
 
 ## ❓ About
 
