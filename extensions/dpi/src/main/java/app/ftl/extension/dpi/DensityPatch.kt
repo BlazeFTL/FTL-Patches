@@ -40,7 +40,7 @@ object DensityPatch {
     private val watchedActivities =
         java.util.WeakHashMap<Activity, ViewTreeObserver.OnGlobalLayoutListener>()
 
-    private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     private val pendingRefresh =
         java.util.Collections.newSetFromMap(java.util.WeakHashMap<Activity, Boolean>())
@@ -130,7 +130,7 @@ object DensityPatch {
         application.registerComponentCallbacks(object : ComponentCallbacks2 {
             override fun onConfigurationChanged(newConfig: Configuration) {
                 applyTo(application.resources)
-                for (a in activeActivities.toList()) correct(a)
+                for (a in java.util.ArrayList(activeActivities)) correct(a)
             }
 
             override fun onLowMemory() {}
