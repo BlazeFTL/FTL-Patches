@@ -7,6 +7,9 @@ import android.content.Context
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.util.Log
 import android.view.ViewTreeObserver
 
@@ -36,6 +39,13 @@ object DensityPatch {
     // fire many times for the same instance, doesn't stack duplicate listeners.
     private val watchedActivities =
         java.util.WeakHashMap<Activity, ViewTreeObserver.OnGlobalLayoutListener>()
+
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    private val pendingRefresh =
+        java.util.Collections.newSetFromMap(java.util.WeakHashMap<Activity, Boolean>())
+
+    private val lastRefresh = java.util.WeakHashMap<Activity, Long>()
 
     @JvmStatic
     fun setPercent(value: Int) { percent = value }
@@ -97,15 +107,15 @@ object DensityPatch {
             // FileExplorerActivity resets to the true device dpi on every resume, not
             // just once, so this has to run ahead of it every time, not just react after).
             override fun onActivityPreStarted(activity: Activity) {
-                forceDensity(activity)
+                correct(activity)
             }
 
             override fun onActivityPreResumed(activity: Activity) {
-                forceDensity(activity)
+                correct(activity)
             }
 
             override fun onActivityResumed(activity: Activity) {
-                forceDensity(activity)
+                correct(activity)
                 attachWatchdog(activity)
             }
             override fun onActivityPaused(activity: Activity) {}
@@ -120,7 +130,7 @@ object DensityPatch {
         application.registerComponentCallbacks(object : ComponentCallbacks2 {
             override fun onConfigurationChanged(newConfig: Configuration) {
                 applyTo(application.resources)
-                for (a in activeActivities) forceDensity(a)
+                for (a in java.util.ArrayList(activeActivities)) correct(a)
             }
 
             override fun onLowMemory() {}
@@ -133,8 +143,8 @@ object DensityPatch {
         val decorView = try { activity.window?.decorView } catch (t: Throwable) { null } ?: return
         val listener = ViewTreeObserver.OnGlobalLayoutListener {
             try {
-                if (activity.resources.displayMetrics.densityDpi != targetDpi) {
-                    forceDensity(activity)
+                if (!isDensityOk(activity.resources)) {
+                    correct(activity)
                 }
             } catch (t: Throwable) {
                 Log.e(TAG, "watchdog failed", t)
@@ -157,28 +167,58 @@ object DensityPatch {
         }
     }
 
-    private fun forceDensity(activity: Activity) {
-        applyTo(activity.resources)
+    private fun isDensityOk(resources: Resources): Boolean =
+        resources.displayMetrics.densityDpi == targetDpi && resources.configuration.densityDpi == targetDpi
+
+    private fun forceDensity(activity: Activity): Boolean {
+        var changed = applyTo(activity.resources)
         val base: Context? = activity.baseContext
         if (base != null && base.resources !== activity.resources) {
-            applyTo(base.resources)
+            if (applyTo(base.resources)) changed = true
+        }
+        return changed
+    }
+
+    private fun correct(activity: Activity) {
+        if (forceDensity(activity)) scheduleRefresh(activity)
+    }
+
+    private fun scheduleRefresh(activity: Activity) {
+        val now = SystemClock.uptimeMillis()
+        val last = lastRefresh[activity]
+        if (last != null && now - last < 1000L) return
+        if (!pendingRefresh.add(activity)) return
+        lastRefresh[activity] = now
+        mainHandler.post {
+            pendingRefresh.remove(activity)
+            try {
+                if (activity.isFinishing || activity.isDestroyed) return@post
+                forceDensity(activity)
+                val decor = activity.window?.decorView ?: return@post
+                decor.dispatchConfigurationChanged(activity.resources.configuration)
+                decor.requestLayout()
+            } catch (t: Throwable) {
+                Log.e(TAG, "refresh failed", t)
+            }
         }
     }
 
-    private fun applyTo(resources: Resources) {
-        val metrics = resources.displayMetrics
-        if (metrics.densityDpi == targetDpi) return
+    private fun applyTo(resources: Resources): Boolean {
+        if (isDensityOk(resources)) return false
 
+        val metrics = resources.displayMetrics
+        val configuration = resources.configuration
         val scale = targetDpi / BASELINE_DPI
+        val fontScale = if (configuration.fontScale == 0f) 1f else configuration.fontScale
         metrics.densityDpi = targetDpi
         metrics.density = scale
         @Suppress("DEPRECATION")
-        run { metrics.scaledDensity = scale }
+        run { metrics.scaledDensity = scale * fontScale }
 
-        val configuration = resources.configuration
         configuration.densityDpi = targetDpi
 
         @Suppress("DEPRECATION")
         resources.updateConfiguration(configuration, metrics)
+        return true
     }
 }
