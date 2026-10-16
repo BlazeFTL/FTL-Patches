@@ -44,8 +44,8 @@ private object WelcomeAdEnabledFingerprint : Fingerprint(
  * and "<init>" are both real and stable; the obfuscated call itself is matched by shape
  * only (static, 0 params, returns Z), never by name. Kept as a second, explicit edit
  * alongside [WelcomeAdEnabledFingerprint] to mirror the reference build exactly, even
- * though patching b() to always return false already makes this site compute the same
- * q0 value on its own.
+ * though patching b() to always return true already makes this site compute the same
+ * q0 value (false, welcome ad flow off) on its own.
  */
 private object WelcomeAdEnabledCheckFingerprint : Fingerprint(
     definingClass = ACTIVITY_WELCOME_MX_CLASS,
@@ -225,13 +225,15 @@ val boostSplashScreenPatch = bytecodePatch(
     dependsOn(removeSplashLogoResourcePatch)
 
     execute {
-        // 1. Kill the check at its source: short-circuits Lxbm;->b()Z to false before
-        // any of the original remote-config/time-window logic runs. Original body is
-        // left in place below the return, just unreachable.
+        // 1. Kill the check at its source: short-circuits Lxbm;->b()Z to true before
+        // any of the original remote-config/time-window logic runs. Stock b() ends in
+        // `xor-int/lit8 v0, v2, 0x1` where v2 = 1 only while the welcome ad window is
+        // active, so true means "welcome ad off". Original body is left in place below
+        // the return, just unreachable.
         WelcomeAdEnabledFingerprint.method.addInstructions(
             0,
             """
-                const/4 v0, 0x0
+                const/4 v0, 0x1
                 return v0
             """.trimIndent(),
         )
@@ -243,12 +245,10 @@ val boostSplashScreenPatch = bytecodePatch(
         val method = WelcomeAdEnabledCheckFingerprint.method
         val matches = WelcomeAdEnabledCheckFingerprint.instructionMatches
 
-        method.replaceInstruction(matches[3].index, "nop")
-
         val invokeIndex = matches[0].index
         val resultRegister = matches[1].getInstruction<OneRegisterInstruction>().registerA
 
-        method.replaceInstruction(invokeIndex, "const/4 v$resultRegister, 0x0")
+        method.replaceInstruction(invokeIndex, "const/4 v$resultRegister, 0x1")
         method.removeInstruction(invokeIndex + 1)
 
         EntryRouteFingerprint.let { fingerprint ->
