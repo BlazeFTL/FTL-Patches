@@ -2,9 +2,10 @@
 """
 Builds .github/assets/banner-light.svg and banner-dark.svg.
 
-Put your own Goku art (transparent PNGs work best) in .github/assets/goku/.
-One is picked per day and sits left of the title. With no art there, a
-four-star dragon ball is drawn instead.
+Put your own Goku art (PNG/JPG/WebP) in .github/assets/goku/. One is picked per
+day and sits left of the title. Art with transparency is used as-is; opaque art
+is cropped square (focus: upper right) and its edges feathered into the page.
+With no art there, a four-star dragon ball is drawn instead.
 
 Needs: pip install fonttools pillow
 
@@ -20,15 +21,16 @@ from pathlib import Path
 from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
 from fontTools.ttLib import TTFont
-from PIL import Image
+from PIL import Image, ImageOps
 
 ASSETS = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent / "assets"
 TITLE_FONT = TTFont(ASSETS / "fonts" / "Poppins-BoldItalic.ttf")
 SUB_FONT = TTFont(ASSETS / "fonts" / "Poppins-Medium.ttf")
 
-W, H = 1200, 280
-TEXT_X = 390
-MAX_TITLE_W = W - TEXT_X - 30
+W, H = 1120, 320
+ART = H
+TEXT_X = 340
+MAX_TITLE_W = W - TEXT_X - 20
 THEMES = {
     "light": {"title": "#1f2328", "sub": "#59636e"},
     "dark": {"title": "#f0f6fc", "sub": "#9198a1"},
@@ -70,29 +72,44 @@ def star(cx, cy, r):
 
 
 def dragon_ball():
-    cx, cy, r = 190, 140, 92
+    cx, cy, r = ART // 2, H // 2, 105
     stars = "".join(
-        f'<polygon points="{star(cx + dx, cy + dy, 19)}" fill="#c1121f"/>'
-        for dx, dy in ((-26, -18), (26, -18), (-26, 24), (26, 24))
+        f'<polygon points="{star(cx + dx, cy + dy, 21)}" fill="#c1121f"/>'
+        for dx, dy in ((-29, -20), (29, -20), (-29, 27), (29, 27))
     )
-    return f"""<circle cx="{cx}" cy="{cy}" r="138" fill="url(#aura)"/>
+    return f"""<circle cx="{cx}" cy="{cy}" r="{ART // 2}" fill="url(#aura)"/>
 <circle cx="{cx}" cy="{cy}" r="{r}" fill="url(#ball)"/>
-<ellipse cx="{cx - 30}" cy="{cy - 44}" rx="34" ry="18" fill="#fff" opacity=".35" transform="rotate(-28 {cx - 30} {cy - 44})"/>
+<ellipse cx="{cx - 34}" cy="{cy - 50}" rx="38" ry="20" fill="#fff" opacity=".35" transform="rotate(-28 {cx - 34} {cy - 50})"/>
 {stars}"""
+
+
+def feather(img):
+    img = ImageOps.fit(img.convert("RGB"), (ART * 2, ART * 2), Image.LANCZOS, centering=(0.62, 0.15))
+    n = img.width
+    px = img.load()
+    out = Image.new("RGBA", img.size)
+    op = out.load()
+    for y in range(n):
+        for x in range(n):
+            r = (((x - n / 2) / (n / 2)) ** 2 + ((y - n / 2) / (n / 2)) ** 2) ** 0.5
+            t = min(max((1 - r) / 0.14, 0), 1)
+            op[x, y] = (*px[x, y], round(255 * t * t * (3 - 2 * t)))
+    return out
 
 
 def goku_art(path):
     img = Image.open(path).convert("RGBA")
-    max_w, max_h = 340, H
-    scale = min(max_w / img.width, max_h / img.height)
+    if img.getchannel("A").getextrema()[0] == 255:
+        img = feather(img)
+    scale = min(ART / img.width, ART / img.height)
     w, h = round(img.width * scale), round(img.height * scale)
     if img.width > w * 2:
         img = img.resize((w * 2, h * 2), Image.LANCZOS)
     buf = io.BytesIO()
-    img.save(buf, "PNG", optimize=True)
-    uri = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
-    x = 190 - w // 2
-    return f'<circle cx="190" cy="140" r="138" fill="url(#aura)"/>\n<image href="{uri}" x="{x}" y="{H - h}" width="{w}" height="{h}"/>'
+    img.save(buf, "WEBP", quality=90, method=6)
+    uri = "data:image/webp;base64," + base64.b64encode(buf.getvalue()).decode()
+    x = (ART - w) // 2
+    return f'<circle cx="{ART // 2}" cy="{H // 2}" r="{ART // 2}" fill="url(#aura)"/>\n<image href="{uri}" x="{x}" y="{H - h}" width="{w}" height="{h}"/>'
 
 
 def build(mode, art):
@@ -125,7 +142,7 @@ def build(mode, art):
 
 
 def main():
-    pics = sorted((ASSETS / "goku").glob("*.png"))
+    pics = sorted(p for pat in ("*.png", "*.jpg", "*.jpeg", "*.webp") for p in (ASSETS / "goku").glob(pat))
     art = goku_art(pics[datetime.date.today().toordinal() % len(pics)]) if pics else dragon_ball()
     for mode in THEMES:
         (ASSETS / f"banner-{mode}.svg").write_text(build(mode, art), encoding="utf-8")

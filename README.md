@@ -2,7 +2,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset=".github/assets/banner-dark.svg">
-  <img src=".github/assets/banner-light.svg" alt="BlazeFTL's patches" width="700">
+  <img src=".github/assets/banner-light.svg" alt="BlazeFTL's patches" width="800">
 </picture>
 
 [![Downloads badge](https://img.shields.io/github/downloads/BlazeFTL/FTL-Patches/total?style=for-the-badge&label=Downloads&color=FF7A00&logo=github&logoColor=white)](https://github.com/BlazeFTL/FTL-Patches/releases)
