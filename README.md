@@ -9,7 +9,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.4](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.4)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;110 patches total
+> **[v1.43.5-dev.1](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.5-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;110 patches total
 <details>
 <summary>📦 All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
 <br>
@@ -38,12 +38,12 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 **🎯 Supported versions:**
 
-| 3.3.0 |
+| 3.3.1 |
 | :---: |
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
-| [Boost Splash Screen Time](#boost-splash-screen-time) | Dont Apply These Patches Over Some Other Persons Mod, Use Untouched Apk. Disables MX Player's welcome/splash ad so playback starts immediately. |  |
+| [Boost Splash Screen Time](#boost-splash-screen-time) | Dont Apply These Patches Over Some Other Persons Mod, Use Untouched Apk. Disables MX Player's welcome/splash ad so playback starts immediately. Also removes startup network calls and the splash logo. |  |
 | [Clean Me Tab](#clean-me-tab) | Adds Mod Settings switches, on by default, that hide promo rows, unused tiles, and Private Folder / File Transfer / Add to Playlist entries. |  |
 | [Configure Smart Enhance](#configure-smart-enhance) | Removes the Smart Enhance disable toast and adds Mod Settings switches for the intro popup and the enable toast. |  |
 | [Configure SpeedUp overlay](#configure-speedup-overlay) | Fixes the stock leftover-visible-view bug in the long-press SpeedUp overlay. "No UI" is toggled in Me tab > Mod Settings. |  |
@@ -151,8 +151,8 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 **🎯 Supported versions:**
 
-| 7.64.0.76450210 | 7.68.1.76801201 |
-| :---: | :---: |
+| 7.68.1.76801201 |
+| :---: |
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
@@ -238,7 +238,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
 | [Disable downloader from download menu](#disable-downloader-from-download-menu) | Removes the http/https <data> entries from BrowserDownloaderActivity's so the app stops offering itself in the system "Download file with" chooser for ordinary web downloads. |  |
-| [Fix HLS seek playback](#fix-hls-seek-playback) | Remuxes classic MPEG-TS HLS downloads to MP4 so seeking in players has no dark frames. |  |
+| [Fix HLS seek playback](#fix-hls-seek-playback) | Remuxes classic MPEG-TS HLS downloads to MP4 so seeking in players has no dark frames, and runs the conversion when the download finishes even if the app is minimized. |  |
 | [Popup blocker](#popup-blocker) | Blocks popups and popunder redirects with Allow / Block / Always Block prompts. Adds "Manage popup rules" as the last item of the 3-dot menu. |  |
 | [Remove from default browser list](#remove-from-default-browser-list) | Removes http/https <data> entries from MainTabsActivity's so the app stops appearing as a candidate in the system's default browser / "open with" chooser. |  |
 | [Skip splash screen](#skip-splash-screen) | Skips splash screen so the app opens directly to the main screen. |  |
