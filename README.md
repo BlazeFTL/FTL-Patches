@@ -26,10 +26,10 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 ## 🐉 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.5-dev.1](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.5-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;110 patches total
+> **[v1.43.5](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.5)**&nbsp;&nbsp;•&nbsp;&nbsp;`TestReadMe`&nbsp;&nbsp;•&nbsp;&nbsp;110 patches total
 <a id="all-video-downloader-ace-player"></a>
 <details>
-<summary>📦&nbsp;All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
+<summary><img src=".github/assets/icons/videoplayer.videodownloader.downloader.png" width="18" align="top">&nbsp;&nbsp;All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
 <br>
 
 **🐉 Supported versions:**
@@ -52,7 +52,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="mx-player"></a>
 <details>
-<summary>📦&nbsp;MX Player&nbsp;&nbsp;•&nbsp;&nbsp;11 patches</summary>
+<summary><img src=".github/assets/icons/com.mxtech.videoplayer.ad.png" width="18" align="top">&nbsp;&nbsp;MX Player&nbsp;&nbsp;•&nbsp;&nbsp;11 patches</summary>
 <br>
 
 **🐉 Supported versions:**
@@ -78,7 +78,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="calendar-2026"></a>
 <details>
-<summary>📦&nbsp;Calendar 2026&nbsp;&nbsp;•&nbsp;&nbsp;6 patches</summary>
+<summary><img src=".github/assets/icons/com.agendaplanner.taskmangereventmangercalendar.png" width="18" align="top">&nbsp;&nbsp;Calendar 2026&nbsp;&nbsp;•&nbsp;&nbsp;6 patches</summary>
 <br>
 
 **🐉 Supported versions:**
@@ -99,7 +99,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="calendar"></a>
 <details>
-<summary>📦&nbsp;Calendar&nbsp;&nbsp;•&nbsp;&nbsp;7 patches</summary>
+<summary><img src=".github/assets/icons/calendar.agenda.schedule.event.advance.calendar.planner.png" width="18" align="top">&nbsp;&nbsp;Calendar&nbsp;&nbsp;•&nbsp;&nbsp;7 patches</summary>
 <br>
 
 **🐉 Supported versions:**
@@ -121,7 +121,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="file-manager-xfolder"></a>
 <details>
-<summary>📦&nbsp;File Manager - XFolder&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
+<summary><img src=".github/assets/icons/files.fileexplorer.filemanager.png" width="18" align="top">&nbsp;&nbsp;File Manager - XFolder&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
 <br>
 
 **🐉 Supported versions:**
@@ -139,7 +139,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="xplayer-video-player"></a>
 <details>
-<summary>📦&nbsp;XPlayer - Video Player&nbsp;&nbsp;•&nbsp;&nbsp;16 patches</summary>
+<summary><img src=".github/assets/icons/video.player.videoplayer.png" width="18" align="top">&nbsp;&nbsp;XPlayer - Video Player&nbsp;&nbsp;•&nbsp;&nbsp;16 patches</summary>
 <br>
 
 **🐉 Supported versions:**
@@ -189,7 +189,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="xender"></a>
 <details>
-<summary>📦&nbsp;Xender&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
+<summary><img src=".github/assets/icons/cn.xender.png" width="18" align="top">&nbsp;&nbsp;Xender&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
 <br>
 
 **🐉 Supported versions:**
@@ -207,7 +207,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="rs-file-manager"></a>
 <details>
-<summary>📦&nbsp;RS File Manager&nbsp;&nbsp;•&nbsp;&nbsp;6 patches</summary>
+<summary><img src=".github/assets/icons/com.rs.explorer.filemanager.png" width="18" align="top">&nbsp;&nbsp;RS File Manager&nbsp;&nbsp;•&nbsp;&nbsp;6 patches</summary>
 <br>
 
 **🐉 Supported versions:**
@@ -228,7 +228,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="firefox-nightly"></a>
 <details>
-<summary>📦&nbsp;Firefox Nightly&nbsp;&nbsp;•&nbsp;&nbsp;7 patches</summary>
+<summary><img src=".github/assets/icons/org.mozilla.fenix.png" width="18" align="top">&nbsp;&nbsp;Firefox Nightly&nbsp;&nbsp;•&nbsp;&nbsp;7 patches</summary>
 <br>
 
 **🐉 Supported versions:**
@@ -266,7 +266,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="video-downloader"></a>
 <details>
-<summary>📦&nbsp;Video Downloader&nbsp;&nbsp;•&nbsp;&nbsp;7 patches</summary>
+<summary><img src=".github/assets/icons/video.downloader.videodownloader.png" width="18" align="top">&nbsp;&nbsp;Video Downloader&nbsp;&nbsp;•&nbsp;&nbsp;7 patches</summary>
 <br>
 
 **🐉 Supported versions:**
@@ -288,7 +288,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="bangla-dictionary"></a>
 <details>
-<summary>📦&nbsp;Bangla Dictionary&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
+<summary><img src=".github/assets/icons/com.hdictionary.bn.png" width="18" align="top">&nbsp;&nbsp;Bangla Dictionary&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
 <br>
 
 **🐉 Supported versions:**
@@ -340,7 +340,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="video-player"></a>
 <details>
-<summary>📦&nbsp;Video Player&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
+<summary><img src=".github/assets/icons/com.allformatplayer.streamvideoplayer.png" width="18" align="top">&nbsp;&nbsp;Video Player&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
 <br>
 
 **🐉 Supported versions:**
@@ -357,7 +357,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="ampere"></a>
 <details>
-<summary>📦&nbsp;Ampere&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<summary><img src=".github/assets/icons/com.gombosdev.ampere.png" width="18" align="top">&nbsp;&nbsp;Ampere&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
 
 **🐉 Supported versions:**
@@ -373,7 +373,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="wpsapp-pro"></a>
 <details>
-<summary>📦&nbsp;WPSApp Pro&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<summary><img src=".github/assets/icons/com.themausoft.wpsapppro.png" width="18" align="top">&nbsp;&nbsp;WPSApp Pro&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
 
 **🐉 Supported versions:**
@@ -389,7 +389,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="video-to-photo"></a>
 <details>
-<summary>📦&nbsp;Video To Photo&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
+<summary><img src=".github/assets/icons/kallossoft.videotophoto.png" width="18" align="top">&nbsp;&nbsp;Video To Photo&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
 <br>
 
 **🐉 Supported versions:**
@@ -406,7 +406,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="impostack-pdf-imposition"></a>
 <details>
-<summary>📦&nbsp;ImpoStack: PDF Imposition&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<summary><img src=".github/assets/icons/com.bytedz.printflow.png" width="18" align="top">&nbsp;&nbsp;ImpoStack: PDF Imposition&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
 
 **🐉 Supported versions:**
@@ -422,7 +422,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="wifi-wps-wpa-tester"></a>
 <details>
-<summary>📦&nbsp;WIFI WPS WPA TESTER&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<summary><img src=".github/assets/icons/com.tester.wpswpatester.png" width="18" align="top">&nbsp;&nbsp;WIFI WPS WPA TESTER&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
 
 **🐉 Supported versions:**
@@ -438,7 +438,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="wifi-analyzer"></a>
 <details>
-<summary>📦&nbsp;WiFi Analyzer&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<summary><img src=".github/assets/icons/abdelrahman.wifianalyzerpro.png" width="18" align="top">&nbsp;&nbsp;WiFi Analyzer&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
 
 **🐉 Supported versions:**
