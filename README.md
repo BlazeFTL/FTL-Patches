@@ -5,7 +5,7 @@
   <img src=".github/assets/ftl-banner-light.svg" alt="BlazeFTL's patches" width="800">
 </picture>
 
-[![Downloads badge](https://img.shields.io/github/downloads/BlazeFTL/FTL-Patches/total?style=for-the-badge&label=Downloads&color=FF5E5B&logo=github&logoColor=white)](https://github.com/BlazeFTL/FTL-Patches/releases/latest)
+[![Downloads badge](https://img.shields.io/github/downloads/BlazeFTL/FTL-Patches/total?style=for-the-badge&label=Downloads&color=FF5E5B&logo=github&logoColor=white)](https://github.com/BlazeFTL/FTL-Patches/releases)
 [![Release badge](https://img.shields.io/github/v/release/BlazeFTL/FTL-Patches?include_prereleases&style=for-the-badge&label=Release&color=2F81F7&logo=github&logoColor=white)](https://github.com/BlazeFTL/FTL-Patches/releases/latest)
 [![Stars badge](https://img.shields.io/github/stars/BlazeFTL/FTL-Patches?style=for-the-badge&label=Stars&color=FF5E5B&logo=github&logoColor=white)](https://github.com/BlazeFTL/FTL-Patches/stargazers)
 
