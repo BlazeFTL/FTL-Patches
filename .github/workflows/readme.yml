@@ -18,6 +18,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Install Pillow
+        run: pip install --break-system-packages pillow
+
       - name: Generate patches list
         run: python3 .github/scripts/generate_patches_readme.py "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME" patches-list.json README.md
 
