@@ -5,12 +5,14 @@ Injects the patches list into README.md (between <!-- PATCHES_START --> and
 
 App icons are automatic, saved to .github/assets/icons/<package>.<ext>.
 Sources, tried in order for any app with no real icon yet:
-  1. .github/assets/icons/sources.json   {"package": "https://image-url"} overrides
+  1. .github/assets/icons/sources.json   overrides: {"package": "https://image-url"}
+     or {"package": "page:https://official-site/"} to take the site's touch icon
   2. Google Play listing
   3. Aptoide API (covers many apps that are off Play)
   4. generated initials badge (<package>.svg), retried against 1-3 on every run
 Drop your own <package>.png in the folder to pin an icon; real files are never
-overwritten. Set NO_ICONS=1 to skip all fetching (offline preview).
+overwritten, except packages listed in sources.json, which are re-fetched from
+their listed URL every run (a failed fetch keeps the current file). Set NO_ICONS=1 to skip all fetching (offline preview).
 
 python3 generate_patches_readme.py <owner/repo> <branch> [patches-list.json] [README.md]
 """
@@ -153,9 +155,9 @@ def patches_table(patches, app_slug, pkg=None):
     patches = sorted(patches, key=lambda x: x["name"])
     has_options = any(p.get("options") for p in patches)
     if has_options:
-        rows = ["| 🥋&nbsp;Patch | 🔥&nbsp;Description | ⚙️&nbsp;Options |", "|----------|----------------|-----------|"]
+        rows = ["| 🩹&nbsp;Patch | 🔥&nbsp;Description | ⚙️&nbsp;Options |", "|----------|----------------|-----------|"]
     else:
-        rows = ["| 🥋&nbsp;Patch | 🔥&nbsp;Description |", "|----------|----------------|"]
+        rows = ["| 🩹&nbsp;Patch | 🔥&nbsp;Description |", "|----------|----------------|"]
     for p in patches:
         cell = patch_cell(p, pkg, f"{app_slug}-{slug(p['name'])}")
         desc = (p.get("description") or "").replace("\n", "<br>")
@@ -224,13 +226,42 @@ def image_ext(blob):
     return None
 
 
+def page_icon(url):
+    """Largest usable raster icon advertised by a web page (touch icon, icon, og:image)."""
+    page = http_get(url)
+    if not page:
+        return None
+    text = page.decode("utf-8", "replace")
+    found = []
+    for tag in re.findall(r"<link\b[^>]*>", text, re.I):
+        rel = re.search(r'rel=["\']([^"\']+)', tag, re.I)
+        href = re.search(r'href=["\']([^"\']+)', tag, re.I)
+        if not (rel and href and "icon" in rel.group(1).lower()):
+            continue
+        sizes = [int(n) for n in re.findall(r"(\d+)x\d+", tag)]
+        rank = (2 if "apple-touch" in rel.group(1).lower() else 1, max(sizes or [0]))
+        found.append((rank, href.group(1)))
+    found.sort(reverse=True)
+    urls = [href for _, href in found]
+    og = re.search(r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)', text, re.I)
+    if og:
+        urls.append(og.group(1))
+    for href in urls:
+        blob = http_get(urllib.parse.urljoin(url, href))
+        if blob and image_ext(blob):
+            return blob
+    return None
+
+
 def override_icon(pkg):
     try:
         urls = json.loads((ICON_DIR / "sources.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
-    url = urls.get(pkg)
-    return http_get(url) if url else None
+    value = urls.get(pkg)
+    if not value:
+        return None
+    return page_icon(value[5:]) if value.startswith("page:") else http_get(value)
 
 
 def play_icon(pkg):
@@ -312,20 +343,33 @@ def placeholder_svg(pkg, name):
     )
 
 
+def pinned_sources():
+    try:
+        return json.loads((ICON_DIR / "sources.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
 def ensure_icon(pkg, name):
     have = icon_file(pkg)
-    if have and not have.endswith(".svg"):
+    real = bool(have) and not have.endswith(".svg")
+    pinned = pkg in pinned_sources()
+    if real and not pinned:
         return
     ICON_DIR.mkdir(parents=True, exist_ok=True)
-    for fetch, tidy in ((override_icon, False), (play_icon, False), (aptoide_icon, True)):
+    sources = ((override_icon, True), (play_icon, False), (aptoide_icon, True))
+    if real:
+        sources = sources[:1]
+    for fetch, tidy in sources:
         blob = fetch(pkg)
         ext = image_ext(blob) if blob else None
         if not ext:
             continue
         if tidy:
             blob, ext = rounded(blob, ext)
+        for old in EXTS:
+            (ICON_DIR / f"{pkg}.{old}").unlink(missing_ok=True)
         (ICON_DIR / f"{pkg}.{ext}").write_bytes(blob)
-        (ICON_DIR / f"{pkg}.svg").unlink(missing_ok=True)
         return
     if not have:
         (ICON_DIR / f"{pkg}.svg").write_text(placeholder_svg(pkg, name), encoding="utf-8")

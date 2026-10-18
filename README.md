@@ -1,16 +1,16 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/banner-dark.svg">
-  <img src=".github/assets/banner-light.svg" alt="BlazeFTL's patches" width="800">
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/ftl-banner-dark.svg">
+  <img src=".github/assets/ftl-banner-light.svg" alt="BlazeFTL's patches" width="800">
 </picture>
 
-[![Downloads badge](https://img.shields.io/github/downloads/BlazeFTL/FTL-Patches/total?style=for-the-badge&label=Downloads&color=FFAB84&logo=github&logoColor=222)](https://github.com/BlazeFTL/FTL-Patches/releases)
-[![Release badge](https://img.shields.io/github/v/release/BlazeFTL/FTL-Patches?include_prereleases&style=for-the-badge&label=Release&color=2AA7E0&logo=github&logoColor=white)](https://github.com/BlazeFTL/FTL-Patches/releases/latest)
-[![Stars badge](https://img.shields.io/github/stars/BlazeFTL/FTL-Patches?style=for-the-badge&label=Stars&color=FFC9A8&logo=github&logoColor=222)](https://github.com/BlazeFTL/FTL-Patches/stargazers)
+[![Downloads badge](https://img.shields.io/github/downloads/BlazeFTL/FTL-Patches/total?style=for-the-badge&label=Downloads&color=FF6B5E&logo=github&logoColor=white)](https://github.com/BlazeFTL/FTL-Patches/releases)
+[![Release badge](https://img.shields.io/github/v/release/BlazeFTL/FTL-Patches?include_prereleases&style=for-the-badge&label=Release&color=6750A4&logo=github&logoColor=white)](https://github.com/BlazeFTL/FTL-Patches/releases/latest)
+[![Stars badge](https://img.shields.io/github/stars/BlazeFTL/FTL-Patches?style=for-the-badge&label=Stars&color=FF8F73&logo=github&logoColor=white)](https://github.com/BlazeFTL/FTL-Patches/stargazers)
 
 <a href="https://morphe.software/add-source?github=BlazeFTL/FTL-Patches" title="Add this source to Morphe">
-  <img alt="Add to Morphe" src="https://img.shields.io/badge/Morphe-Add%20this%20source-2AA7E0?style=for-the-badge" height="38"/>
+  <img alt="Add to Morphe" src="https://img.shields.io/badge/Morphe-Add%20this%20source-6750A4?style=for-the-badge" height="38"/>
 </a>
 
 </div>
@@ -26,10 +26,10 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 ## 🐉 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.5](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.5)**&nbsp;&nbsp;•&nbsp;&nbsp;`TestReadMe`&nbsp;&nbsp;•&nbsp;&nbsp;110 patches total
+> **[v1.43.5-dev.1](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.5-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;110 patches total
 <a id="all-video-downloader-ace-player"></a>
 <details>
-<summary><img src=".github/assets/icons/videoplayer.videodownloader.downloader.png" width="18" align="absmiddle">&nbsp;&nbsp;All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
+<summary>📦&nbsp;All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -37,7 +37,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 | 1.9.8 |
 | :---: |
 
-| 🥋&nbsp;Patch | 🔥&nbsp;Description | ⚙️&nbsp;Options |
+| 🩹&nbsp;Patch | 🔥&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
 | <a id="all-video-downloader-ace-player-boost-splash-screen"></a>[Boost Splash Screen](patches/src/main/kotlin/app/ftl/patches/AllVideoDownloader/BoostSplashScreenPatch.kt) | Fixes Remove Ads And Remove Ads Lite Gettings Stuck In Splash Screen Useless if you also select skip splash and language activity patch. Also stops the splash from hiding the on-screen navigation buttons. | • Splash duration (ms) |
 | <a id="all-video-downloader-ace-player-disable-ad-dialog-when-reopening-app"></a>[Disable ad dialog when reopening app](patches/src/main/kotlin/app/ftl/patches/AllVideoDownloader/DisableOpenAdOnResumePatch.kt) | Prevents the full-screen "loading ad" dialog from appearing when the app is reopened after being minimized. |  |
@@ -52,7 +52,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="mx-player"></a>
 <details>
-<summary><img src=".github/assets/icons/com.mxtech.videoplayer.ad.png" width="18" align="absmiddle">&nbsp;&nbsp;MX Player&nbsp;&nbsp;•&nbsp;&nbsp;11 patches</summary>
+<summary>📦&nbsp;MX Player&nbsp;&nbsp;•&nbsp;&nbsp;11 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -60,7 +60,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 | 3.3.1 | 3.3.0 |
 | :---: | :---: |
 
-| 🥋&nbsp;Patch | 🔥&nbsp;Description | ⚙️&nbsp;Options |
+| 🩹&nbsp;Patch | 🔥&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
 | <a id="mx-player-boost-splash-screen-time"></a>[Boost Splash Screen Time](patches/src/main/kotlin/app/ftl/patches/MxPlayerAD/BoostSplashScreenPatch.kt) | Dont Apply These Patches Over Some Other Persons Mod, Use Untouched Apk. Disables MX Player's welcome/splash ad so playback starts immediately. Also removes startup network calls and the splash logo. |  |
 | <a id="mx-player-clean-me-tab"></a>[Clean Me Tab](patches/src/main/kotlin/app/ftl/patches/MxPlayerAD/CleanMeTabDesPatch.kt) | Adds Mod Settings switches, on by default, that hide promo rows, unused tiles, and Private Folder / File Transfer / Add to Playlist entries. |  |
@@ -78,7 +78,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="calendar-2026"></a>
 <details>
-<summary><img src=".github/assets/icons/com.agendaplanner.taskmangereventmangercalendar.png" width="18" align="absmiddle">&nbsp;&nbsp;Calendar 2026&nbsp;&nbsp;•&nbsp;&nbsp;6 patches</summary>
+<summary>📦&nbsp;Calendar 2026&nbsp;&nbsp;•&nbsp;&nbsp;6 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -86,7 +86,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 | 2.1 |
 | :---: |
 
-| 🥋&nbsp;Patch | 🔥&nbsp;Description |
+| 🩹&nbsp;Patch | 🔥&nbsp;Description |
 |----------|----------------|
 | <a id="calendar-2026-boost-splash"></a>[Boost splash](patches/src/main/kotlin/app/ftl/patches/Calendar2026/BoostSplashPatch.kt) | Removes the splash screen delay. |
 | <a id="calendar-2026-disable-caller-related-features"></a>[Disable caller related features](patches/src/main/kotlin/app/ftl/patches/Calendar2026/DisableCallerFeaturesPatch.kt) | Disables caller ID features, the phone state receiver and the permission settings entry. |
@@ -99,7 +99,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="calendar"></a>
 <details>
-<summary><img src=".github/assets/icons/calendar.agenda.schedule.event.advance.calendar.planner.png" width="18" align="absmiddle">&nbsp;&nbsp;Calendar&nbsp;&nbsp;•&nbsp;&nbsp;7 patches</summary>
+<summary>📦&nbsp;Calendar&nbsp;&nbsp;•&nbsp;&nbsp;7 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -107,7 +107,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 | 1.0.35 |
 | :---: |
 
-| 🥋&nbsp;Patch | 🔥&nbsp;Description |
+| 🩹&nbsp;Patch | 🔥&nbsp;Description |
 |----------|----------------|
 | <a id="calendar-boost-splash-screen"></a>[Boost splash screen](patches/src/main/kotlin/app/ftl/patches/Calendar/BoostSplashPatch.kt) | Skips splash ads and the consent request and opens the app immediately. |
 | <a id="calendar-disable-caller-features"></a>[Disable caller features](patches/src/main/kotlin/app/ftl/patches/Calendar/DisableCallerFeaturesPatch.kt) | Disables the after call screen and hides its entry in settings. |
@@ -121,7 +121,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="file-manager-xfolder"></a>
 <details>
-<summary><img src=".github/assets/icons/files.fileexplorer.filemanager.png" width="18" align="absmiddle">&nbsp;&nbsp;File Manager - XFolder&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
+<summary>📦&nbsp;File Manager - XFolder&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -129,7 +129,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 | 1.5.5.7 |
 | :---: |
 
-| 🥋&nbsp;Patch | 🔥&nbsp;Description |
+| 🩹&nbsp;Patch | 🔥&nbsp;Description |
 |----------|----------------|
 | <a id="file-manager-xfolder-change-cleaner-media-tab-defaults"></a>[Change Cleaner & Media Tab Defaults](patches/src/main/kotlin/app/ftl/patches/XFolder/DisableRateAndCleanerDefaultsPatch.kt) | Changes first-run defaults: hides the Image, Video, Audio and Cleaner tabs, and shows hidden files by default. Only affects users who have never changed the setting themselves - the preference override still takes priority. |
 | <a id="file-manager-xfolder-disable-rate-us-dialog"></a>[Disable Rate Us Dialog](patches/src/main/kotlin/app/ftl/patches/XFolder/DisableRateAndCleanerDefaultsPatch.kt) | Prevents the in-app rate-us dialog from ever being shown. |
@@ -139,7 +139,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="xplayer-video-player"></a>
 <details>
-<summary><img src=".github/assets/icons/video.player.videoplayer.png" width="18" align="absmiddle">&nbsp;&nbsp;XPlayer - Video Player&nbsp;&nbsp;•&nbsp;&nbsp;16 patches</summary>
+<summary>📦&nbsp;XPlayer - Video Player&nbsp;&nbsp;•&nbsp;&nbsp;16 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -147,7 +147,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 | 2.9.2 |
 | :---: |
 
-| 🥋&nbsp;Patch | 🔥&nbsp;Description |
+| 🩹&nbsp;Patch | 🔥&nbsp;Description |
 |----------|----------------|
 | <a id="xplayer-video-player-clean-3-dot-menu"></a>[Clean 3 Dot Menu](patches/src/main/kotlin/app/ftl/patches/XPlayer/CleanBottomSheetsPatch.kt) | Removes Lock and Add to playlist from the video and folder 3-dot bottom sheets and from the selection toolbar menus. Toggle in Mod Settings. |
 | <a id="xplayer-video-player-disable-rate-dialog"></a>[Disable Rate Dialog](patches/src/main/kotlin/app/ftl/patches/XPlayer/DisableRateDialogPatch.kt) | Disables the rate dialog counters so it never appears. |
@@ -170,7 +170,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="snaptube"></a>
 <details>
-<summary><img src=".github/assets/icons/com.snaptube.premium.svg" width="18" align="absmiddle">&nbsp;&nbsp;SnapTube&nbsp;&nbsp;•&nbsp;&nbsp;4 patches</summary>
+<summary>📦&nbsp;SnapTube&nbsp;&nbsp;•&nbsp;&nbsp;4 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -178,7 +178,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 | 7.68.1.76801201 |
 | :---: |
 
-| 🥋&nbsp;Patch | 🔥&nbsp;Description |
+| 🩹&nbsp;Patch | 🔥&nbsp;Description |
 |----------|----------------|
 | <a id="snaptube-clean-snaptube-settings-page"></a>[Clean SnapTube Settings Page](patches/src/main/kotlin/app/ftl/patches/SnapTube/HideSnaptubeSettingsPatch.kt) | Hides the Download tools and Phone clean categories, and their sub-items, from Settings. |
 | <a id="snaptube-disable-annoying-snaptube-notifications"></a>[Disable Annoying Snaptube Notifications](patches/src/main/kotlin/app/ftl/patches/SnapTube/DisableSnaptubeNotificationDefaultsPatch.kt) | Turns off the Toolbar, Recommended contents, and Tool notifications channels by default. |
@@ -189,7 +189,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="xender"></a>
 <details>
-<summary><img src=".github/assets/icons/cn.xender.png" width="18" align="absmiddle">&nbsp;&nbsp;Xender&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
+<summary>📦&nbsp;Xender&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -197,7 +197,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 | 18.8.0.prime |
 | :---: |
 
-| 🥋&nbsp;Patch | 🔥&nbsp;Description |
+| 🩹&nbsp;Patch | 🔥&nbsp;Description |
 |----------|----------------|
 | <a id="xender-clean-main-ui"></a>[Clean main UI](patches/src/main/kotlin/app/ftl/patches/Xender/CleanMainUiPatch.kt) | Hides the bottom navigation bar, the top-right guide icon, and the Rate/Help/About drawer items, keeps the connect/create/join buttons on top, and stops them from being auto-hidden. |
 | <a id="xender-skip-splash-screen"></a>[Skip splash screen](patches/src/main/kotlin/app/ftl/patches/Xender/SkipSplashPatch.kt) | Jumps straight to the main activity from the splash screen, skipping the splash animation entirely. |
@@ -207,7 +207,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="rs-file-manager"></a>
 <details>
-<summary><img src=".github/assets/icons/com.rs.explorer.filemanager.png" width="18" align="absmiddle">&nbsp;&nbsp;RS File Manager&nbsp;&nbsp;•&nbsp;&nbsp;6 patches</summary>
+<summary>📦&nbsp;RS File Manager&nbsp;&nbsp;•&nbsp;&nbsp;6 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -215,7 +215,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 | 2.3.1.2 |
 | :---: |
 
-| 🥋&nbsp;Patch | 🔥&nbsp;Description |
+| 🩹&nbsp;Patch | 🔥&nbsp;Description |
 |----------|----------------|
 | <a id="rs-file-manager-clean-sidebar"></a>[Clean sidebar](patches/src/main/kotlin/app/ftl/patches/RsFileExplorer/CleanSideBarPatch.kt) | Hides the Bookmarks, remote-connection and Category sections from the navigation sidebar, and hides Encrypt and Downloader from the Storage section. |
 | <a id="rs-file-manager-disable-downloader-from-download-menu"></a>[Disable downloader from download menu](patches/src/main/kotlin/app/ftl/patches/RsFileExplorer/DisableDownloadHandlerPatch.kt) | Strips RsDownloadActivity's intent filters so it no longer offers itself as a handler in the system download/"complete action using" chooser. |
@@ -228,7 +228,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="firefox-nightly"></a>
 <details>
-<summary><img src=".github/assets/icons/org.mozilla.fenix.png" width="18" align="absmiddle">&nbsp;&nbsp;Firefox Nightly&nbsp;&nbsp;•&nbsp;&nbsp;7 patches</summary>
+<summary>📦&nbsp;Firefox Nightly&nbsp;&nbsp;•&nbsp;&nbsp;7 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -236,7 +236,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 | 159.0a1 | 160.0a1 |
 | :---: | :---: |
 
-| 🥋&nbsp;Patch | 🔥&nbsp;Description |
+| 🩹&nbsp;Patch | 🔥&nbsp;Description |
 |----------|----------------|
 | <a id="firefox-nightly-close-duplicate-tabs"></a>[Close duplicate tabs](patches/src/main/kotlin/app/ftl/patches/FireFox/CloseDuplicateTabsPatch.kt) | Adds Close duplicate tabs to the tab tray 3 dot menu. Toggle in Mod Settings. |
 | <a id="firefox-nightly-hide-fullscreen-toast"></a>[Hide fullscreen toast](patches/src/main/kotlin/app/ftl/patches/FireFox/HideFullscreenToastPatch.kt) | Removes the toast shown when a video goes fullscreen. Toggle in Mod Settings. |
@@ -250,7 +250,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="mixplorer"></a>
 <details>
-<summary><img src=".github/assets/icons/com.mixplorer.png" width="18" align="absmiddle">&nbsp;&nbsp;MiXplorer&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<summary>📦&nbsp;MiXplorer&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -258,7 +258,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 | Any version |
 | :---: |
 
-| 🥋&nbsp;Patch | 🔥&nbsp;Description |
+| 🩹&nbsp;Patch | 🔥&nbsp;Description |
 |----------|----------------|
 | <a id="mixplorer-disable-from-download-menu-of-browsers"></a>[Disable From Download Menu Of Browsers](patches/src/main/kotlin/app/ftl/patches/MiXplorer/DisableDownloadChooserPatch.kt) | Removes only the http/https <data> entries from MiXplorer's Explore/Download/Copy to/Extract to shell activities' VIEW intent filters, so the app stops showing up multiple times in browsers download link chooser. |
 
@@ -266,7 +266,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="video-downloader"></a>
 <details>
-<summary><img src=".github/assets/icons/video.downloader.videodownloader.png" width="18" align="absmiddle">&nbsp;&nbsp;Video Downloader&nbsp;&nbsp;•&nbsp;&nbsp;7 patches</summary>
+<summary>📦&nbsp;Video Downloader&nbsp;&nbsp;•&nbsp;&nbsp;7 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -274,7 +274,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 | 2.7.3 |
 | :---: |
 
-| 🥋&nbsp;Patch | 🔥&nbsp;Description | ⚙️&nbsp;Options |
+| 🩹&nbsp;Patch | 🔥&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
 | <a id="video-downloader-disable-downloader-from-download-menu"></a>[Disable downloader from download menu](patches/src/main/kotlin/app/ftl/patches/VideoDownLoader/DisableDownloadHandlerPatch.kt) | Removes the http/https <data> entries from BrowserDownloaderActivity's so the app stops offering itself in the system "Download file with" chooser for ordinary web downloads. |  |
 | <a id="video-downloader-fix-hls-seek-playback"></a>[Fix HLS seek playback](patches/src/main/kotlin/app/ftl/patches/VideoDownLoader/FixHlsSeekPatch.kt) | Remuxes classic MPEG-TS HLS downloads to MP4 so seeking in players has no dark frames, and runs the conversion when the download finishes even if the app is minimized. |  |
@@ -288,7 +288,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="bangla-dictionary"></a>
 <details>
-<summary><img src=".github/assets/icons/com.hdictionary.bn.png" width="18" align="absmiddle">&nbsp;&nbsp;Bangla Dictionary&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
+<summary>📦&nbsp;Bangla Dictionary&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -296,7 +296,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 | 11.5.9 |
 | :---: |
 
-| 🥋&nbsp;Patch | 🔥&nbsp;Description |
+| 🩹&nbsp;Patch | 🔥&nbsp;Description |
 |----------|----------------|
 | <a id="bangla-dictionary-disable-pronunciation-nag"></a>[Disable pronunciation nag](patches/src/main/kotlin/app/ftl/patches/BanglaDictionary/DisablePronunciationNagPatch.kt) | Removes the "device doesn't support pronunciation" toast and install-TTS dialog, and hides the pronunciation button when no usable TTS engine/language is available. |
 | <a id="bangla-dictionary-unlock-pro"></a>[Unlock Pro](patches/src/main/kotlin/app/ftl/patches/BanglaDictionary/UnlockProPatch.kt) | Forces the purchase check to always return true, unlocking Pro. |
@@ -305,7 +305,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="es-file-explorer"></a>
 <details>
-<summary><img src=".github/assets/icons/com.estrongs.android.pop.png" width="18" align="absmiddle">&nbsp;&nbsp;ES File Explorer&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<summary>📦&nbsp;ES File Explorer&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -313,7 +313,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 | 4.4.3.7 |
 | :---: |
 
-| 🥋&nbsp;Patch | 🔥&nbsp;Description |
+| 🩹&nbsp;Patch | 🔥&nbsp;Description |
 |----------|----------------|
 | <a id="es-file-explorer-es-file-explorer-ui-cleanup"></a>[ES File Explorer Ui Cleanup](patches/src/main/kotlin/app/ftl/patches/EsFileExplorer/EsFileExplorerPatch.kt) | Removes BookMark, New Files, Cleaner Row In HomePage, Cleans More menu actions |
 
@@ -321,7 +321,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="mx-player-pro"></a>
 <details>
-<summary><img src=".github/assets/icons/com.mxtech.videoplayer.pro.png" width="18" align="absmiddle">&nbsp;&nbsp;MX Player Pro&nbsp;&nbsp;•&nbsp;&nbsp;4 patches</summary>
+<summary>📦&nbsp;MX Player Pro&nbsp;&nbsp;•&nbsp;&nbsp;4 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -329,7 +329,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 | Any version |
 | :---: |
 
-| 🥋&nbsp;Patch | 🔥&nbsp;Description | ⚙️&nbsp;Options |
+| 🩹&nbsp;Patch | 🔥&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
 | <a id="mx-player-pro-hide-file-transfer-video-playlist-private-folder-tiles"></a>[Hide File Transfer, Video Playlist, Private Folder tiles](patches/src/main/kotlin/app/ftl/patches/MxPlayer/HideToolTilesPatch.kt) | Removes the File Transfer, Video Playlist, and Private Folder tiles from settings Page. | • Hide File Transfer<br>• Hide Private Folder<br>• Hide Video Playlists |
 | <a id="mx-player-pro-hide-settings-page-useless-buttons"></a>[Hide Settings Page UseLess Buttons](patches/src/main/kotlin/app/ftl/patches/MxPlayer/HideMeTabPromoItemsPatch.kt) | Collapses the WhatsApp, Legal, and Help entries on the Me tab. | • Hide WhatsApp<br>• Hide Legal<br>• Hide Help |
@@ -340,7 +340,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="video-player"></a>
 <details>
-<summary><img src=".github/assets/icons/com.allformatplayer.streamvideoplayer.png" width="18" align="absmiddle">&nbsp;&nbsp;Video Player&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
+<summary>📦&nbsp;Video Player&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -348,7 +348,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 | 1.4 |
 | :---: |
 
-| 🥋&nbsp;Patch | 🔥&nbsp;Description |
+| 🩹&nbsp;Patch | 🔥&nbsp;Description |
 |----------|----------------|
 | <a id="video-player-hide-bottom-bar"></a>[Hide bottom bar](patches/src/main/kotlin/app/ftl/patches/AllVideoPlayer/RemoveBottomBar.kt) | Hides the bottom navigation bar. |
 | <a id="video-player-skip-splash-screen"></a>[Skip splash screen](patches/src/main/kotlin/app/ftl/patches/AllVideoPlayer/SkipSplashPatch.kt) | Launches the app directly into the main screen. |
@@ -357,7 +357,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="ampere"></a>
 <details>
-<summary><img src=".github/assets/icons/com.gombosdev.ampere.png" width="18" align="absmiddle">&nbsp;&nbsp;Ampere&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<summary>📦&nbsp;Ampere&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -365,7 +365,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 | Any version |
 | :---: |
 
-| 🥋&nbsp;Patch | 🔥&nbsp;Description |
+| 🩹&nbsp;Patch | 🔥&nbsp;Description |
 |----------|----------------|
 | <a id="ampere-material-colors-upgrade-peach-and-purple"></a>[Material Colors Upgrade Peach And Purple](patches/src/main/kotlin/app/ftl/patches/Ampere/MaterialColorsUpgradePatch.kt) | Updates Accent/Primary/CardBgDark to the newer Material color palette. |
 
@@ -373,7 +373,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="wpsapp-pro"></a>
 <details>
-<summary><img src=".github/assets/icons/com.themausoft.wpsapppro.png" width="18" align="absmiddle">&nbsp;&nbsp;WPSApp Pro&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<summary>📦&nbsp;WPSApp Pro&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -381,7 +381,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 | 1.7.05 |
 | :---: |
 
-| 🥋&nbsp;Patch | 🔥&nbsp;Description |
+| 🩹&nbsp;Patch | 🔥&nbsp;Description |
 |----------|----------------|
 | <a id="wpsapp-pro-remove-license-verification"></a>[Remove License Verification](patches/src/main/kotlin/app/ftl/patches/WpsAppPro/RemoveLicenseVerificationPatch.kt) | Spoofs every PackageManager.getInstallerPackageName() check to report "com.android.vending", so Pro features unlock regardless of install source. |
 
@@ -389,7 +389,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="video-to-photo"></a>
 <details>
-<summary><img src=".github/assets/icons/kallossoft.videotophoto.png" width="18" align="absmiddle">&nbsp;&nbsp;Video To Photo&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
+<summary>📦&nbsp;Video To Photo&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -397,7 +397,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 | 5.0.2 |
 | :---: |
 
-| 🥋&nbsp;Patch | 🔥&nbsp;Description |
+| 🩹&nbsp;Patch | 🔥&nbsp;Description |
 |----------|----------------|
 | <a id="video-to-photo-skip-splash-delay"></a>[Skip splash delay](patches/src/main/kotlin/app/ftl/patches/VideoToPhoto/UnlockProSkipSplash.kt) | Shortens the splash screen waits. |
 | <a id="video-to-photo-unlock-pro-and-skip-onboarding"></a>[Unlock Pro and skip onboarding](patches/src/main/kotlin/app/ftl/patches/VideoToPhoto/UnlockProSkipSplash.kt) | Unlocks Pro features and skips the onboarding screens. |
@@ -406,7 +406,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="impostack-pdf-imposition"></a>
 <details>
-<summary><img src=".github/assets/icons/com.bytedz.printflow.png" width="18" align="absmiddle">&nbsp;&nbsp;ImpoStack: PDF Imposition&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<summary>📦&nbsp;ImpoStack: PDF Imposition&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -414,7 +414,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 | 1.4.0 |
 | :---: |
 
-| 🥋&nbsp;Patch | 🔥&nbsp;Description |
+| 🩹&nbsp;Patch | 🔥&nbsp;Description |
 |----------|----------------|
 | <a id="impostack-pdf-imposition-unlock-premium"></a>[Unlock Premium](patches/src/main/kotlin/app/ftl/patches/ImpoStack/UnlockPremiumPatch.kt) | Forces SecurityTracker.isPremium() to always return true, so every feature gated by the "st_01" premium flag stays unlocked. |
 
@@ -422,7 +422,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="wifi-wps-wpa-tester"></a>
 <details>
-<summary><img src=".github/assets/icons/com.tester.wpswpatester.png" width="18" align="absmiddle">&nbsp;&nbsp;WIFI WPS WPA TESTER&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<summary>📦&nbsp;WIFI WPS WPA TESTER&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -430,7 +430,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 | rc-5.164 |
 | :---: |
 
-| 🥋&nbsp;Patch | 🔥&nbsp;Description |
+| 🩹&nbsp;Patch | 🔥&nbsp;Description |
 |----------|----------------|
 | <a id="wifi-wps-wpa-tester-unlock-pro"></a>[Unlock Pro](patches/src/main/kotlin/app/ftl/patches/WpsWpaTester/UnlockProPatch.kt) | Forces the Pro flag true at every read and write site in the dex, unlocking Pro. |
 
@@ -438,7 +438,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <a id="wifi-analyzer"></a>
 <details>
-<summary><img src=".github/assets/icons/abdelrahman.wifianalyzerpro.png" width="18" align="absmiddle">&nbsp;&nbsp;WiFi Analyzer&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<summary>📦&nbsp;WiFi Analyzer&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -446,7 +446,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 | 9.4 |
 | :---: |
 
-| 🥋&nbsp;Patch | 🔥&nbsp;Description |
+| 🩹&nbsp;Patch | 🔥&nbsp;Description |
 |----------|----------------|
 | <a id="wifi-analyzer-unlock-pro-disable-rate-dialog"></a>[Unlock Pro & Disable Rate Dialog](patches/src/main/kotlin/app/ftl/patches/WifiAnalyzer/UnlockProAndDisableRateDialogPatch.kt) | Forces the premium check to always return true, unlocking every Pro feature, and stops the in-app "rate us" dialog from ever triggering. |
 
@@ -457,7 +457,7 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 <summary>🌐&nbsp;Universal&nbsp;&nbsp;•&nbsp;&nbsp;15 patches</summary>
 <br>
 
-| 🥋&nbsp;Patch | 🔥&nbsp;Description | ⚙️&nbsp;Options |
+| 🩹&nbsp;Patch | 🔥&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
 | <a id="universal-apk-junk-cleanup"></a>[APK Junk Cleanup](patches/src/main/kotlin/app/ftl/patches/ApkCleanup/ApkJunkClean.kt) | Removes junk and useless files with no runtime purpose inside apk. Native libraries are left untouched unless the 'Strip native architectures' toggle is enabled. | • Strip native architectures<br>• Architecture to keep |
 | <a id="universal-add-save-data"></a>[Add Save Data](patches/src/main/kotlin/app/ftl/patches/AddSaveData/AddSaveDataPatch.kt) | Unpacks bundled save-data zip(s) into the app's storage on first launch. | • 1. Select data/data zip<br>• 2. Select Android/data zip<br>• 3. Select Android/obb zip<br>• Add toast<br>• Toast message<br>• Show toast once |
@@ -479,6 +479,6 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 
 <!-- PATCHES_END -->
 
-## 🥋 License
+## ⚖️ License
 
 [GPL-3.0](LICENSE). App icons in the list are the property of their respective developers, see [.github/assets/icons/README.md](.github/assets/icons/README.md).
