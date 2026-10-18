@@ -3,7 +3,7 @@
 Builds .github/assets/ftl-banner-light.svg and ftl-banner-dark.svg.
 
 Put your own Goku art (PNG/JPG/WebP) in .github/assets/goku/. One is picked per
-day and shown whole, uncropped, in a rounded frame left of the title. With no
+day in a circle left of the title, full width, top-aligned. With no
 art there, a four-star dragon ball is drawn instead.
 
 Needs: pip install fonttools pillow
@@ -83,18 +83,20 @@ def dragon_ball():
 
 def goku_art(path):
     img = Image.open(path).convert("RGBA")
-    w = round(ART_H * img.width / img.height)
-    if img.height > ART_H * 2:
-        img = img.resize((w * 2, ART_H * 2), Image.LANCZOS)
+    d = ART_H
+    w = d * 2
+    if img.width > w:
+        img = img.resize((w, round(img.height * w / img.width)), Image.LANCZOS)
     buf = io.BytesIO()
     img.save(buf, "WEBP", quality=88, method=6)
     uri = "data:image/webp;base64," + base64.b64encode(buf.getvalue()).decode()
-    x, y, rx = PAD + 2, PAD, 28
-    art = f"""<ellipse cx="{x + w / 2}" cy="{H / 2}" rx="{w / 2 + 34}" ry="{ART_H / 2 + 30}" fill="url(#aura)"/>
-<clipPath id="frame"><rect x="{x}" y="{y}" width="{w}" height="{ART_H}" rx="{rx}"/></clipPath>
-<image href="{uri}" x="{x}" y="{y}" width="{w}" height="{ART_H}" preserveAspectRatio="xMidYMid slice" clip-path="url(#frame)"/>
-<rect x="{x}" y="{y}" width="{w}" height="{ART_H}" rx="{rx}" fill="none" stroke="url(#bar)" stroke-width="4"/>"""
-    return art, x + w + 6
+    x, y = PAD + 2, PAD
+    cx, cy, r = x + d / 2, y + d / 2, d / 2
+    art = f"""<circle cx="{cx}" cy="{cy}" r="{r + 34}" fill="url(#aura)"/>
+<clipPath id="frame"><circle cx="{cx}" cy="{cy}" r="{r}"/></clipPath>
+<image href="{uri}" x="{x}" y="{y}" width="{d}" height="{d}" preserveAspectRatio="xMidYMin slice" clip-path="url(#frame)"/>
+<circle cx="{cx}" cy="{cy}" r="{r - 2}" fill="none" stroke="url(#bar)" stroke-width="4"/>"""
+    return art, x + d + 6
 
 
 def build(mode, art, art_right):

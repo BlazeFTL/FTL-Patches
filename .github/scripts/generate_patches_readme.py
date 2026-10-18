@@ -7,6 +7,8 @@ App icons are automatic, saved to .github/assets/icons/<package>.<ext>.
 Sources, tried in order for any app with no real icon yet:
   1. .github/assets/icons/sources.json   overrides: {"package": "https://image-url"}
      or {"package": "page:https://official-site/"} to take the site's touch icon
+     or {"package": "og:https://store-page/"} to take the page's og:image (app store
+     pages); a list of any of these is tried in order
   2. Google Play listing
   3. Aptoide API (covers many apps that are off Play)
   4. generated initials badge (<package>.svg), retried against 1-3 on every run
@@ -226,14 +228,32 @@ def image_ext(blob):
     return None
 
 
-def page_icon(url):
-    """Largest usable raster icon advertised by a web page (touch icon, icon, og:image)."""
+def ico_to_png(blob):
+    if not blob.startswith(b"\x00\x00\x01\x00"):
+        return None
+    try:
+        from PIL import Image
+
+        ico = Image.open(io.BytesIO(blob))
+        size = max(ico.ico.sizes())
+        if size[0] < 48:
+            return None
+        ico.size = size
+        out = io.BytesIO()
+        ico.convert("RGBA").save(out, "PNG")
+        return out.getvalue()
+    except Exception:
+        return None
+
+
+def page_icon(url, og_only=False):
+    """Icon advertised by a web page: touch icon / icon links (largest first), then og:image."""
     page = http_get(url)
     if not page:
         return None
     text = page.decode("utf-8", "replace")
     found = []
-    for tag in re.findall(r"<link\b[^>]*>", text, re.I):
+    for tag in [] if og_only else re.findall(r"<link\b[^>]*>", text, re.I):
         rel = re.search(r'rel=["\']([^"\']+)', tag, re.I)
         href = re.search(r'href=["\']([^"\']+)', tag, re.I)
         if not (rel and href and "icon" in rel.group(1).lower()):
@@ -250,18 +270,31 @@ def page_icon(url):
         blob = http_get(urllib.parse.urljoin(url, href))
         if blob and image_ext(blob):
             return blob
+        png = ico_to_png(blob) if blob else None
+        if png:
+            return png
     return None
 
 
-def override_icon(pkg):
+def pinned_sources():
     try:
-        urls = json.loads((ICON_DIR / "sources.json").read_text(encoding="utf-8"))
+        return json.loads((ICON_DIR / "sources.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        return None
-    value = urls.get(pkg)
-    if not value:
-        return None
-    return page_icon(value[5:]) if value.startswith("page:") else http_get(value)
+        return {}
+
+
+def override_icon(pkg):
+    value = pinned_sources().get(pkg)
+    for spec in [value] if isinstance(value, str) else value or []:
+        if spec.startswith("page:"):
+            blob = page_icon(spec[5:])
+        elif spec.startswith("og:"):
+            blob = page_icon(spec[3:], og_only=True)
+        else:
+            blob = http_get(spec)
+        if blob and image_ext(blob):
+            return blob
+    return None
 
 
 def play_icon(pkg):
@@ -341,13 +374,6 @@ def placeholder_svg(pkg, name):
         f'font-family="Poppins,Segoe UI,Roboto,Arial,sans-serif" font-size="{size}" font-weight="700" '
         f'fill="#fff">{text}</text></svg>\n'
     )
-
-
-def pinned_sources():
-    try:
-        return json.loads((ICON_DIR / "sources.json").read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return {}
 
 
 def ensure_icon(pkg, name):

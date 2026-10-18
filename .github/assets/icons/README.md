@@ -10,8 +10,9 @@ Icons are fetched automatically by package name when the README is generated: Go
 first, then Aptoide for apps that are off Play. Apps found on neither get a generated
 initials badge (`<package>.svg`), retried on every run. To pin an icon, put your own
 `<package>.png` here; real icons are never overwritten. To force an app's icon from a specific place, list it in `sources.json` in this
-folder: `"package.name": "https://image-url"` or `"package.name": "page:https://site/"`
-(takes that site's touch icon). Listed apps are re-fetched every run and replace the
+folder: `"package.name": "https://image-url"`, `"package.name": "page:https://site/"`
+(takes that site's touch icon) or `"package.name": "og:https://store-page/"` (takes the
+page's og:image). A list of these is tried in order. Listed apps are re-fetched every run and replace the
 current icon; if the fetch fails the current icon stays.
 
 ## Removal
