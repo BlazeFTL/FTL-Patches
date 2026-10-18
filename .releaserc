@@ -59,7 +59,7 @@
           "patches-bundle.json",
           "patches-list.json",
           "README.md",
-          ".github/assets/icons/*.png"
+          ".github/assets/icons/*"
         ],
         "message": "chore: Release v${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }

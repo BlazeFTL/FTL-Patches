@@ -6,9 +6,11 @@ Each is the property of the developer of the app it depicts, and may be a tradem
 They appear in the README only to identify which app a set of patches applies to
 (nominative use). No affiliation, sponsorship or endorsement is claimed or implied.
 
-Icons are fetched automatically from each app's Google Play listing by package name
-(`<package>.png`, 96x96) when the README is generated. To use a different one, put
-your own `<package>.png` here; existing files are never overwritten.
+Icons are fetched automatically by package name when the README is generated: Google Play
+first, then Aptoide for apps that are off Play. Apps found on neither get a generated
+initials badge (`<package>.svg`), retried on every run. To pin an icon, put your own
+`<package>.png` here; real icons are never overwritten. To point an app at a specific
+image URL, add `{"package.name": "https://..."}` to `sources.json` in this folder.
 
 ## Removal
 

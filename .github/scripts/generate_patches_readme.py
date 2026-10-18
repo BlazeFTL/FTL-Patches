@@ -3,20 +3,28 @@
 Injects the patches list into README.md (between <!-- PATCHES_START --> and
 <!-- PATCHES_END -->) from patches-list.json.
 
-App icons are automatic: each app's icon is fetched from its Google Play listing
-by package name and saved to .github/assets/icons/<package>.png. Apps that already
-have a file are skipped. To override one or cover an app not on Play, drop your own
-.github/assets/icons/<package>.png in. Apps with no icon render with a package emoji.
+App icons are automatic, saved to .github/assets/icons/<package>.<ext>.
+Sources, tried in order for any app with no real icon yet:
+  1. .github/assets/icons/sources.json   {"package": "https://image-url"} overrides
+  2. Google Play listing
+  3. Aptoide API (covers many apps that are off Play)
+  4. generated initials badge (<package>.svg), retried against 1-3 on every run
+Drop your own <package>.png in the folder to pin an icon; real files are never
+overwritten. Set NO_ICONS=1 to skip all fetching (offline preview).
 
 python3 generate_patches_readme.py <owner/repo> <branch> [patches-list.json] [README.md]
 """
 
+import io
 import json
+import os
 import re
 import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+import zlib
+from html import escape
 from pathlib import Path
 
 if len(sys.argv) < 3:
@@ -183,56 +191,157 @@ def versions_table(targets):
 
 
 ICON_DIR = Path(".github/assets/icons")
+EXTS = ("png", "jpg", "webp", "svg")
 PLAY_URL = "https://play.google.com/store/apps/details?id={}&hl=en&gl=US"
+APTOIDE_URL = "https://ws75.aptoide.com/api/7/app/get/package_name={}"
+NO_ICONS = os.environ.get("NO_ICONS") == "1"
+PALETTES = (("#FFB38A", "#FF8F5E"), ("#5FD0D8", "#2AA7E0"), ("#FFA270", "#F26B4A"), ("#2AA7E0", "#1D6FD8"))
 
 
 def icon_file(pkg):
-    path = ICON_DIR / f"{pkg}.png"
-    return path.name if path.is_file() else None
+    for ext in EXTS:
+        if (ICON_DIR / f"{pkg}.{ext}").is_file():
+            return f"{pkg}.{ext}"
+    return None
 
 
-def fetch_play_icon_url(pkg):
-    request = urllib.request.Request(PLAY_URL.format(pkg), headers={"User-Agent": "Mozilla/5.0"})
+def http_get(url):
+    request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
     try:
         with urllib.request.urlopen(request, timeout=20) as response:
-            page = response.read().decode("utf-8", "replace")
-    except (urllib.error.URLError, OSError):
+            return response.read()
+    except (urllib.error.URLError, OSError, ValueError):
         return None
-    icon = re.search(r'"image":"(https://play-lh\.googleusercontent\.com/[^"]+)"', page)
-    return icon.group(1) if icon else None
 
 
-def download_icon(url, pkg):
-    try:
-        with urllib.request.urlopen(f"{url}=s96-cc", timeout=20) as response:
-            blob = response.read()
-    except (urllib.error.URLError, OSError):
-        return
+def image_ext(blob):
     if blob.startswith(b"\x89PNG\r\n\x1a\n"):
-        ICON_DIR.mkdir(parents=True, exist_ok=True)
-        (ICON_DIR / f"{pkg}.png").write_bytes(blob)
+        return "png"
+    if blob.startswith(b"\xff\xd8\xff"):
+        return "jpg"
+    if blob[:4] == b"RIFF" and blob[8:12] == b"WEBP":
+        return "webp"
+    return None
 
 
-def fetch_missing_icons(pkgs):
-    for pkg in pkgs:
-        if icon_file(pkg):
+def override_icon(pkg):
+    try:
+        urls = json.loads((ICON_DIR / "sources.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    url = urls.get(pkg)
+    return http_get(url) if url else None
+
+
+def play_icon(pkg):
+    page = http_get(PLAY_URL.format(pkg))
+    if not page:
+        return None
+    icon = re.search(r'"image":"(https://play-lh\.googleusercontent\.com/[^"]+)"', page.decode("utf-8", "replace"))
+    return http_get(f"{icon.group(1)}=s96-cc") if icon else None
+
+
+def find_icon_url(node):
+    if isinstance(node, dict):
+        icon = node.get("icon")
+        if isinstance(icon, str) and icon.startswith("http"):
+            return icon
+        node = list(node.values())
+    if isinstance(node, list):
+        for child in node:
+            found = find_icon_url(child)
+            if found:
+                return found
+    return None
+
+
+def aptoide_icon(pkg):
+    blob = http_get(APTOIDE_URL.format(pkg))
+    if not blob:
+        return None
+    try:
+        url = find_icon_url(json.loads(blob))
+    except ValueError:
+        return None
+    return http_get(url) if url else None
+
+
+def rounded(blob, ext):
+    """Square-fit to 96x96 and cut to a circle, to match Play's round icons. Needs
+    Pillow; without it the original image is kept as is."""
+    try:
+        from PIL import Image, ImageDraw, ImageOps
+    except ImportError:
+        return blob, ext
+    try:
+        img = ImageOps.fit(Image.open(io.BytesIO(blob)).convert("RGBA"), (96, 96))
+    except Exception:
+        return blob, ext
+    mask = Image.new("L", (96, 96), 0)
+    ImageDraw.Draw(mask).ellipse((0, 0, 95, 95), fill=255)
+    img.putalpha(Image.composite(img.getchannel("A"), Image.new("L", (96, 96), 0), mask))
+    out = io.BytesIO()
+    img.save(out, "PNG", optimize=True)
+    return out.getvalue(), "png"
+
+
+def initials(name):
+    words = re.findall(r"[A-Za-z0-9]+", name)
+    if not words:
+        return "?"
+    if len(words[0]) <= 3 and words[0].isupper():
+        return words[0]
+    if len(words) > 1:
+        return (words[0][0] + words[1][0]).upper()
+    caps = re.findall(r"[A-Z]", words[0])
+    return "".join(caps[:2]) if len(caps) >= 2 else words[0][:2].upper()
+
+
+def placeholder_svg(pkg, name):
+    top, bottom = PALETTES[zlib.crc32(pkg.encode()) % len(PALETTES)]
+    text = escape(initials(name))
+    size = 38 if len(text) <= 2 else 30
+    return (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">'
+        f'<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="{top}"/>'
+        f'<stop offset="1" stop-color="{bottom}"/></linearGradient></defs>'
+        '<circle cx="48" cy="48" r="48" fill="url(#g)"/>'
+        f'<text x="48" y="48" text-anchor="middle" dominant-baseline="central" '
+        f'font-family="Poppins,Segoe UI,Roboto,Arial,sans-serif" font-size="{size}" font-weight="700" '
+        f'fill="#fff">{text}</text></svg>\n'
+    )
+
+
+def ensure_icon(pkg, name):
+    have = icon_file(pkg)
+    if have and not have.endswith(".svg"):
+        return
+    ICON_DIR.mkdir(parents=True, exist_ok=True)
+    for fetch, tidy in ((override_icon, False), (play_icon, False), (aptoide_icon, True)):
+        blob = fetch(pkg)
+        ext = image_ext(blob) if blob else None
+        if not ext:
             continue
-        url = fetch_play_icon_url(pkg)
-        if url:
-            download_icon(url, pkg)
+        if tidy:
+            blob, ext = rounded(blob, ext)
+        (ICON_DIR / f"{pkg}.{ext}").write_bytes(blob)
+        (ICON_DIR / f"{pkg}.svg").unlink(missing_ok=True)
+        return
+    if not have:
+        (ICON_DIR / f"{pkg}.svg").write_text(placeholder_svg(pkg, name), encoding="utf-8")
 
 
 def icon_img(pkg):
     name = icon_file(pkg) if pkg else None
     if not name:
         return "📦&nbsp;"
-    return f'<img src=".github/assets/icons/{name}" width="18" align="top">&nbsp;&nbsp;'
+    return f'<img src=".github/assets/icons/{name}" width="18" align="absmiddle">&nbsp;&nbsp;'
 
 
 def spoiler(label, count, targets, tbl, pkg=None):
     noun = "patch" if count == 1 else "patches"
     vtbl = versions_table(targets)
-    versions = f"**🐉 Supported versions:**\n\n{vtbl}\n\n" if vtbl else ""
+    versions = f"**🎯 Supported versions:**\n\n{vtbl}\n\n" if vtbl else ""
     return f"""<a id="{slug(label)}"></a>
 <details>
 <summary>{icon_img(pkg)}{label}&nbsp;&nbsp;•&nbsp;&nbsp;{count} {noun}</summary>
@@ -248,7 +357,9 @@ def build_content():
         f"> **[v{ver}](https://github.com/{owner}/{repo}/releases/tag/v{ver})**"
         f"&nbsp;&nbsp;•&nbsp;&nbsp;`{branch}`&nbsp;&nbsp;•&nbsp;&nbsp;{total} patches total"
     ]
-    fetch_missing_icons(list(by_pkg))
+    if not NO_ICONS:
+        for pkg, entry in by_pkg.items():
+            ensure_icon(pkg, entry["name"])
 
     for pkg, entry in by_pkg.items():
         patches = list(entry["patches"].values())
