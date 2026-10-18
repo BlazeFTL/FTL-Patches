@@ -479,6 +479,9 @@ Click **[Add To Morphe↗️](https://morphe.software/add-source?github=BlazeFTL
 
 <!-- PATCHES_END -->
 
+---
+
+
 ## 🛠️ Building
 
 You need Java 21 and a GitHub token with `read:packages`:
