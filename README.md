@@ -5,7 +5,7 @@
   <img src=".github/assets/ftl-banner-light.svg" alt="BlazeFTL's patches" width="800">
 </picture>
 
-[![Downloads badge](https://img.shields.io/github/downloads/BlazeFTL/FTL-Patches/total?style=for-the-badge&label=Downloads&color=FF5E5B&logo=github&logoColor=white)](https://github.com/BlazeFTL/FTL-Patches/releases)
+[![Downloads badge](https://img.shields.io/github/downloads/BlazeFTL/FTL-Patches/total?style=for-the-badge&label=Downloads&color=FF5E5B&logo=github&logoColor=white)](https://github.com/BlazeFTL/FTL-Patches/releases/latest)
 [![Release badge](https://img.shields.io/github/v/release/BlazeFTL/FTL-Patches?include_prereleases&style=for-the-badge&label=Release&color=2F81F7&logo=github&logoColor=white)](https://github.com/BlazeFTL/FTL-Patches/releases/latest)
 [![Stars badge](https://img.shields.io/github/stars/BlazeFTL/FTL-Patches?style=for-the-badge&label=Stars&color=FF5E5B&logo=github&logoColor=white)](https://github.com/BlazeFTL/FTL-Patches/stargazers)
 
@@ -21,7 +21,7 @@ Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans buil
 
 ## ⚡ Usage
 
-Tap **Add this source** above with Morphe installed, or add `https://github.com/BlazeFTL/FTL-Patches` as a patch source in Morphe. Pick your app, select patches, patch.
+Click **[Add To Morphe↗️](https://morphe.software/add-source?github=BlazeFTL/FTL-Patches)** with Morphe installed, or add `https://github.com/BlazeFTL/FTL-Patches` as a patch source in Morphe. Pick your app, select patches, patch.
 
 ## 🐉 Patches list
 
@@ -478,6 +478,17 @@ Tap **Add this source** above with Morphe installed, or add `https://github.com/
 </details>
 
 <!-- PATCHES_END -->
+
+## 🛠️ Building
+
+You need Java 21 and a GitHub token with `read:packages`:
+
+```bash
+./gradlew buildAndroid
+```
+
+The build writes the bundle to `patches/build/libs/`. See the
+[Morphe documentation](https://github.com/MorpheApp/morphe-documentation) for setup instructions.
 
 ## ⚖️ License
 
