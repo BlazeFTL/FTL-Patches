@@ -26,7 +26,7 @@ Click **[Add To Morphe↗️](https://morphe.software/add-source?github=BlazeFTL
 ## 🐉 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.5](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.5)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;110 patches total
+> **[v1.43.6-dev.1](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.6-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;110 patches total
 <a id="all-video-downloader-ace-player"></a>
 <details>
 <summary><img src=".github/assets/icons/videoplayer.videodownloader.downloader.png" width="18" align="absmiddle">&nbsp;&nbsp;All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
@@ -170,7 +170,7 @@ Click **[Add To Morphe↗️](https://morphe.software/add-source?github=BlazeFTL
 
 <a id="snaptube"></a>
 <details>
-<summary><img src=".github/assets/icons/com.snaptube.premium.png" width="18" align="absmiddle">&nbsp;&nbsp;SnapTube&nbsp;&nbsp;•&nbsp;&nbsp;4 patches</summary>
+<summary><img src=".github/assets/icons/com.snaptube.premium.jpg" width="18" align="absmiddle">&nbsp;&nbsp;SnapTube&nbsp;&nbsp;•&nbsp;&nbsp;4 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -250,7 +250,7 @@ Click **[Add To Morphe↗️](https://morphe.software/add-source?github=BlazeFTL
 
 <a id="mixplorer"></a>
 <details>
-<summary><img src=".github/assets/icons/com.mixplorer.png" width="18" align="absmiddle">&nbsp;&nbsp;MiXplorer&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<summary><img src=".github/assets/icons/com.mixplorer.jpg" width="18" align="absmiddle">&nbsp;&nbsp;MiXplorer&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
 
 **🎯 Supported versions:**
