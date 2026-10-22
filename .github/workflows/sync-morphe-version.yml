@@ -13,7 +13,16 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Ensure running on main
+        run: |
+          if [ "${{ github.ref_name }}" != "main" ]; then
+            echo "This workflow must run from main (got ${{ github.ref_name }})" >&2
+            exit 1
+          fi
 
       - name: Fetch upstream versions
         id: upstream
@@ -44,8 +53,9 @@ jobs:
           sed -i -E 's/(id\("app\.morphe\.patches"\) version ")[^"]+(")/\1${{ steps.upstream.outputs.plugin_ver }}\2/' settings.gradle.kts
 
       - name: Create PR
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@v6
         with:
+          base: main
           commit-message: "chore: sync morphe-patcher ${{ steps.upstream.outputs.patcher_ver }} / plugin ${{ steps.upstream.outputs.plugin_ver }}"
           title: "chore: sync Morphe patcher/plugin version"
           body: |
