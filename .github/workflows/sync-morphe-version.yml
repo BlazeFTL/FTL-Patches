@@ -1,3 +1,5 @@
+# The morphe versions should be synced from main branch of Morphe
+
 name: Sync Morphe Version
 
 on:
@@ -13,16 +15,7 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: main
-
-      - name: Ensure running on main
-        run: |
-          if [ "${{ github.ref_name }}" != "main" ]; then
-            echo "This workflow must run from main (got ${{ github.ref_name }})" >&2
-            exit 1
-          fi
+      - uses: actions/checkout@v7
 
       - name: Fetch upstream versions
         id: upstream
@@ -30,10 +23,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TOML=$(curl -sH "Authorization: Bearer $GH_TOKEN" \
-            "https://api.github.com/repos/MorpheApp/morphe-manager/contents/gradle/libs.versions.toml?ref=dev" \
+            "https://api.github.com/repos/MorpheApp/morphe-manager/contents/gradle/libs.versions.toml?ref=main" \
             | jq -r '.content' | base64 -d)
           SETTINGS=$(curl -sH "Authorization: Bearer $GH_TOKEN" \
-            "https://api.github.com/repos/MorpheApp/morphe-patches-template/contents/settings.gradle.kts" \
+            "https://api.github.com/repos/MorpheApp/morphe-patches-template/contents/settings.gradle.kts?ref=main" \
             | jq -r '.content' | base64 -d)
 
           PATCHER_VER=$(echo "$TOML" | grep -m1 '^morphe-patcher' | sed -E 's/.*"([^"]+)".*/\1/')
@@ -41,6 +34,12 @@ jobs:
 
           if [ -z "$PATCHER_VER" ] || [ -z "$PLUGIN_VER" ]; then
             echo "Failed to parse upstream versions" >&2
+            exit 1
+          fi
+
+          # Guard: never sync pre-release / dev versions
+          if [[ "$PATCHER_VER" == *"-dev"* ]] || [[ "$PLUGIN_VER" == *"-dev"* ]]; then
+            echo "Dev version detected ($PATCHER_VER / $PLUGIN_VER) - aborting sync." >&2
             exit 1
           fi
 
@@ -53,13 +52,12 @@ jobs:
           sed -i -E 's/(id\("app\.morphe\.patches"\) version ")[^"]+(")/\1${{ steps.upstream.outputs.plugin_ver }}\2/' settings.gradle.kts
 
       - name: Create PR
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
-          base: main
           commit-message: "chore: sync morphe-patcher ${{ steps.upstream.outputs.patcher_ver }} / plugin ${{ steps.upstream.outputs.plugin_ver }}"
           title: "chore: sync Morphe patcher/plugin version"
           body: |
-            Auto-synced from MorpheApp/morphe-manager (patcher) and MorpheApp/morphe-patches-template (plugin).
+            Auto-synced from MorpheApp/morphe-manager (patcher) and MorpheApp/morphe-patches-template (plugin), both from the `main` branch.
 
             - morphe-patcher: `${{ steps.upstream.outputs.patcher_ver }}`
             - app.morphe.patches: `${{ steps.upstream.outputs.plugin_ver }}`
