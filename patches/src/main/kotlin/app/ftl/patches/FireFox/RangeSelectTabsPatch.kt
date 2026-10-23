@@ -1,27 +1,54 @@
+/*
+ * Long press to select tab range.
+ *
+ * SUPPORT POLICY: one Firefox Nightly build only (161.0a1). No fallbacks, no multi-version matching.
+ * On a new Nightly: fix every fingerprint against the new smali, delete anything for the old build.
+ *
+ * SMALI NEEDED WHEN A FINGERPRINT BREAKS (send these from the NEW build):
+ *
+ *   RangeLongClickFingerprint
+ *     Need: every class containing  TabsTrayAction$TabItemLongClicked;-><init>
+ *           + TabManagementFragment.smali (getter getTabsTrayStore$app).
+ *     Constraint: must be a Function1 lambda invoke(Object)Object whose fields hold the fragment.
+ *                 RangeSelect.store() reflects over the lambda's fields looking for getTabsTrayStore$app.
+ *                 If the creator no longer holds the fragment, RangeSelect.java must change too.
+ *     161.0a1: UNVERIFIED. No class in the supplied smali creates TabItemLongClicked
+ *              (TabManagementFragment lambdas, RenderTabsTray, getEntryProvider, redux, tabgroups/flow all checked).
+ *              Creator lives in a package not yet supplied (try tabstray/ui subpackages, tabstray/controller).
+ *
+ *   RangeClickFingerprint
+ *     Need: class containing  new-instance TabGroupAction$TabGroupClicked
+ *     161.0a1: TabManagementFragment$$ExternalSyntheticLambda43 (unique). Lambda numbers shift between builds.
+ *
+ *   InteractableGestureFingerprint
+ *     Need: InteractableListKt$detectListPressAndDrag$1
+ *     161.0a1: mozilla/components/compose/draggable/ (moved out of org/mozilla/fenix/tabstray/browser/compose/interactable/).
+ *
+ *   ReorderableGestureFingerprint
+ *     Need: ReorderableListKt$detectListPressAndDrag$1
+ *     161.0a1: org/mozilla/fenix/tabstray/browser/compose/.
+ *
+ *   Both gesture fingerprints: invoke(PointerInputScope, Continuation)Object with
+ *     iget-boolean $shouldLongPressToDrag ; if-eqz (immediately) ; call DragGestureDetectorKt.detectDragGesturesAfterLongPress.
+ *     The if-eqz target must be  sget-object Unit ; return-object  (checked in hookGesture).
+ *
+ * Quick find in a decoded dump:  grep -rl '<needle>' .
+ */
+
 package app.ftl.patches.firefox
 
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.fieldAccess
+import app.morphe.patcher.instanceOf
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.newInstance
 import app.morphe.patcher.opcode
-import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.BytecodePatchContext
-import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
 import com.android.tools.smali.dexlib2.Opcode
-
-private val COMPATIBILITY_FIREFOX_RANGE = Compatibility(
-    packageName = "org.mozilla.fenix",
-    name = "Firefox Nightly",
-    targets = listOf(
-        AppTarget(version = "159.0a1"),
-        AppTarget(version = "160.0a1", versionCode = 2016189527),
-    ),
-)
 
 private const val RS_SELECT = "Lapp/ftl/extension/firefox/RangeSelect;"
 private const val RS_START = "Lapp/ftl/extension/firefox/RangeSelectStart;"
@@ -44,8 +71,10 @@ private const val RS_GROUP_CLICKED = "Lorg/mozilla/fenix/tabstray/redux/action/T
 private const val RS_DETECT = "$RS_DRAG_KT->detectDragGesturesAfterLongPress(" +
     "$RS_POINTER_SCOPE$RS_FUNCTION1$RS_FUNCTION0$RS_FUNCTION0$RS_FUNCTION2$RS_CONTINUATION)$RS_OBJ"
 
+// Long press on a tab item -> dispatches TabItemLongClicked. definingClass intentionally NOT pinned:
+// the creator lambda moved between builds. Match by shape: invoke(Object)Object that calls the
+// fragment's store getter and creates TabItemLongClicked. See header for what to send if this fails.
 private object RangeLongClickFingerprint : Fingerprint(
-    definingClass = RS_FRAGMENT_LAMBDA,
     name = "invoke",
     returnType = RS_OBJ,
     parameters = listOf(RS_OBJ),
@@ -55,19 +84,22 @@ private object RangeLongClickFingerprint : Fingerprint(
     ),
 )
 
+// Tap on a tab item -> Tab: forwards to Function1; TabGroup: dispatches TabGroupClicked.
+// Fragment lambda number changes per build; matched by prefix + instance-of Tab + TabGroupClicked.
 private object RangeClickFingerprint : Fingerprint(
     definingClass = RS_FRAGMENT_LAMBDA,
     name = "invoke",
     returnType = RS_OBJ,
     parameters = listOf(RS_OBJ),
     filters = listOf(
-        instanceOfType(RS_TAB),
+        instanceOf(RS_TAB),
         newInstance(RS_GROUP_CLICKED),
     ),
 )
 
+// 161.0a1: class lives in android-components (mozilla/components/compose/draggable).
 private object InteractableGestureFingerprint : Fingerprint(
-    definingClass = "Lorg/mozilla/fenix/tabstray/browser/compose/interactable/" +
+    definingClass = "Lmozilla/components/compose/draggable/" +
         "InteractableListKt\$detectListPressAndDrag\$1;",
     name = "invoke",
     returnType = RS_OBJ,
@@ -79,6 +111,7 @@ private object InteractableGestureFingerprint : Fingerprint(
     ),
 )
 
+// 161.0a1: class lives in org/mozilla/fenix/tabstray/browser/compose.
 private object ReorderableGestureFingerprint : Fingerprint(
     definingClass = "Lorg/mozilla/fenix/tabstray/browser/compose/" +
         "ReorderableListKt\$detectListPressAndDrag\$1;",
@@ -203,18 +236,17 @@ val rangeSelectTabsPatch = bytecodePatch(
         "Toggle in Mod Settings.",
     default = true,
 ) {
-    compatibleWith(COMPATIBILITY_FIREFOX_RANGE)
+    // COMPATIBILITY_FIREFOX_NIGHTLY must list the single supported build only (161.0a1).
+    compatibleWith(COMPATIBILITY_FIREFOX_NIGHTLY)
 
     extendWith("extensions/firefox.mpe")
 
     execute {
-        val gestures = listOf<Fingerprint>(InteractableGestureFingerprint, ReorderableGestureFingerprint)
-            .filter { it.matchOrNull() != null }
-        if (gestures.isEmpty()) throw PatchException("List press and drag gesture detector not found")
-
+        // Single supported build: every fingerprint must match, any miss fails the patch loudly.
         installInterfaces()
         hookLongClick()
         hookClick()
-        gestures.forEach { hookGesture(it) }
+        hookGesture(InteractableGestureFingerprint)
+        hookGesture(ReorderableGestureFingerprint)
     }
 }

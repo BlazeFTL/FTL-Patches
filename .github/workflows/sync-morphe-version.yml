@@ -1,3 +1,5 @@
+# The morphe versions should be synced from main branch of Morphe
+
 name: Sync Morphe Version
 
 on:
@@ -21,10 +23,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TOML=$(curl -sH "Authorization: Bearer $GH_TOKEN" \
-            "https://api.github.com/repos/MorpheApp/morphe-manager/contents/gradle/libs.versions.toml?ref=dev" \
+            "https://api.github.com/repos/MorpheApp/morphe-manager/contents/gradle/libs.versions.toml?ref=main" \
             | jq -r '.content' | base64 -d)
           SETTINGS=$(curl -sH "Authorization: Bearer $GH_TOKEN" \
-            "https://api.github.com/repos/MorpheApp/morphe-patches-template/contents/settings.gradle.kts" \
+            "https://api.github.com/repos/MorpheApp/morphe-patches-template/contents/settings.gradle.kts?ref=main" \
             | jq -r '.content' | base64 -d)
 
           PATCHER_VER=$(echo "$TOML" | grep -m1 '^morphe-patcher' | sed -E 's/.*"([^"]+)".*/\1/')
@@ -32,6 +34,12 @@ jobs:
 
           if [ -z "$PATCHER_VER" ] || [ -z "$PLUGIN_VER" ]; then
             echo "Failed to parse upstream versions" >&2
+            exit 1
+          fi
+
+          # Guard: never sync pre-release / dev versions
+          if [[ "$PATCHER_VER" == *"-dev"* ]] || [[ "$PLUGIN_VER" == *"-dev"* ]]; then
+            echo "Dev version detected ($PATCHER_VER / $PLUGIN_VER) - aborting sync." >&2
             exit 1
           fi
 
@@ -49,7 +57,7 @@ jobs:
           commit-message: "chore: sync morphe-patcher ${{ steps.upstream.outputs.patcher_ver }} / plugin ${{ steps.upstream.outputs.plugin_ver }}"
           title: "chore: sync Morphe patcher/plugin version"
           body: |
-            Auto-synced from MorpheApp/morphe-manager (patcher) and MorpheApp/morphe-patches-template (plugin).
+            Auto-synced from MorpheApp/morphe-manager (patcher) and MorpheApp/morphe-patches-template (plugin), both from the `main` branch.
 
             - morphe-patcher: `${{ steps.upstream.outputs.patcher_ver }}`
             - app.morphe.patches: `${{ steps.upstream.outputs.plugin_ver }}`

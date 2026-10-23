@@ -5,8 +5,6 @@ import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.opcode
-import app.morphe.patcher.patch.AppTarget
-import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
 import com.android.tools.smali.dexlib2.Opcode
@@ -15,12 +13,6 @@ import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
-
-private val COMPATIBILITY_FIREFOX_SCROLL = Compatibility(
-    packageName = "org.mozilla.fenix",
-    name = "Firefox Nightly",
-    targets = listOf(AppTarget(version = "159.0a1")),
-)
 
 private const val TAB_LAYOUT_KT = "Lorg/mozilla/fenix/tabstray/ui/tabpage/TabLayoutKt;"
 private const val SCROLL_HELPER_LAMBDA =
@@ -87,7 +79,7 @@ val rememberTabScrollPositionPatch = bytecodePatch(
     description = "Keeps the tab tray scroll position when it is closed and reopened.",
     default = true,
 ) {
-    compatibleWith(COMPATIBILITY_FIREFOX_SCROLL)
+    compatibleWith(COMPATIBILITY_FIREFOX_NIGHTLY)
 
     extendWith("extensions/firefox.mpe")
 

@@ -1,0 +1,8 @@
+{
+  "com.snaptube.premium": "page:https://www.snaptubeapp.com/",
+  "com.mixplorer": [
+    "og:https://mixplorer.en.uptodown.com/android",
+    "og:https://mixplorer.en.softonic.com/android",
+    "page:https://mixplorer.com/"
+  ]
+}

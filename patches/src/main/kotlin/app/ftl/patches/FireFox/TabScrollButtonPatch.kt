@@ -4,9 +4,7 @@ import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.methodCall
-import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.BytecodePatchContext
-import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
@@ -18,15 +16,6 @@ import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
-
-private val COMPATIBILITY_FIREFOX_SCROLL_BUTTON = Compatibility(
-    packageName = "org.mozilla.fenix",
-    name = "Firefox Nightly",
-    targets = listOf(
-        AppTarget(version = "159.0a1"),
-        AppTarget(version = "160.0a1", versionCode = 2016189527),
-    ),
-)
 
 private const val SB_TAB_SCROLL = "Lapp/ftl/extension/firefox/TabScroll;"
 private const val SB_TAB_SCROLL_CLICK = "Lapp/ftl/extension/firefox/TabScrollClick;"
@@ -208,7 +197,7 @@ val tabScrollButtonPatch = bytecodePatch(
         "Toggle in Mod Settings.",
     default = true,
 ) {
-    compatibleWith(COMPATIBILITY_FIREFOX_SCROLL_BUTTON)
+    compatibleWith(COMPATIBILITY_FIREFOX_NIGHTLY)
 
     dependsOn(tabNextToCurrentPatch)
 

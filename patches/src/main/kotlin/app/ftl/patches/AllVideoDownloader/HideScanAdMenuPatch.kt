@@ -1,5 +1,6 @@
 package app.ftl.patches.videodownloader
 
+import app.ftl.patches.alldownloader.COMPATIBILITY_ALL_VIDEO_DOWNLOADER
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.PatchException
@@ -11,7 +12,7 @@ val hideScanAdMenuPatch = bytecodePatch(
     name = "Hide Scan (AD) menu item",
     description = "Removes the Scan (AD) row from the browser overflow menu."
 ) {
-    compatibleWith(VIDEO_DOWNLOADER_PACKAGE)
+    compatibleWith(COMPATIBILITY_ALL_VIDEO_DOWNLOADER)
 
     execute {
         ScanAdMenuBuilderFingerprint.let { fingerprint ->

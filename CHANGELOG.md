@@ -1,3 +1,9 @@
+## [1.43.6-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.5...v1.43.6-dev.1) (2026-10-20)
+
+### 🐛 Bug Fixes
+
+* Add Support For Latest FireFox Nightly ([8324974](https://github.com/BlazeFTL/FTL-Patches/commit/8324974ae4f0b3bd4893c75ee263cba97e7cf851))
+
 ## [1.43.5](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.4...v1.43.5) (2026-10-17)
 
 ### 🐛 Bug Fixes

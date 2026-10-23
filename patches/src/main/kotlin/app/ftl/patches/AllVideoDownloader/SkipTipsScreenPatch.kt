@@ -1,5 +1,6 @@
 package app.ftl.patches.videodownloader
 
+import app.ftl.patches.alldownloader.COMPATIBILITY_ALL_VIDEO_DOWNLOADER
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 
@@ -7,7 +8,7 @@ val skipTipsScreenPatch = bytecodePatch(
     name = "Skip tips screen",
     description = "Closes the onboarding tips screen as soon as it opens."
 ) {
-    compatibleWith(VIDEO_DOWNLOADER_PACKAGE)
+    compatibleWith(COMPATIBILITY_ALL_VIDEO_DOWNLOADER)
 
     execute {
         TipsActivityOnCreateFingerprint.let { fingerprint ->

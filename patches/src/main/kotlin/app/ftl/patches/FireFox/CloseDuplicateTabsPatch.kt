@@ -3,23 +3,13 @@ package app.ftl.patches.firefox
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.fieldAccess
-import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.BytecodePatchContext
-import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import app.morphe.patcher.string
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
-
-private val COMPATIBILITY_FIREFOX_DUPLICATES = Compatibility(
-    packageName = "org.mozilla.fenix",
-    name = "Firefox Nightly",
-    targets = listOf(
-        AppTarget(version = "159.0a1"),
-        AppTarget(version = "160.0a1", versionCode = 2016189527),
-    ),
-)
 
 private const val DUP_TAB_MENU = "Lapp/ftl/extension/firefox/TabMenu;"
 private const val DUP_CLOSE_ACTION = "Lapp/ftl/extension/firefox/TabCloseDuplicates;"
@@ -35,17 +25,26 @@ private object TabMenuItemsFingerprint : Fingerprint(
     ),
 )
 
+private fun menuJoin(method: MutableMethod, emptyIndex: Int): Int {
+    var index = emptyIndex + 1
+    var hops = 0
+    while (method.getInstruction(index).opcode.name.startsWith("goto") && hops < 4) {
+        index = method.jumpTarget(index)
+        hops++
+    }
+    if (method.getInstruction(index).location.labels.isEmpty()) {
+        throw PatchException("Menu list join point not found after EmptyList at $emptyIndex")
+    }
+    return index
+}
+
 private fun BytecodePatchContext.hookMenuItems() {
     val fingerprint = TabMenuItemsFingerprint
     val method = fingerprint.method
     val emptyList = fingerprint.instructionMatches[1]
     val listRegister = (emptyList.instruction as OneRegisterInstruction).registerA
-    val joinIndex = emptyList.index + 1
+    val joinIndex = menuJoin(method, emptyList.index)
 
-    if (listRegister > 15) throw PatchException("Menu list register out of range: v$listRegister")
-    if (method.getInstruction(joinIndex).location.labels.isEmpty()) {
-        throw PatchException("Menu list join point not found after EmptyList at ${emptyList.index}")
-    }
     if (!Liveness(method).isLive(joinIndex, listRegister)) {
         throw PatchException("Menu list register v$listRegister is not live at the join point")
     }
@@ -55,7 +54,7 @@ private fun BytecodePatchContext.hookMenuItems() {
         insert(
             joinIndex,
             """
-                invoke-static {v$listRegister}, $DUP_TAB_MENU->withDuplicates(Ljava/lang/Object;)Ljava/util/List;
+                invoke-static/range {v$listRegister .. v$listRegister}, $DUP_TAB_MENU->withDuplicates(Ljava/lang/Object;)Ljava/util/List;
                 move-result-object v$listRegister
             """,
         ),
@@ -76,7 +75,7 @@ val closeDuplicateTabsPatch = bytecodePatch(
     description = "Adds Close duplicate tabs to the tab tray 3 dot menu. Toggle in Mod Settings.",
     default = true,
 ) {
-    compatibleWith(COMPATIBILITY_FIREFOX_DUPLICATES)
+    compatibleWith(COMPATIBILITY_FIREFOX_NIGHTLY)
 
     extendWith("extensions/firefox.mpe")
 

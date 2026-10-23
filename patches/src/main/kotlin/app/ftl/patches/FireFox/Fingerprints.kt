@@ -37,7 +37,7 @@ internal object ExtensionsMenuItemFingerprint : Fingerprint(
 internal object WebExtensionMenuItemsFingerprint : Fingerprint(
     definingClass = EXTENSIONS_MENU_ITEM_KT,
     name = "WebExtensionMenuItems",
-    filters = listOf(constTo(17, 0x40000000)),
+    filters = listOf(constOrUnique(17, 0x40000000)),
 )
 
 internal object IPProtectionMenuItemFingerprint : Fingerprint(
@@ -236,9 +236,8 @@ internal object AccountSubtitleLambdaFingerprint : Fingerprint(
     returnType = OBJ,
     parameters = listOf(OBJ, OBJ),
     filters = listOf(
-        methodCall(definingClass = "Landroidx/compose/material3/TextKt;", name = "Text-Nvy7gAk"),
+        callPrefix("Landroidx/compose/material3/TextKt;", "Text-"),
         fieldAccess(opcode = Opcode.IGET_OBJECT, type = "Ljava/lang/String;"),
-        opcode(Opcode.IF_NEZ),
     ),
 )
 
@@ -320,9 +319,9 @@ internal object MenuNavigationFingerprint : Fingerprint(
     definingClass = MENU_NAVIGATION_KT,
     name = "MenuNavigation",
     filters = listOf(
-        constTo(2, 0x41400000),
-        constTo(11, 0x40800000),
-        methodCall(definingClass = "Landroidx/compose/foundation/layout/PaddingKt;", name = "padding-VpY3zN4"),
+        constOrUnique(2, 0x41400000),
+        constOrUnique(11, 0x40800000),
+        callPrefix("Landroidx/compose/foundation/layout/PaddingKt;", "padding-"),
     ),
 )
 
@@ -359,8 +358,7 @@ internal object WebExtensionMenuItemsPinFingerprint : Fingerprint(
 
 internal object IconListItemFingerprint : Fingerprint(
     definingClass = LIST_ITEM_KT,
-    custom = { method, _ -> method.name.startsWith("IconListItem") },
-    filters = listOf(constTo(24, 0x2010), constTo(16, 0)),
+    custom = { method, _ -> method.name == "IconListItem" || method.name.startsWith("IconListItem-") },
 )
 
 internal object BadgeHideFingerprint : Fingerprint(

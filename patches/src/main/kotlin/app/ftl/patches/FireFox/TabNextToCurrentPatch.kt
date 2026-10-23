@@ -8,9 +8,7 @@ import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.fieldAccess
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.opcode
-import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.BytecodePatchContext
-import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
@@ -27,15 +25,6 @@ import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
-
-private val COMPATIBILITY_FIREFOX_TABS = Compatibility(
-    packageName = "org.mozilla.fenix",
-    name = "Firefox Nightly",
-    targets = listOf(
-        AppTarget(version = "159.0a1"),
-        AppTarget(version = "160.0a1", versionCode = 2016189527),
-    ),
-)
 
 private const val TAB_ORDER = "Lapp/ftl/extension/firefox/TabOrder;"
 private const val TAB_END_CLICK = "Lapp/ftl/extension/firefox/TabEndClick;"
@@ -335,7 +324,7 @@ val tabNextToCurrentPatch = bytecodePatch(
         "down arrow) beside + that opens a tab at the end. Both are toggles in Mod Settings.",
     default = true,
 ) {
-    compatibleWith(COMPATIBILITY_FIREFOX_TABS)
+    compatibleWith(COMPATIBILITY_FIREFOX_NIGHTLY)
 
     dependsOn(tabIconsPatch)
 

@@ -392,6 +392,11 @@ public final class ExtensionPin {
         return new PinClick(base, new PinLong(context, item));
     }
 
+    public static Object wrap(Object base, Object item) {
+        if (!ModSettings.pinEnabled() || appCtx == null) return base;
+        return new PinClick(base, new PinLong(appCtx, item));
+    }
+
     public static Object longOf(Object function) {
         return function instanceof PinClick ? ((PinClick) function).onLong : null;
     }

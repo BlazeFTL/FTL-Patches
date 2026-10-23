@@ -4,19 +4,8 @@ import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.opcode
-import app.morphe.patcher.patch.AppTarget
-import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.bytecodePatch
 import com.android.tools.smali.dexlib2.Opcode
-
-private val COMPATIBILITY_FIREFOX_FULLSCREEN = Compatibility(
-    packageName = "org.mozilla.fenix",
-    name = "Firefox Nightly",
-    targets = listOf(
-        AppTarget(version = "159.0a1"),
-        AppTarget(version = "160.0a1", versionCode = 2016189527),
-    ),
-)
 
 private object FullscreenToastFingerprint : Fingerprint(
     definingClass = "Lorg/mozilla/fenix/browser/BaseBrowserFragment;",
@@ -39,7 +28,7 @@ val hideFullscreenToastPatch = bytecodePatch(
     description = "Removes the toast shown when a video goes fullscreen. Toggle in Mod Settings.",
     default = true,
 ) {
-    compatibleWith(COMPATIBILITY_FIREFOX_FULLSCREEN)
+    compatibleWith(COMPATIBILITY_FIREFOX_NIGHTLY)
 
     extendWith("extensions/firefox.mpe")
 

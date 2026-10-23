@@ -40,7 +40,7 @@ jobs:
       - name: Build patches.mpp
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./gradlew :patches:buildAndroid
+        run: ./gradlew :patches:buildAndroid --stacktrace
 
       - name: Resolve mode
         id: mode

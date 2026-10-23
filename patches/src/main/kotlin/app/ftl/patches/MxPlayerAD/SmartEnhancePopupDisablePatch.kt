@@ -1,5 +1,6 @@
 package app.ftl.patches.mxplayerad
 
+import app.ftl.util.registersUsed
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
@@ -9,11 +10,8 @@ import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.string
 import app.morphe.patcher.util.smali.ExternalLabel
-import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
-import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
-import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 
@@ -53,12 +51,11 @@ internal val disableSmartEnhancePopupPatch = bytecodePatch(
         // matches[2] = const-string "LocalPlayerEnhanceIntroDialog" (11 instructions before return-void)
         val caseStart = matches[0].index - 7
         val caseEnd = matches[2].index + 11
-        val instructions = method.implementation!!.instructions
 
         // Outer ActivityScreen field on this OnClickListener (originally "Lql;->c").
-        val outerFieldRef = (instructions[caseStart + 1] as ReferenceInstruction).reference as FieldReference
+        val outerFieldRef = method.getInstruction<ReferenceInstruction>(caseStart + 1).reference as FieldReference
         // ActivityScreen's real toggle+apply method (originally "Ha").
-        val toggleMethodRef = (instructions[caseEnd - 1] as ReferenceInstruction).reference as MethodReference
+        val toggleMethodRef = method.getInstruction<ReferenceInstruction>(caseEnd - 1).reference as MethodReference
 
         val outerField = "${outerFieldRef.definingClass}->${outerFieldRef.name}:${outerFieldRef.type}"
         val toggleParams = toggleMethodRef.parameterTypes.joinToString("") { it.toString() }
@@ -75,22 +72,12 @@ internal val disableSmartEnhancePopupPatch = bytecodePatch(
         // dialog. Skipping the case skipped that write, so the badge came back on every new
         // player session. Read the SharedPreferences register and the getBoolean default off
         // the stock call; first-run state is the default, so seen = !default. Semantic-free.
-        val getBoolean = matches[1].getInstruction<Instruction>()
-        var prefsReg = -1
-        var defReg = -1
-        when (getBoolean) {
-            is FiveRegisterInstruction -> {
-                prefsReg = getBoolean.registerC
-                defReg = getBoolean.registerE
-            }
-            is RegisterRangeInstruction -> {
-                prefsReg = getBoolean.startRegister
-                defReg = getBoolean.startRegister + 2
-            }
-        }
-        if (prefsReg < 0 || defReg < 0) {
+        val callRegisters = method.getInstruction(matches[1].index).registersUsed
+        if (callRegisters.size != 3) {
             throw PatchException("Smart Enhance click handler: getBoolean call has an unexpected shape")
         }
+        val prefsReg = callRegisters[0]
+        val defReg = callRegisters[2]
         // Both registers are already loaded here (only the key const-string sits between this
         // point and the call). The default is read at runtime, so no literal lookup is needed.
         val markSeen = """
