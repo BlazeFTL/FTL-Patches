@@ -32,7 +32,7 @@
  *     iget-boolean $shouldLongPressToDrag ; if-eqz (immediately) ; call DragGestureDetectorKt.detectDragGesturesAfterLongPress.
  *     The if-eqz target must be  sget-object Unit ; return-object  (checked in hookGesture).
  *
- * Quick find in a decoded dump:  grep -rl '<needle>' smali*/
+ * Quick find in a decoded dump:  grep -rl '<needle>' .
  */
 
 package app.ftl.patches.firefox
@@ -41,6 +41,7 @@ import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.fieldAccess
+import app.morphe.patcher.instanceOf
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.newInstance
 import app.morphe.patcher.opcode
@@ -91,7 +92,7 @@ private object RangeClickFingerprint : Fingerprint(
     returnType = RS_OBJ,
     parameters = listOf(RS_OBJ),
     filters = listOf(
-        instanceOfType(RS_TAB),
+        instanceOf(RS_TAB),
         newInstance(RS_GROUP_CLICKED),
     ),
 )
