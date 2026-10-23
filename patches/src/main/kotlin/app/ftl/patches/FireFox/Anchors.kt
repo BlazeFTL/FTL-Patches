@@ -48,18 +48,23 @@ internal fun MutableMethod.lastIndexBefore(from: Int, window: Int, predicate: (I
     return -1
 }
 
-internal fun MutableMethod.callArgument(index: Int, type: String): Int? {
+internal fun MutableMethod.callParameters(index: Int): List<Pair<String, Int>> {
     val call = getInstruction<Instruction>(index)
-    val reference = (call as? ReferenceInstruction)?.reference as? MethodReference ?: return null
+    val reference = (call as? ReferenceInstruction)?.reference as? MethodReference ?: return emptyList()
     val registers = call.callRegisters()
     var cursor = if (call.opcode.name.contains("static")) 0 else 1
+    val result = ArrayList<Pair<String, Int>>()
     for (parameter in reference.parameterTypes) {
         val descriptor = parameter.toString()
-        if (descriptor == type) return registers.getOrNull(cursor)
+        val register = registers.getOrNull(cursor) ?: break
+        result += descriptor to register
         cursor += if (descriptor == "J" || descriptor == "D") 2 else 1
     }
-    return null
+    return result
 }
+
+internal fun MutableMethod.callArgument(index: Int, type: String): Int? =
+    callParameters(index).firstOrNull { it.first == type }?.second
 
 internal fun Liveness.holder(source: Int, at: Int, what: String): Int {
     val holders = copiesOf(source, at)

@@ -251,6 +251,7 @@ private fun cloneLibraryCall(
     return ClonedCall(start, scratch, lines.joinToString("\n"))
 }
 
+private const val ICON_LIST_ITEM_OWNER = "Lorg/mozilla/fenix/compose/list/ListItemKt;"
 private const val WEB_EXTENSION_ITEM = "Lorg/mozilla/fenix/components/menu/store/WebExtensionMenuItem;"
 private const val PIN_STORE_CALL = "$EXTENSION_PIN->remember(Ljava/lang/Object;Ljava/lang/Object;)V"
 private const val PIN_LIST_CALL = "$EXTENSION_PIN->addPinned(Ljava/util/ArrayList;Ljava/lang/Object;)V"
@@ -362,19 +363,24 @@ private fun BytecodePatchContext.prepareExtensionItems(): () -> Unit {
 }
 
 private fun BytecodePatchContext.prepareIconListItem(): () -> Unit {
-    val fingerprint = IconListItemFingerprint
-    val method = fingerprint.method
-    val defaultAt = fingerprint.instructionMatches[1].index
-    val at = defaultAt + 1
-    val target = method.getInstruction<OneRegisterInstruction>(defaultAt).registerA
-    val clickParameter = method.parameterTypes.indexOfFirst { it.toString() == FUNCTION0 }
-    if (clickParameter < 0) unsupported("Icon list item click")
-    val source = Liveness(method).holder(parameterRegister(method, clickParameter), at, "Icon list item click")
-    val call = method.staticCall(at, PIN_LONG_CALL, listOf(source))
+    val method = IconListItemFingerprint.method
+    val callAt = method.firstIndexFrom(0) { _, instruction ->
+        val reference = (instruction as? ReferenceInstruction)?.reference as? MethodReference
+        reference != null && reference.definingClass == ICON_LIST_ITEM_OWNER &&
+            (reference.name == "ListItem" || reference.name.startsWith("ListItem-"))
+    }
+    if (callAt < 0) unsupported("Icon list item call")
+    val functions = method.callParameters(callAt).filter { it.first == FUNCTION0 }
+    if (functions.size < 2) unsupported("Icon list item click arguments")
+    val source = functions[0].second
+    val target = functions[1].second
+    if (source == target) unsupported("Icon list item click registers")
+    if (Liveness(method).isLive(callAt + 1, target)) unsupported("Icon list item long click register")
+    val call = method.staticCall(callAt, PIN_LONG_CALL, listOf(source))
     return {
         method.applyEdits(
             insert(
-                at,
+                callAt,
                 """
                     $call
                     move-result-object v$target

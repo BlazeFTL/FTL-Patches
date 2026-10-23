@@ -359,8 +359,7 @@ internal object WebExtensionMenuItemsPinFingerprint : Fingerprint(
 
 internal object IconListItemFingerprint : Fingerprint(
     definingClass = LIST_ITEM_KT,
-    custom = { method, _ -> method.name.startsWith("IconListItem") },
-    filters = listOf(constTo(24, 0x2010), constTo(16, 0)),
+    custom = { method, _ -> method.name == "IconListItem" || method.name.startsWith("IconListItem-") },
 )
 
 internal object BadgeHideFingerprint : Fingerprint(
