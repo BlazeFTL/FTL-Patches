@@ -26,10 +26,10 @@ Click **[Add To Morphe↗️](https://morphe.software/add-source?github=BlazeFTL
 ## 🐉 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.6-dev.1](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.6-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;110 patches total
+> **[v1.43.6](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.6)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;111 patches total
 <a id="all-video-downloader-ace-player"></a>
 <details>
-<summary><img src=".github/assets/icons/videoplayer.videodownloader.downloader.png" width="18" align="absmiddle">&nbsp;&nbsp;All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
+<summary><img src=".github/assets/icons/videoplayer.videodownloader.downloader.png" width="18" align="absmiddle">&nbsp;&nbsp;All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;9 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -42,6 +42,7 @@ Click **[Add To Morphe↗️](https://morphe.software/add-source?github=BlazeFTL
 | <a id="all-video-downloader-ace-player-boost-splash-screen"></a>[Boost Splash Screen](patches/src/main/kotlin/app/ftl/patches/AllVideoDownloader/BoostSplashScreenPatch.kt) | Fixes Remove Ads And Remove Ads Lite Gettings Stuck In Splash Screen Useless if you also select skip splash and language activity patch. Also stops the splash from hiding the on-screen navigation buttons. | • Splash duration (ms) |
 | <a id="all-video-downloader-ace-player-disable-ad-dialog-when-reopening-app"></a>[Disable ad dialog when reopening app](patches/src/main/kotlin/app/ftl/patches/AllVideoDownloader/DisableOpenAdOnResumePatch.kt) | Prevents the full-screen "loading ad" dialog from appearing when the app is reopened after being minimized. |  |
 | <a id="all-video-downloader-ace-player-disable-downloader-from-download-menu"></a>[Disable downloader from download menu](patches/src/main/kotlin/app/ftl/patches/AllVideoDownloader/DisableDownloadHandlerPatch.kt) | Strips WebDownloadActivity's intent-filter data so it no longer offers itself as a handler in the system download/"complete action using" chooser. |  |
+| <a id="all-video-downloader-ace-player-disable-persistent-foreground-service"></a>[Disable persistent foreground service](patches/src/main/kotlin/app/ftl/patches/AllVideoDownloader/DisableNotifyServiceForegroundPatch.kt) | Stops the notification shortcut service from running as a foreground service so the app no longer stays alive in the background after being removed from recents. |  |
 | <a id="all-video-downloader-ace-player-disable-rate-dialogs"></a>[Disable rate dialogs](patches/src/main/kotlin/app/ftl/patches/AllVideoDownloader/DisableRateDialogsPatch.kt) | Prevents the rate and star rating dialogs from showing. |  |
 | <a id="all-video-downloader-ace-player-hide-scan-ad-menu-item"></a>[Hide Scan (AD) menu item](patches/src/main/kotlin/app/ftl/patches/AllVideoDownloader/HideScanAdMenuPatch.kt) | Removes the Scan (AD) row from the browser overflow menu. |  |
 | <a id="all-video-downloader-ace-player-remove-from-default-browser-list"></a>[Remove from default browser list](patches/src/main/kotlin/app/ftl/patches/AllVideoDownloader/RemoveBrowserRegistrationPatch.kt) | Removes the unscoped http/https <data> entries from MainActivity's first intent-filter carrying them so the app stops appearing as a candidate in the system's default browser / "open with" chooser. |  |
@@ -233,8 +234,8 @@ Click **[Add To Morphe↗️](https://morphe.software/add-source?github=BlazeFTL
 
 **🎯 Supported versions:**
 
-| 159.0a1 | 160.0a1 |
-| :---: | :---: |
+| 161.0a1 |
+| :---: |
 
 | 🩹&nbsp;Patch | 🔥&nbsp;Description |
 |----------|----------------|
