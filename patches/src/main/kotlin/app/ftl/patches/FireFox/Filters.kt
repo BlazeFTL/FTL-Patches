@@ -26,11 +26,11 @@ internal fun constTo(
     register: Int,
     value: Int,
     location: InstructionLocation = InstructionLocation.MatchAfterAnywhere(),
-) = filter(location) { _, instruction ->
+) = filter(location) { method, instruction ->
     instruction is NarrowLiteralInstruction &&
         instruction is OneRegisterInstruction &&
-        instruction.registerA == register &&
-        instruction.narrowLiteral == value
+        instruction.narrowLiteral == value &&
+        (instruction.registerA == register || literalCount(method, value) == 1)
 }
 
 internal fun constOrUnique(
