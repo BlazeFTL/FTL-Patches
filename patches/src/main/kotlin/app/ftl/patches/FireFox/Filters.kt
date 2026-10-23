@@ -33,6 +33,29 @@ internal fun constTo(
         instruction.narrowLiteral == value
 }
 
+internal fun constOrUnique(
+    register: Int,
+    value: Int,
+    location: InstructionLocation = InstructionLocation.MatchAfterAnywhere(),
+) = filter(location) { method, instruction ->
+    instruction is NarrowLiteralInstruction &&
+        instruction is OneRegisterInstruction &&
+        instruction.narrowLiteral == value &&
+        (instruction.registerA == register || literalCount(method, value) == 1)
+}
+
+private fun literalCount(method: Method, value: Int): Int =
+    method.implementation?.instructions?.count { it is NarrowLiteralInstruction && it.narrowLiteral == value } ?: 0
+
+internal fun callPrefix(
+    owner: String,
+    namePrefix: String,
+    location: InstructionLocation = InstructionLocation.MatchAfterAnywhere(),
+) = filter(location) { _, instruction ->
+    val reference = (instruction as? ReferenceInstruction)?.reference as? MethodReference
+    reference != null && reference.definingClass == owner && reference.name.startsWith(namePrefix)
+}
+
 internal fun constAny(
     value: Int,
     location: InstructionLocation = InstructionLocation.MatchAfterAnywhere(),

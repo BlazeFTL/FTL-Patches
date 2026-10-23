@@ -37,7 +37,7 @@ internal object ExtensionsMenuItemFingerprint : Fingerprint(
 internal object WebExtensionMenuItemsFingerprint : Fingerprint(
     definingClass = EXTENSIONS_MENU_ITEM_KT,
     name = "WebExtensionMenuItems",
-    filters = listOf(constTo(17, 0x40000000)),
+    filters = listOf(constOrUnique(17, 0x40000000)),
 )
 
 internal object IPProtectionMenuItemFingerprint : Fingerprint(
@@ -320,9 +320,9 @@ internal object MenuNavigationFingerprint : Fingerprint(
     definingClass = MENU_NAVIGATION_KT,
     name = "MenuNavigation",
     filters = listOf(
-        constTo(2, 0x41400000),
-        constTo(11, 0x40800000),
-        methodCall(definingClass = "Landroidx/compose/foundation/layout/PaddingKt;", name = "padding-VpY3zN4"),
+        constOrUnique(2, 0x41400000),
+        constOrUnique(11, 0x40800000),
+        callPrefix("Landroidx/compose/foundation/layout/PaddingKt;", "padding-"),
     ),
 )
 

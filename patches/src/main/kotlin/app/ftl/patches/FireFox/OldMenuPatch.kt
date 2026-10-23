@@ -430,13 +430,15 @@ private fun BytecodePatchContext.installMenuTweaks() {
 
     optional("MenuNavigation") {
         MenuNavigationFingerprint.let {
+            val at = it.instructionMatches[0].index
+            val register = it.method.getInstruction<OneRegisterInstruction>(at).registerA
             it.method.applyEdits(
                 swap(
-                    it.instructionMatches[0].index,
-                    2,
+                    at,
+                    register,
                     """
                         invoke-static {}, $OLD_MENU->navPadding()F
-                        move-result v2
+                        move-result v$register
                     """,
                 ),
             )
