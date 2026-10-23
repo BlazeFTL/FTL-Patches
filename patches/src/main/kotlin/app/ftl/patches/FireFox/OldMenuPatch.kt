@@ -251,70 +251,166 @@ private fun cloneLibraryCall(
     return ClonedCall(start, scratch, lines.joinToString("\n"))
 }
 
-private fun BytecodePatchContext.installPinHooks() {
-    ToolbarEndActionsFingerprint.let {
-        it.method.applyEdits(
-            insert(
-                it.instructionMatches[1].index + 2,
-                "invoke-static {v0, p0}, $EXTENSION_PIN->addPinned(Ljava/util/ArrayList;Ljava/lang/Object;)V",
-            ),
-        )
-    }
+private const val TEXT_KT = "Landroidx/compose/material3/TextKt;"
+private const val ICON_LIST_ITEM_OWNER = "Lorg/mozilla/fenix/compose/list/ListItemKt;"
+private const val WEB_EXTENSION_ITEM = "Lorg/mozilla/fenix/components/menu/store/WebExtensionMenuItem;"
+private const val PIN_STORE_CALL = "$EXTENSION_PIN->remember(Ljava/lang/Object;Ljava/lang/Object;)V"
+private const val PIN_LIST_CALL = "$EXTENSION_PIN->addPinned(Ljava/util/ArrayList;Ljava/lang/Object;)V"
+private const val PIN_WRAP_CALL = "$EXTENSION_PIN->wrap(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"
+private const val PIN_LONG_CALL = "$EXTENSION_PIN->longOf(Ljava/lang/Object;)Ljava/lang/Object;"
+private const val PIN_HANDLE_CALL = "$EXTENSION_PIN->handle(Ljava/lang/Object;Ljava/lang/Object;)V"
 
-    ToolbarMiddlewareFingerprint.let {
-        val m = it.instructionMatches
-        val menuClicked = m[4].index
-        it.method.applyEdits(
-            insert(
-                m[2].index + 1,
-                "invoke-static {v1, v0}, $EXTENSION_PIN->remember(Ljava/lang/Object;Ljava/lang/Object;)V",
-            ),
+private fun BytecodePatchContext.prepareEndActions(): () -> Unit {
+    val fingerprint = ToolbarEndActionsFingerprint
+    val method = fingerprint.method
+    val start = fingerprint.instructionMatches[0].index
+    val created = method.firstIndexFrom(start) { _, instruction ->
+        instruction.opcode == Opcode.NEW_INSTANCE && instruction.refersToType("Ljava/util/ArrayList;")
+    }
+    if (created < 0) unsupported("Toolbar end actions list")
+    val list = method.getInstruction<OneRegisterInstruction>(created).registerA
+    val constructed = method.firstIndexFrom(created + 1) { _, instruction ->
+        instruction.opcode == Opcode.INVOKE_DIRECT && instruction.calls("<init>") &&
+            instruction.callRegisters().firstOrNull() == list
+    }
+    if (constructed < 0) unsupported("Toolbar end actions list constructor")
+    val at = constructed + 1
+    val owner = Liveness(method).holder(method.parameterBase(), at, "Toolbar middleware")
+    val call = method.staticCall(at, PIN_LIST_CALL, listOf(list, owner))
+    return { method.applyEdits(insert(at, call)) }
+}
+
+private fun BytecodePatchContext.prepareToolbarMiddleware(): () -> Unit {
+    val fingerprint = ToolbarMiddlewareFingerprint
+    val method = fingerprint.method
+    val m = fingerprint.instructionMatches
+    val live = Liveness(method)
+    val owner = method.parameterBase()
+    val menuClicked = m[4].index
+    val rememberAt = m[2].index + 1
+
+    val rememberCall = method.staticCall(
+        rememberAt,
+        PIN_STORE_CALL,
+        listOf(live.holder(parameterRegister(method, 0), rememberAt, "Toolbar store"), live.holder(owner, rememberAt, "Toolbar middleware")),
+    )
+
+    val action = method.lowHolder(live, parameterRegister(method, 2), menuClicked, "Toolbar action")
+    val next = method.lowHolder(live, parameterRegister(method, 1), menuClicked, "Toolbar next")
+    val middleware = method.lowHolder(live, owner, menuClicked, "Toolbar middleware")
+    val skip = method.lastIndexBefore(menuClicked, 8) { it.opcode.name.startsWith("goto") }
+    if (skip < 0) unsupported("Toolbar middleware exit")
+    val end = method.jumpTarget(skip)
+    val scratch = live.takeLow(1, menuClicked, joins = listOf(end), exclude = setOf(action, next, middleware))[0]
+
+    return {
+        method.applyEdits(
+            insert(rememberAt, rememberCall),
             insert(
                 menuClicked,
                 """
-                    instance-of v4, v3, ${PIN_PREFIX}PinEvent;
-                    if-eqz v4, :ftl_next
-                    invoke-static {v3, v0}, $EXTENSION_PIN->handle(Ljava/lang/Object;Ljava/lang/Object;)V
-                    invoke-interface {v2, v3}, Lkotlin/jvm/functions/Function1;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
+                    instance-of v$scratch, v$action, ${PIN_PREFIX}PinEvent;
+                    if-eqz v$scratch, :ftl_next
+                    invoke-static {v$action, v$middleware}, $PIN_HANDLE_CALL
+                    invoke-interface {v$next, v$action}, Lkotlin/jvm/functions/Function1;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
                     goto/16 :ftl_end
                 """,
                 mapOf(
                     "ftl_next" to { menuClicked },
-                    "ftl_end" to { jumpTarget(menuClicked - 1) },
+                    "ftl_end" to { end },
                 ),
             ),
         )
     }
+}
 
-    WebExtensionMenuItemsPinFingerprint.let {
-        it.method.applyEdits(
+private fun BytecodePatchContext.prepareExtensionItems(): () -> Unit {
+    val fingerprint = WebExtensionMenuItemsPinFingerprint
+    val method = fingerprint.method
+    val at = fingerprint.instructionMatches[0].index
+
+    val castAt = method.lastIndexBefore(at, 12) {
+        it.opcode == Opcode.CHECK_CAST && it.refersToType(FUNCTION0)
+    }
+    if (castAt < 0) unsupported("Extension menu click handler")
+    val click = method.getInstruction<OneRegisterInstruction>(castAt).registerA
+
+    var item = -1
+    var itemAt = -1
+    for (i in at - 1 downTo maxOf(0, at - 80)) {
+        val register = method.callArgument(i, WEB_EXTENSION_ITEM)
+        if (register != null) {
+            item = register
+            itemAt = i
+            break
+        }
+    }
+    if (item < 0) unsupported("Extension menu item")
+    if (Liveness(method).redefinedBetween(item, itemAt + 1, at)) unsupported("Extension menu item register")
+
+    val call = method.staticCall(at, PIN_WRAP_CALL, listOf(click, item))
+    return {
+        method.applyEdits(
             insert(
-                it.instructionMatches[0].index,
+                at,
                 """
-                    sget-object v6, Landroidx/compose/ui/platform/AndroidCompositionLocals_androidKt;->LocalContext:Landroidx/compose/runtime/StaticProvidableCompositionLocal;
-                    invoke-virtual {v14, v6}, Landroidx/compose/runtime/GapComposer;->consume(Landroidx/compose/runtime/ProvidableCompositionLocal;)Ljava/lang/Object;
-                    move-result-object v6
-                    check-cast v6, Landroid/content/Context;
-                    invoke-static {v13, v8, v6}, $EXTENSION_PIN->wrap(Ljava/lang/Object;Ljava/lang/Object;Landroid/content/Context;)Ljava/lang/Object;
-                    move-result-object v13
-                    check-cast v13, $FUNCTION0
+                    $call
+                    move-result-object v$click
+                    check-cast v$click, $FUNCTION0
                 """,
             ),
         )
     }
+}
 
-    IconListItemFingerprint.let {
-        it.method.applyEdits(
+private fun BytecodePatchContext.prepareIconListItem(): () -> Unit {
+    val method = IconListItemFingerprint.method
+    val callAt = method.firstIndexFrom(0) { _, instruction ->
+        val reference = (instruction as? ReferenceInstruction)?.reference as? MethodReference
+        reference != null && reference.definingClass == ICON_LIST_ITEM_OWNER &&
+            (reference.name == "ListItem" || reference.name.startsWith("ListItem-"))
+    }
+    if (callAt < 0) unsupported("Icon list item call")
+    val functions = method.callParameters(callAt).filter { it.first == FUNCTION0 }
+    if (functions.size < 2) unsupported("Icon list item click arguments")
+    val source = functions[0].second
+    val target = functions[1].second
+    if (source == target) unsupported("Icon list item click registers")
+    if (Liveness(method).isLive(callAt + 1, target)) unsupported("Icon list item long click register")
+    val call = method.staticCall(callAt, PIN_LONG_CALL, listOf(source))
+    return {
+        method.applyEdits(
             insert(
-                it.instructionMatches[1].index + 1,
+                callAt,
                 """
-                    invoke-static {v15}, $EXTENSION_PIN->longOf(Ljava/lang/Object;)Ljava/lang/Object;
-                    move-result-object v16
-                    check-cast v16, $FUNCTION0
+                    $call
+                    move-result-object v$target
+                    check-cast v$target, $FUNCTION0
                 """,
             ),
         )
     }
+}
+
+private fun BytecodePatchContext.installPinHooks() {
+    val edits = try {
+        listOf(
+            prepareEndActions(),
+            prepareToolbarMiddleware(),
+            prepareExtensionItems(),
+        )
+    } catch (e: Exception) {
+        logger.warning("Extension pinning skipped: ${e::class.simpleName}: ${e.message?.lineSequence()?.firstOrNull()}")
+        return
+    }
+    val longPress = try {
+        prepareIconListItem()
+    } catch (e: Exception) {
+        logger.warning("Extension pin long press skipped: ${e::class.simpleName}: ${e.message?.lineSequence()?.firstOrNull()}")
+        null
+    }
+    edits.forEach { it() }
+    longPress?.invoke()
 }
 
 private fun BytecodePatchContext.installMenuTweaks() {
@@ -335,13 +431,15 @@ private fun BytecodePatchContext.installMenuTweaks() {
 
     optional("MenuNavigation") {
         MenuNavigationFingerprint.let {
+            val at = it.instructionMatches[0].index
+            val register = it.method.getInstruction<OneRegisterInstruction>(at).registerA
             it.method.applyEdits(
                 swap(
-                    it.instructionMatches[0].index,
-                    2,
+                    at,
+                    register,
                     """
                         invoke-static {}, $OLD_MENU->navPadding()F
-                        move-result v2
+                        move-result v$register
                     """,
                 ),
             )
@@ -671,15 +769,30 @@ private fun BytecodePatchContext.installMenuTweaks() {
 
     optional("AccountSubtitleLambda") {
         AccountSubtitleLambdaFingerprint.let {
+            val method = it.method
             val iget = it.instructionMatches[1].index
-            val register = it.method.getInstruction<OneRegisterInstruction>(iget).registerA
-            it.method.applyEdits(
+            val callAt = method.firstIndexFrom(iget + 1) { _, instruction ->
+                val reference = (instruction as? ReferenceInstruction)?.reference as? MethodReference
+                reference != null && reference.definingClass == TEXT_KT && reference.name.startsWith("Text-")
+            }
+            if (callAt < 0) unsupported("Account subtitle text")
+            val text = method.callParameters(callAt).firstOrNull()
+            if (text == null || text.first != "Ljava/lang/String;") unsupported("Account subtitle text argument")
+            val register = text.second
+            val call = method.staticCall(
+                callAt,
+                "$OLD_MENU->accountSubtitle(Ljava/lang/String;)Ljava/lang/String;",
+                listOf(register),
+            )
+            method.applyEdits(
                 insert(
-                    iget + 1,
+                    callAt,
                     """
-                        invoke-static {v$register}, $OLD_MENU->accountSubtitle(Ljava/lang/String;)Ljava/lang/String;
+                        $call
                         move-result-object v$register
+                        if-eqz v$register, :ftl_skip
                     """,
+                    mapOf("ftl_skip" to { callAt + 1 }),
                 ),
             )
         }
