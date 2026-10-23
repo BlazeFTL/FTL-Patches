@@ -7,21 +7,10 @@ import app.morphe.patcher.fieldAccess
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.newInstance
 import app.morphe.patcher.opcode
-import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.BytecodePatchContext
-import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
 import com.android.tools.smali.dexlib2.Opcode
-
-private val COMPATIBILITY_FIREFOX_RANGE = Compatibility(
-    packageName = "org.mozilla.fenix",
-    name = "Firefox Nightly",
-    targets = listOf(
-        AppTarget(version = "159.0a1"),
-        AppTarget(version = "160.0a1", versionCode = 2016189527),
-    ),
-)
 
 private const val RS_SELECT = "Lapp/ftl/extension/firefox/RangeSelect;"
 private const val RS_START = "Lapp/ftl/extension/firefox/RangeSelectStart;"
@@ -203,7 +192,7 @@ val rangeSelectTabsPatch = bytecodePatch(
         "Toggle in Mod Settings.",
     default = true,
 ) {
-    compatibleWith(COMPATIBILITY_FIREFOX_RANGE)
+    compatibleWith(COMPATIBILITY_FIREFOX_NIGHTLY)
 
     extendWith("extensions/firefox.mpe")
 

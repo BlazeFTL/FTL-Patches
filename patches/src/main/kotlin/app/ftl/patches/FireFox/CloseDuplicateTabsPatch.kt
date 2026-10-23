@@ -3,24 +3,13 @@ package app.ftl.patches.firefox
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.fieldAccess
-import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.BytecodePatchContext
-import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import app.morphe.patcher.string
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
-
-private val COMPATIBILITY_FIREFOX_DUPLICATES = Compatibility(
-    packageName = "org.mozilla.fenix",
-    name = "Firefox Nightly",
-    targets = listOf(
-        AppTarget(version = "159.0a1"),
-        AppTarget(version = "160.0a1"),
-    ),
-)
 
 private const val DUP_TAB_MENU = "Lapp/ftl/extension/firefox/TabMenu;"
 private const val DUP_CLOSE_ACTION = "Lapp/ftl/extension/firefox/TabCloseDuplicates;"
@@ -86,7 +75,7 @@ val closeDuplicateTabsPatch = bytecodePatch(
     description = "Adds Close duplicate tabs to the tab tray 3 dot menu. Toggle in Mod Settings.",
     default = true,
 ) {
-    compatibleWith(COMPATIBILITY_FIREFOX_DUPLICATES)
+    compatibleWith(COMPATIBILITY_FIREFOX_NIGHTLY)
 
     extendWith("extensions/firefox.mpe")
 
