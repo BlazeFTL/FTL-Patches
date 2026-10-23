@@ -251,6 +251,7 @@ private fun cloneLibraryCall(
     return ClonedCall(start, scratch, lines.joinToString("\n"))
 }
 
+private const val TEXT_KT = "Landroidx/compose/material3/TextKt;"
 private const val ICON_LIST_ITEM_OWNER = "Lorg/mozilla/fenix/compose/list/ListItemKt;"
 private const val WEB_EXTENSION_ITEM = "Lorg/mozilla/fenix/components/menu/store/WebExtensionMenuItem;"
 private const val PIN_STORE_CALL = "$EXTENSION_PIN->remember(Ljava/lang/Object;Ljava/lang/Object;)V"
@@ -768,15 +769,30 @@ private fun BytecodePatchContext.installMenuTweaks() {
 
     optional("AccountSubtitleLambda") {
         AccountSubtitleLambdaFingerprint.let {
+            val method = it.method
             val iget = it.instructionMatches[1].index
-            val register = it.method.getInstruction<OneRegisterInstruction>(iget).registerA
-            it.method.applyEdits(
+            val callAt = method.firstIndexFrom(iget + 1) { _, instruction ->
+                val reference = (instruction as? ReferenceInstruction)?.reference as? MethodReference
+                reference != null && reference.definingClass == TEXT_KT && reference.name.startsWith("Text-")
+            }
+            if (callAt < 0) unsupported("Account subtitle text")
+            val text = method.callParameters(callAt).firstOrNull()
+            if (text == null || text.first != "Ljava/lang/String;") unsupported("Account subtitle text argument")
+            val register = text.second
+            val call = method.staticCall(
+                callAt,
+                "$OLD_MENU->accountSubtitle(Ljava/lang/String;)Ljava/lang/String;",
+                listOf(register),
+            )
+            method.applyEdits(
                 insert(
-                    iget + 1,
+                    callAt,
                     """
-                        invoke-static {v$register}, $OLD_MENU->accountSubtitle(Ljava/lang/String;)Ljava/lang/String;
+                        $call
                         move-result-object v$register
+                        if-eqz v$register, :ftl_skip
                     """,
+                    mapOf("ftl_skip" to { callAt + 1 }),
                 ),
             )
         }

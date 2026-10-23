@@ -236,9 +236,8 @@ internal object AccountSubtitleLambdaFingerprint : Fingerprint(
     returnType = OBJ,
     parameters = listOf(OBJ, OBJ),
     filters = listOf(
-        methodCall(definingClass = "Landroidx/compose/material3/TextKt;", name = "Text-Nvy7gAk"),
+        callPrefix("Landroidx/compose/material3/TextKt;", "Text-"),
         fieldAccess(opcode = Opcode.IGET_OBJECT, type = "Ljava/lang/String;"),
-        opcode(Opcode.IF_NEZ),
     ),
 )
 
