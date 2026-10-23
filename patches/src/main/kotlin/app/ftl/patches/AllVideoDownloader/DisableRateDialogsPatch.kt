@@ -1,5 +1,6 @@
 package app.ftl.patches.videodownloader
 
+import app.ftl.patches.alldownloader.COMPATIBILITY_ALL_VIDEO_DOWNLOADER
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.patch.bytecodePatch
@@ -8,7 +9,7 @@ val disableRateDialogsPatch = bytecodePatch(
     name = "Disable rate dialogs",
     description = "Prevents the rate and star rating dialogs from showing."
 ) {
-    compatibleWith(VIDEO_DOWNLOADER_PACKAGE)
+    compatibleWith(COMPATIBILITY_ALL_VIDEO_DOWNLOADER)
 
     execute {
         RateDialogShowFingerprint.method.addInstructions(
