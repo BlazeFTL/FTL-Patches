@@ -58,6 +58,50 @@ internal class Liveness(private val method: MutableMethod) {
         throw IllegalStateException("no free register run at $index")
     }
 
+    fun redefinedBetween(register: Int, from: Int, until: Int): Boolean =
+        (from until minOf(until, instructions.size)).any { defsUses(instructions[it]).first.contains(register) }
+
+    fun copiesOf(source: Int, index: Int): List<Int> {
+        val states = arrayOfNulls<BitSet>(instructions.size + 1)
+        states[0] = BitSet(registerCount).also { it.set(source) }
+        var changed = true
+
+        fun merge(target: Int, state: BitSet) {
+            if (target >= states.size) return
+            val current = states[target]
+            if (current == null) {
+                states[target] = state.clone() as BitSet
+                changed = true
+                return
+            }
+            val next = current.clone() as BitSet
+            next.and(state)
+            if (next != current) {
+                states[target] = next
+                changed = true
+            }
+        }
+
+        while (changed) {
+            changed = false
+            for (i in instructions.indices) {
+                val before = states[i] ?: continue
+                val instruction = instructions[i]
+                val name = instruction.opcode.name
+                val after = before.clone() as BitSet
+                val isCopy = name.startsWith("move") && !name.startsWith("move-result") &&
+                    name != "move-exception" && !name.contains("wide")
+                val copied = isCopy && before.get((instruction as TwoRegisterInstruction).registerB)
+                defsUses(instruction).first.forEach { if (it in 0 until registerCount) after.clear(it) }
+                if (copied) after.set((instruction as TwoRegisterInstruction).registerA)
+                successors(i).forEach { merge(it, after) }
+                handlers[i].forEach { merge(it, before) }
+            }
+        }
+        val state = states[index] ?: return emptyList()
+        return (0 until registerCount).filter { state.get(it) }
+    }
+
     private fun handlerTargets(): Array<MutableList<Int>> {
         val result = Array<MutableList<Int>>(instructions.size) { mutableListOf() }
         for (block in method.implementation!!.tryBlocks) {
