@@ -7,7 +7,7 @@ internal val COMPATIBILITY_MX_PLAYER_AD = Compatibility(
     packageName = "com.mxtech.videoplayer.ad",
     name = "MX Player",
     targets = listOf(
-        AppTarget(version = "3.3.1", versionCode = 2001003541),
+        AppTarget(version = "3.4.0", versionCode = 2001003550),
     ),
 )
 
