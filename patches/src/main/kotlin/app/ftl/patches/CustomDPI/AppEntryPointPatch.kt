@@ -18,9 +18,6 @@ internal object AppEntryPoint {
     // activity would leave every other process unpatched.
     var processEntryActivities: Map<String, String> = emptyMap()
         internal set
-
-    var activityClassNames: Set<String> = emptySet()
-        internal set
 }
 
 private fun resolveClassName(name: String, packageName: String): String? = when {
@@ -94,25 +91,6 @@ private fun Document.findProcessEntryActivities(
 
     return result
 }
-private fun Document.findActivityClassNames(packageName: String): Set<String> {
-    val result = LinkedHashSet<String>()
-
-    for (tag in listOf("activity", "activity-alias")) {
-        val elements = getElementsByTagName(tag)
-
-        for (i in 0 until elements.length) {
-            val element = elements.item(i) as Element
-
-            if (element.getAttribute("android:enabled") == "false") continue
-
-            val nameAttr = if (tag == "activity-alias") "android:targetActivity" else "android:name"
-            resolveClassName(element.getAttribute(nameAttr), packageName)?.let { result.add(it) }
-        }
-    }
-
-    return result
-}
-
 // Universal patch (no compatibleWith), so `default` must be false.
 // Unnamed: this only ever runs as a dependency of universalDpiPatch, never selected on its own.
 internal val findAppEntryPointPatch = resourcePatch(
@@ -132,7 +110,6 @@ internal val findAppEntryPointPatch = resourcePatch(
             val defaultProcess =
                 resolveProcessName(applicationElement.getAttribute("android:process"), packageName, packageName)
             AppEntryPoint.processEntryActivities = document.findProcessEntryActivities(packageName, defaultProcess)
-            AppEntryPoint.activityClassNames = document.findActivityClassNames(packageName)
         }
     }
 }

@@ -1,28 +1,26 @@
 package app.ftl.patches.customdpi
 
-import app.ftl.util.getFreeRegisterProvider
-import app.ftl.util.registersUsed
-import app.ftl.util.traverseClassHierarchy
-import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
-import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.BytecodePatchContext
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.stringOption
 import app.morphe.patcher.util.proxy.mutableTypes.MutableClass
-import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
-import com.android.tools.smali.dexlib2.AccessFlags
-import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
-import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
-import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
+import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
+import app.ftl.util.getFreeRegisterProvider
+import app.ftl.util.registersUsed
+import app.ftl.util.traverseClassHierarchy
 
-private const val CONTEXT_TYPE = "Landroid/content/Context;"
 private const val EXTENSION_SET_PERCENT =
     "Lapp/ftl/extension/dpi/DensityPatch;->setPercent(I)V"
-private const val EXTENSION_WRAP =
-    "Lapp/ftl/extension/dpi/DensityPatch;->wrap(Landroid/content/Context;)Landroid/content/Context;"
+private const val EXTENSION_INIT =
+    "Lapp/ftl/extension/dpi/DensityPatch;->init(Landroid/app/Application;)V"
+private const val EXTENSION_INIT_ACTIVITY =
+    "Lapp/ftl/extension/dpi/DensityPatch;->init(Landroid/app/Activity;)V"
 
 private fun String.toClassType() = "L${replace('.', '/')};"
 
+// Universal patch (no compatibleWith) -> compatible with any package. `default` must stay false,
+// per PatchBuilder.resolveDefaultValue(), since a universal patch cannot default to enabled.
 @Suppress("unused")
 val universalDpiPatch = bytecodePatch(
     "Change Display Size",
@@ -47,90 +45,100 @@ val universalDpiPatch = bytecodePatch(
 
     execute {
         val dpi = dpiOption?.toIntOrNull() ?: 100
-        if (dpi == 100) return@execute
 
-        val targets = LinkedHashSet<String>()
-        AppEntryPoint.applicationClassName?.let { targets.add(it) }
-        targets.addAll(AppEntryPoint.activityClassNames)
+        val applicationClass = AppEntryPoint.applicationClassName
+            ?.toClassType()
+            ?.let { mutableClassDefByOrNull(it) }
 
-        val patched = HashSet<String>()
+        if (applicationClass != null && injectApplicationInit(applicationClass, dpi)) {
+            return@execute
+        }
 
-        targets.forEach { className ->
-            val target = mutableClassDefByOrNull(className.toClassType()) ?: return@forEach
-            hookAttachBaseContext(target, dpi, patched)
+        // No usable Application.onCreate() found. Fall back to injecting into one
+        // activity per distinct process declared in the manifest (falling back further
+        // to just the launcher activity if manifest parsing found nothing), so apps that
+        // isolate any component (e.g. a splash/ad screen) into its own process still get
+        // DensityPatch initialized in every process it runs in, not just whichever one
+        // happens to host the launcher activity.
+        val entryActivities = AppEntryPoint.processEntryActivities.values.toMutableSet()
+        AppEntryPoint.launcherActivityClassName?.let { entryActivities.add(it) }
+
+        if (entryActivities.isEmpty()) return@execute
+
+        entryActivities.forEach { className ->
+            val activityClass = className.toClassType().let { mutableClassDefByOrNull(it) } ?: return@forEach
+            injectActivityInit(activityClass, dpi)
         }
     }
 }
 
-private fun BytecodePatchContext.hookAttachBaseContext(
-    target: MutableClass,
-    dpi: Int,
-    patched: MutableSet<String>,
-) {
-    var declared = false
+/**
+ * @return true if injection succeeded.
+ */
+private fun BytecodePatchContext.injectApplicationInit(applicationClass: MutableClass, dpi: Int): Boolean {
     var injected = false
 
-    traverseClassHierarchy(target) {
+    traverseClassHierarchy(applicationClass) {
         if (injected) return@traverseClassHierarchy
 
-        val method = methods.firstOrNull {
-            it.name == "attachBaseContext" &&
-                it.returnType == "V" &&
-                it.parameterTypes.map { p -> p.toString() } == listOf(CONTEXT_TYPE)
+        val onCreate = methods.firstOrNull {
+            it.name == "onCreate" && it.parameters.isEmpty() && it.returnType == "V"
         } ?: return@traverseClassHierarchy
 
-        declared = true
-
-        if (!patched.add(type)) {
-            injected = true
-            return@traverseClassHierarchy
-        }
-
         val register = try {
-            method.getFreeRegisterProvider(1, 1, method.getInstruction(0).registersUsed).getFreeRegister()
+            onCreate.getFreeRegisterProvider(1, 1, onCreate.getInstruction(0).registersUsed).getFreeRegister()
         } catch (e: IllegalArgumentException) {
-            patched.remove(type)
             return@traverseClassHierarchy
         }
 
-        method.addInstructions(
+        onCreate.addInstructions(
             0,
             """
                 const v$register, $dpi
                 invoke-static/range { v$register .. v$register }, $EXTENSION_SET_PERCENT
-                invoke-static/range { p1 .. p1 }, $EXTENSION_WRAP
-                move-result-object p1
+                invoke-static/range { p0 .. p0 }, $EXTENSION_INIT
             """,
         )
         injected = true
     }
 
-    if (declared) return
+    return injected
+}
 
-    val superType = target.superclass ?: return
+/**
+ * @return true if injection succeeded.
+ */
+private fun BytecodePatchContext.injectActivityInit(activityClass: MutableClass, dpi: Int): Boolean {
+    var injected = false
 
-    val method = ImmutableMethod(
-        target.type,
-        "attachBaseContext",
-        listOf(ImmutableMethodParameter(CONTEXT_TYPE, null, null)),
-        "V",
-        AccessFlags.PROTECTED.value,
-        null,
-        null,
-        MutableMethodImplementation(3),
-    ).toMutable()
+    traverseClassHierarchy(activityClass) {
+        if (injected) return@traverseClassHierarchy
 
-    method.addInstructions(
-        0,
-        """
-            const v0, $dpi
-            invoke-static/range { v0 .. v0 }, $EXTENSION_SET_PERCENT
-            invoke-static/range { p1 .. p1 }, $EXTENSION_WRAP
-            move-result-object p1
-            invoke-super { p0, p1 }, $superType->attachBaseContext(Landroid/content/Context;)V
-            return-void
-        """,
-    )
+        val onCreate = methods.firstOrNull {
+            it.name == "onCreate" &&
+                it.parameters == listOf("Landroid/os/Bundle;") &&
+                it.returnType == "V"
+        } ?: return@traverseClassHierarchy
 
-    target.methods.add(method)
+        // Only 1 register needed: init(Activity) resolves the Application itself,
+        // and also applies density to this activity directly (register()'s
+        // ActivityLifecycleCallbacks only cover activities created afterward).
+        val register = try {
+            onCreate.getFreeRegisterProvider(1, 1, onCreate.getInstruction(0).registersUsed).getFreeRegister()
+        } catch (e: IllegalArgumentException) {
+            return@traverseClassHierarchy
+        }
+
+        onCreate.addInstructions(
+            0,
+            """
+                const v$register, $dpi
+                invoke-static/range { v$register .. v$register }, $EXTENSION_SET_PERCENT
+                invoke-static/range { p0 .. p0 }, $EXTENSION_INIT_ACTIVITY
+            """,
+        )
+        injected = true
+    }
+
+    return injected
 }
