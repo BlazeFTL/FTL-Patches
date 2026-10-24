@@ -1,6 +1,7 @@
 package app.ftl.patches.apkcleanup
 
 import app.morphe.patcher.patch.resourcePatch
+import java.io.File
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
@@ -605,32 +606,20 @@ val pngOptimizerPatch = resourcePatch(
     default = false,
 ) {
     execute {
-        // Same issue DrawableCleanPatch had: get("res", false) is scoped to the manifest
-        // package only. Walk up to resourcesRoot and scan every package's own res/ folder;
-        // assets/ isn't part of the per-package ARSC resource system, so it stays a single root.
-        val mainRes = get("res", false)
-        val resRoots = if (mainRes.isDirectory) {
-            mainRes.parentFile.parentFile
-                .listFiles { f -> f.isDirectory }
-                ?.map { it.resolve("res") }
-                ?.filter { it.isDirectory }
-                ?: listOf(mainRes)
-        } else {
-            emptyList()
+        val pngFiles = mutableListOf<File>()
+        resourcePackageDirs().forEach { (pkgName, pkgDir) ->
+            decode("res/**/*.png", packageName = pkgName).forEach { path ->
+                pkgDir.resolve(path).takeIf { it.isFile }?.let(pngFiles::add)
+            }
         }
-        val assetsRoot = get("assets", false).takeIf { it.isDirectory }
-        val roots = resRoots + listOfNotNull(assetsRoot)
-        if (roots.isEmpty()) return@execute
+        decode("assets/**/*.png").forEach { path ->
+            get(path, false).takeIf { it.isFile }?.let(pngFiles::add)
+        }
 
-        val pngFiles = roots.flatMap { root ->
-            root.walkTopDown()
-                .filter {
-                    it.isFile &&
-                    it.extension.equals("png", ignoreCase = true) &&
-                    it.length() >= 512 &&
-                    it.length() <= 10_000_000
-                }
-                .toList()
+        pngFiles.retainAll { it.length() in 512L..10_000_000L }
+        if (pngFiles.isEmpty()) {
+            logger.info("PNG optimizer: no PNG files found")
+            return@execute
         }
 
         val optimizedCount = AtomicInteger(0)
