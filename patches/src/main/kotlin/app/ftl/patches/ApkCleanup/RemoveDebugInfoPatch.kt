@@ -150,10 +150,15 @@ private fun patchOriginalDexMappings(context: BytecodePatchContext): Int {
 
     var totalChanged = 0
 
-    mappings.values.forEach { mappedFile ->
-        val getBuffer = mappedFile.javaClass.getMethod("getBuffer")
-        val force = mappedFile.javaClass.getMethod("force")
+    val mappedFileType = Class.forName(
+        "app.morphe.patcher.dex.MappedFile",
+        true,
+        BytecodePatchContext::class.java.classLoader,
+    )
+    val getBuffer = mappedFileType.getMethod("getBuffer").also { runCatching { it.isAccessible = true } }
+    val force = mappedFileType.getMethod("force").also { runCatching { it.isAccessible = true } }
 
+    mappings.values.forEach { mappedFile ->
         val buffer = getBuffer.invoke(mappedFile) as ByteBuffer
         buffer.order(ByteOrder.LITTLE_ENDIAN)
 
