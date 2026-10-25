@@ -272,6 +272,43 @@ object DensityPatch {
         decor.requestLayout()
         decor.invalidate()
         Log.d(TAG, "refresh ${activity.javaClass.simpleName}")
+        decor.post { dumpTop(activity, decor) }
+    }
+
+    // Debug aid: logs the views that intersect the top strip of the screen, with their
+    // bounds in window coordinates, so a clipped header can be matched to the view doing it.
+    private fun dumpTop(activity: Activity, decor: View) {
+        try {
+            val lines = ArrayList<String>()
+            val res = activity.resources
+            Log.d(TAG, "dump ${activity.javaClass.simpleName} dpi=${res.displayMetrics.densityDpi}/${res.configuration.densityDpi} " +
+                "wdp=${res.configuration.screenWidthDp} hdp=${res.configuration.screenHeightDp} decor=${decor.width}x${decor.height}")
+            dumpView(decor, 0, lines)
+            for (l in lines) Log.d(TAG, l)
+        } catch (t: Throwable) {
+            Log.e(TAG, "dump failed", t)
+        }
+    }
+
+    private fun dumpView(view: View, depth: Int, out: MutableList<String>) {
+        if (out.size >= 60 || depth > 12) return
+        val loc = IntArray(2)
+        view.getLocationInWindow(loc)
+        if (loc[1] > 330 || view.visibility != View.VISIBLE) return
+        val id = try {
+            if (view.id != View.NO_ID) view.resources.getResourceEntryName(view.id) else "-"
+        } catch (t: Throwable) { "?" }
+        val lp = view.layoutParams
+        val clip = if (view is ViewGroup) " clipC=${view.clipChildren} clipP=${view.clipToPadding}" else ""
+        val clipB = view.clipBounds?.let { " clipBounds=$it" } ?: ""
+        out.add(
+            "  ".repeat(depth) + "${view.javaClass.simpleName}#$id " +
+                "[${loc[0]},${loc[1]} ${view.width}x${view.height}] mH=${view.measuredHeight} " +
+                "lp=${lp?.width}x${lp?.height} pad=${view.paddingTop}/${view.paddingBottom} ty=${view.translationY}$clip$clipB"
+        )
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) dumpView(view.getChildAt(i), depth + 1, out)
+        }
     }
 
     private fun forceLayoutTree(view: View) {
