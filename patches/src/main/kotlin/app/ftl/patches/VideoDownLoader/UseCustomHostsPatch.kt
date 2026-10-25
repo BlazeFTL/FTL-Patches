@@ -1,5 +1,6 @@
 package app.ftl.patches.videodownloader
 
+import app.ftl.patches.apkcleanup.resourcePackageDirs
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.filePathOption
 import app.morphe.patcher.patch.resourcePatch
@@ -24,10 +25,10 @@ val useCustomHostsPatch = resourcePatch(
         if (!source.isFile) throw PatchException("Host file not found: ${source.path}")
         if (source.length() == 0L) throw PatchException("Host file is empty: ${source.path}")
 
-        val resourcesRoot = get("res", false).parentFile.parentFile
-        val targets = resourcesRoot.listFiles { file -> file.isDirectory }
-            .orEmpty()
-            .map { it.resolve("res/raw/hosts.txt") }
+        val targets = resourcePackageDirs()
+            .flatMap { (pkgName, pkgDir) ->
+                decode("res/raw/hosts.txt", packageName = pkgName).map { pkgDir.resolve(it) }
+            }
             .filter { it.isFile }
 
         if (targets.isEmpty()) throw PatchException("res/raw/hosts.txt not found in this APK")
