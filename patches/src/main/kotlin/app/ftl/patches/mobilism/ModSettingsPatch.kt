@@ -42,11 +42,18 @@ internal object ModSettingsTopMenuSelectedFingerprint : Fingerprint(
     parameters = listOf("Landroid/view/MenuItem;")
 )
 
-internal object ModSettingsMenuItemVisibleFingerprint : Fingerprint(
+internal object ModSettingsMenuItemSetVisibleFingerprint : Fingerprint(
     definingClass = "Landroidx/appcompat/view/menu/MenuItemImpl;",
-    name = "isVisible",
+    name = "setVisible",
+    returnType = "Landroid/view/MenuItem;",
+    parameters = listOf("Z")
+)
+
+internal object ModSettingsMenuItemSetVisibleIntFingerprint : Fingerprint(
+    definingClass = "Landroidx/appcompat/view/menu/MenuItemImpl;",
+    name = "setVisibleInt",
     returnType = "Z",
-    parameters = listOf()
+    parameters = listOf("Z")
 )
 
 @Suppress("unused")
@@ -83,20 +90,11 @@ val modSettingsPatch = bytecodePatch(
             )
         }
 
-        ModSettingsMenuItemVisibleFingerprint.method.let { method ->
-            val reg = method.findFreeRegister(0)
-            method.addInstructions(
-                0,
-                """
-                    invoke-static { p0 }, $EXT/ModDrawer;->forceHidden(Ljava/lang/Object;)Z
-                    move-result v$reg
-                    if-eqz v$reg, :mod_drawer_continue
-                    const/16 v$reg, 0x0
-                    return v$reg
-                    :mod_drawer_continue
-                    nop
-                """
-            )
-        }
+        val filterVisible = """
+            invoke-static { p0, p1 }, $EXT/ModDrawer;->filterVisible(Ljava/lang/Object;Z)Z
+            move-result p1
+        """
+        ModSettingsMenuItemSetVisibleFingerprint.method.addInstructions(0, filterVisible)
+        ModSettingsMenuItemSetVisibleIntFingerprint.methodOrNull?.addInstructions(0, filterVisible)
     }
 }

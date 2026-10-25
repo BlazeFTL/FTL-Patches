@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.SubMenu;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -114,6 +115,54 @@ public final class ModDrawer {
         return false;
     }
 
+    public static boolean filterVisible(Object menuItem, boolean visible) {
+        return visible && !forceHidden(menuItem);
+    }
+
+    private static int[] allPairs() {
+        Context ctx = ModPrefs.context();
+        if (ctx == null) {
+            return new int[0];
+        }
+        Resources res = ctx.getResources();
+        String pkg = ctx.getPackageName();
+        int[] tmp = new int[(MAIN.length + EXTRA.length) * 2];
+        int n = 0;
+        for (int pass = 0; pass < 2; pass++) {
+            Item[] list = pass == 0 ? MAIN : EXTRA;
+            for (Item item : list) {
+                int id = res.getIdentifier(item.idName, "id", pkg);
+                int group = res.getIdentifier(item.groupName, "id", pkg);
+                if (id == 0 || group == 0) {
+                    continue;
+                }
+                tmp[n++] = id;
+                tmp[n++] = group;
+            }
+        }
+        int[] out = new int[n];
+        System.arraycopy(tmp, 0, out, 0, n);
+        return out;
+    }
+
+    private static void reapply(Menu menu, int[] all) {
+        for (int i = 0; i < menu.size(); i++) {
+            MenuItem item = menu.getItem(i);
+            SubMenu sub = item.getSubMenu();
+            if (sub != null) {
+                reapply(sub, all);
+            }
+            int id = item.getItemId();
+            int group = item.getGroupId();
+            for (int j = 0; j < all.length; j += 2) {
+                if (all[j] == id && all[j + 1] == group) {
+                    item.setVisible(true);
+                    break;
+                }
+            }
+        }
+    }
+
     public static void refresh(Activity activity) {
         try {
             View root = activity.getWindow().getDecorView();
@@ -125,7 +174,7 @@ public final class ModDrawer {
             if (menu == null) {
                 return;
             }
-            menu.getClass().getMethod("onItemsChanged", boolean.class).invoke(menu, true);
+            reapply(menu, allPairs());
         } catch (Throwable ignored) {
         }
     }
