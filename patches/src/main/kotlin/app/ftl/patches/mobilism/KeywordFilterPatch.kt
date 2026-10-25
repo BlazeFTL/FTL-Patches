@@ -2,6 +2,7 @@ package app.ftl.patches.mobilism
 
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.newInstance
 import app.morphe.patcher.patch.bytecodePatch
@@ -135,7 +136,7 @@ val keywordFilterPatch = bytecodePatch(
         listOf(KeywordFilterHomeMenuSelectedFingerprint, KeywordFilterTopMenuSelectedFingerprint).forEach { fingerprint ->
             val method = fingerprint.method
             val reg = method.findFreeRegister(0)
-            method.addInstructions(
+            method.addInstructionsWithLabels(
                 0,
                 """
                     invoke-static { p0, p1 }, $FILTER->onOptionsItemSelected(Ljava/lang/Object;Landroid/view/MenuItem;)Z
@@ -208,7 +209,7 @@ val keywordFilterPatch = bytecodePatch(
             val method = fingerprint.method
             val insertIndex = fingerprint.instructionMatches.first().index + 1
             val reg = method.findFreeRegister(insertIndex)
-            method.addInstructions(
+            method.addInstructionsWithLabels(
                 insertIndex,
                 """
                     invoke-static { p0 }, $FILTER->onSearchPageEnd(Ljava/lang/Object;)Z

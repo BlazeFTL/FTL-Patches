@@ -2,6 +2,7 @@ package app.ftl.patches.mobilism
 
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.util.findFreeRegister
@@ -77,7 +78,7 @@ val modSettingsPatch = bytecodePatch(
         listOf(ModSettingsHomeMenuSelectedFingerprint, ModSettingsTopMenuSelectedFingerprint).forEach { fingerprint ->
             val method = fingerprint.method
             val reg = method.findFreeRegister(0)
-            method.addInstructions(
+            method.addInstructionsWithLabels(
                 0,
                 """
                     invoke-static { p0, p1 }, $EXT/ModSettings;->onOptionsItemSelected(Ljava/lang/Object;Landroid/view/MenuItem;)Z
