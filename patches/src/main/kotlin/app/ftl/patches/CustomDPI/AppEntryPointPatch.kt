@@ -18,6 +18,11 @@ internal object AppEntryPoint {
     // activity would leave every other process unpatched.
     var processEntryActivities: Map<String, String> = emptyMap()
         internal set
+
+    // Every enabled <activity> class. DensityPatch hooks each one's onConfigurationChanged()
+    // so density is restored before the app's own handler runs.
+    var activityClassNames: Set<String> = emptySet()
+        internal set
 }
 
 private fun resolveClassName(name: String, packageName: String): String? = when {
@@ -57,6 +62,21 @@ private fun Document.findLauncherActivity(packageName: String): String? {
     }
 
     return null
+}
+
+private fun Document.findActivityClassNames(packageName: String): Set<String> {
+    val result = LinkedHashSet<String>()
+    val elements = getElementsByTagName("activity")
+
+    for (i in 0 until elements.length) {
+        val element = elements.item(i) as Element
+
+        if (element.getAttribute("android:enabled") == "false") continue
+
+        resolveClassName(element.getAttribute("android:name"), packageName)?.let { result.add(it) }
+    }
+
+    return result
 }
 
 private fun resolveProcessName(process: String, packageName: String, defaultProcess: String): String = when {
@@ -110,6 +130,7 @@ internal val findAppEntryPointPatch = resourcePatch(
             val defaultProcess =
                 resolveProcessName(applicationElement.getAttribute("android:process"), packageName, packageName)
             AppEntryPoint.processEntryActivities = document.findProcessEntryActivities(packageName, defaultProcess)
+            AppEntryPoint.activityClassNames = document.findActivityClassNames(packageName)
         }
     }
 }

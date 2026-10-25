@@ -16,6 +16,8 @@ private const val EXTENSION_INIT =
     "Lapp/ftl/extension/dpi/DensityPatch;->init(Landroid/app/Application;)V"
 private const val EXTENSION_INIT_ACTIVITY =
     "Lapp/ftl/extension/dpi/DensityPatch;->init(Landroid/app/Activity;)V"
+private const val EXTENSION_CONFIG_CHANGED =
+    "Lapp/ftl/extension/dpi/DensityPatch;->onConfigChanged(Landroid/app/Activity;)V"
 
 private fun String.toClassType() = "L${replace('.', '/')};"
 
@@ -46,28 +48,65 @@ val universalDpiPatch = bytecodePatch(
     execute {
         val dpi = dpiOption?.toIntOrNull() ?: 100
 
-        val applicationClass = AppEntryPoint.applicationClassName
-            ?.toClassType()
-            ?.let { mutableClassDefByOrNull(it) }
+        injectEntryPoint(dpi)
+        injectConfigurationHooks()
+    }
+}
 
-        if (applicationClass != null && injectApplicationInit(applicationClass, dpi)) {
-            return@execute
-        }
+private fun BytecodePatchContext.injectEntryPoint(dpi: Int) {
+    val applicationClass = AppEntryPoint.applicationClassName
+        ?.toClassType()
+        ?.let { mutableClassDefByOrNull(it) }
 
-        // No usable Application.onCreate() found. Fall back to injecting into one
-        // activity per distinct process declared in the manifest (falling back further
-        // to just the launcher activity if manifest parsing found nothing), so apps that
-        // isolate any component (e.g. a splash/ad screen) into its own process still get
-        // DensityPatch initialized in every process it runs in, not just whichever one
-        // happens to host the launcher activity.
-        val entryActivities = AppEntryPoint.processEntryActivities.values.toMutableSet()
-        AppEntryPoint.launcherActivityClassName?.let { entryActivities.add(it) }
+    if (applicationClass != null && injectApplicationInit(applicationClass, dpi)) {
+        return
+    }
 
-        if (entryActivities.isEmpty()) return@execute
+    // No usable Application.onCreate() found. Fall back to injecting into one
+    // activity per distinct process declared in the manifest (falling back further
+    // to just the launcher activity if manifest parsing found nothing), so apps that
+    // isolate any component (e.g. a splash/ad screen) into its own process still get
+    // DensityPatch initialized in every process it runs in, not just whichever one
+    // happens to host the launcher activity.
+    val entryActivities = AppEntryPoint.processEntryActivities.values.toMutableSet()
+    AppEntryPoint.launcherActivityClassName?.let { entryActivities.add(it) }
 
-        entryActivities.forEach { className ->
-            val activityClass = className.toClassType().let { mutableClassDefByOrNull(it) } ?: return@forEach
-            injectActivityInit(activityClass, dpi)
+    entryActivities.forEach { className ->
+        val activityClass = className.toClassType().let { mutableClassDefByOrNull(it) } ?: return@forEach
+        injectActivityInit(activityClass, dpi)
+    }
+}
+
+/**
+ * Puts DensityPatch.onConfigChanged(this) at the head of the first onConfigurationChanged()
+ * found walking up from each manifest activity. Activities that handle rotation/size changes
+ * themselves otherwise run their handler against the system's reset (real) density.
+ */
+private fun BytecodePatchContext.injectConfigurationHooks() {
+    val hooked = HashSet<String>()
+
+    AppEntryPoint.activityClassNames.forEach { className ->
+        val activityClass = className.toClassType().let { mutableClassDefByOrNull(it) } ?: return@forEach
+        var injected = false
+
+        traverseClassHierarchy(activityClass) {
+            if (injected) return@traverseClassHierarchy
+
+            val method = methods.firstOrNull {
+                it.name == "onConfigurationChanged" &&
+                    it.parameters == listOf("Landroid/content/res/Configuration;") &&
+                    it.returnType == "V" &&
+                    it.implementation != null
+            } ?: return@traverseClassHierarchy
+
+            injected = true
+
+            if (!hooked.add(type)) return@traverseClassHierarchy
+
+            method.addInstructions(
+                0,
+                "invoke-static/range { p0 .. p0 }, $EXTENSION_CONFIG_CHANGED",
+            )
         }
     }
 }
