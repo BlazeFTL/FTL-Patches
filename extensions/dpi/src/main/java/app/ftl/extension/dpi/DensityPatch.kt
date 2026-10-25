@@ -260,16 +260,20 @@ object DensityPatch {
     // Window insets (status bar / cutout) are real pixels and do not follow the patched
     // density, while a toolbar's fixed height is dp-based. Toolbar = top inset padding + dp
     // height, so lowering density squeezes the content area to nothing and the bar clips its
-    // own icons. Guarantee room for one action bar below the inset padding.
+    // own icons. Guarantee room for one action bar below the inset padding. Uses the measured
+    // height, not LayoutParams: custom toolbars (MX's MXImmersiveToolbar) add the status bar
+    // height themselves during measure, so lp.height alone over-corrects and pushes content down.
     private fun fixToolbars(view: View, need: Int, y: Int, depth: Int): Boolean {
         if (depth > 14 || y > 400 || view.visibility == View.GONE || view !is ViewGroup) return false
         var fixed = false
         val lp = view.layoutParams
-        if (lp != null && lp.height > 0 && view.paddingTop > 0 && isToolbar(view)) {
+        if (lp != null && lp.height > 0 && view.paddingTop > 0 && !view.isLayoutRequested && isToolbar(view)) {
             val minHeight = view.paddingTop + need
-            if (lp.height < minHeight - 1) {
-                Log.d(TAG, "toolbar height ${lp.height} -> $minHeight (pad=${view.paddingTop} bar=$need)")
-                lp.height = minHeight
+            val actual = view.measuredHeight
+            if (actual > 0 && actual < minHeight - 1) {
+                val newHeight = lp.height + (minHeight - actual)
+                Log.d(TAG, "toolbar height ${lp.height} -> $newHeight (measured=$actual pad=${view.paddingTop} bar=$need)")
+                lp.height = newHeight
                 view.layoutParams = lp
                 fixed = true
             }
@@ -348,7 +352,6 @@ object DensityPatch {
             Log.e(TAG, "dispatchConfigurationChanged failed", t)
         }
         forceLayoutTree(decor)
-        safeFixToolbars(activity, decor)
         decor.requestApplyInsets()
         decor.requestLayout()
         decor.invalidate()
