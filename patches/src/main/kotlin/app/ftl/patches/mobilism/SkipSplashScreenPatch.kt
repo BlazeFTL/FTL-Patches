@@ -13,6 +13,8 @@ val skipSplashScreenPatch = resourcePatch(
     name = "Skip splash screen",
     description = "Launches the home screen directly instead of the splash screen."
 ) {
+    compatibleWith(COMPATIBILITY_MOBILISM)
+
     execute {
         document("AndroidManifest.xml").use { document ->
             val activities = document.getElementsByTagName("activity")

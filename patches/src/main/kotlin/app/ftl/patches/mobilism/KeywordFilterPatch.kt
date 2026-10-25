@@ -119,6 +119,8 @@ val keywordFilterPatch = bytecodePatch(
     name = "Keyword filter",
     description = "Adds a Keyword filter entry to the 3-dot menu to hide posts by title keywords, with long-press hide and copy."
 ) {
+    compatibleWith(COMPATIBILITY_MOBILISM)
+
     extendWith("extensions/mobilism.mpe")
 
     execute {

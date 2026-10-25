@@ -54,6 +54,8 @@ val modSettingsPatch = bytecodePatch(
     name = "Mod settings",
     description = "Adds a Mod settings entry to the 3-dot menu to show or hide sidebar items."
 ) {
+    compatibleWith(COMPATIBILITY_MOBILISM)
+
     extendWith("extensions/mobilism.mpe")
 
     execute {

@@ -20,6 +20,8 @@ val materialColorsPatch = resourcePatch(
     name = "Material colors",
     description = "Applies the Material red and purple palette to the Apps and Games tabs."
 ) {
+    compatibleWith(COMPATIBILITY_MOBILISM)
+
     execute {
         document("res/values/colors.xml").use { document ->
             val remaining = MATERIAL_COLORS.keys.toMutableSet()
