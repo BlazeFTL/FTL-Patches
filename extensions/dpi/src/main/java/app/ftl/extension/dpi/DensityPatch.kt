@@ -48,6 +48,9 @@ object DensityPatch {
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    @Volatile
+    private var dumpBudget = 200
+
     private val pendingRefresh =
         Collections.newSetFromMap(WeakHashMap<Activity, Boolean>())
 
@@ -160,6 +163,8 @@ object DensityPatch {
         private var windowStart = 0L
         private var fixes = 0
         private var lastScan = 0L
+        private var lastSig = 0
+        private var lastSigAt = 0L
 
         override fun onPreDraw(): Boolean {
             val activity = ref.get() ?: return true
@@ -168,6 +173,17 @@ object DensityPatch {
             } catch (t: Throwable) {
                 Log.e(TAG, "watchdog failed", t)
                 true
+            }
+        }
+
+        private fun trackTop(activity: Activity, now: Long) {
+            if (dumpBudget <= 0 || now - lastSigAt < 60L) return
+            lastSigAt = now
+            val decor = activity.window?.peekDecorView() ?: return
+            val sig = topSignature(decor, 0)
+            if (sig != lastSig) {
+                lastSig = sig
+                dumpTop(activity, decor, "change")
             }
         }
 
@@ -188,7 +204,10 @@ object DensityPatch {
                 }
             }
 
-            if (!fixed) return true
+            if (!fixed) {
+                trackTop(activity, now)
+                return true
+            }
 
             if (now - windowStart > 1000L) {
                 windowStart = now
@@ -209,6 +228,7 @@ object DensityPatch {
         try {
             decor.viewTreeObserver.addOnPreDrawListener(watch)
             watchers[activity] = watch
+            decor.postDelayed({ dumpTop(activity, decor, "attach+500") }, 500L)
         } catch (t: Throwable) {
             Log.e(TAG, "attachWatchdog failed", t)
         }
@@ -272,22 +292,41 @@ object DensityPatch {
         decor.requestLayout()
         decor.invalidate()
         Log.d(TAG, "refresh ${activity.javaClass.simpleName}")
-        decor.post { dumpTop(activity, decor) }
+        decor.postDelayed({ dumpTop(activity, decor, "refresh+400") }, 400L)
     }
 
     // Debug aid: logs the views that intersect the top strip of the screen, with their
     // bounds in window coordinates, so a clipped header can be matched to the view doing it.
-    private fun dumpTop(activity: Activity, decor: View) {
+    private fun dumpTop(activity: Activity, decor: View, reason: String) {
+        if (dumpBudget <= 0) return
+        dumpBudget--
         try {
             val lines = ArrayList<String>()
             val res = activity.resources
-            Log.d(TAG, "dump ${activity.javaClass.simpleName} dpi=${res.displayMetrics.densityDpi}/${res.configuration.densityDpi} " +
+            Log.d(TAG, "dump[$reason] ${activity.javaClass.simpleName} dpi=${res.displayMetrics.densityDpi}/${res.configuration.densityDpi} " +
                 "wdp=${res.configuration.screenWidthDp} hdp=${res.configuration.screenHeightDp} decor=${decor.width}x${decor.height}")
             dumpView(decor, 0, lines)
             for (l in lines) Log.d(TAG, l)
         } catch (t: Throwable) {
             Log.e(TAG, "dump failed", t)
         }
+    }
+
+    private fun topSignature(view: View, depth: Int): Int {
+        if (depth > 12) return 0
+        val loc = IntArray(2)
+        view.getLocationInWindow(loc)
+        if (loc[1] > 330 || view.visibility != View.VISIBLE) return 0
+        var h = loc[0]
+        h = h * 31 + loc[1]
+        h = h * 31 + view.width
+        h = h * 31 + view.height
+        h = h * 31 + (view.layoutParams?.height ?: 0)
+        h = h * 31 + view.paddingTop
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) h = h * 31 + topSignature(view.getChildAt(i), depth + 1)
+        }
+        return h
     }
 
     private fun dumpView(view: View, depth: Int, out: MutableList<String>) {
@@ -304,7 +343,7 @@ object DensityPatch {
         out.add(
             "  ".repeat(depth) + "${view.javaClass.simpleName}#$id " +
                 "[${loc[0]},${loc[1]} ${view.width}x${view.height}] mH=${view.measuredHeight} " +
-                "lp=${lp?.width}x${lp?.height} pad=${view.paddingTop}/${view.paddingBottom} ty=${view.translationY}$clip$clipB"
+                "lp=${lp?.width}x${lp?.height} pad=${view.paddingTop}/${view.paddingBottom} ty=${view.translationY} minH=${view.minimumHeight} sy=${view.scrollY}$clip$clipB"
         )
         if (view is ViewGroup) {
             for (i in 0 until view.childCount) dumpView(view.getChildAt(i), depth + 1, out)
