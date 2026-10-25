@@ -212,9 +212,10 @@ val extractApkCertificatePatch = rawResourcePatch(
         // Strategy 0b: META-INF v1 signature — fallback for APKs signed only with JAR/v1 scheme.
         // get() operates on base.apk content so works for all split formats too.
         try {
-            val metaInfDir = get("META-INF", copy = false)
-            val certFile = metaInfDir.listFiles()
-                ?.firstOrNull { it.isFile && isCertEntry("META-INF/${it.name}") }
+            val certFile = decode("META-INF/*")
+                .firstOrNull { isCertEntry(it) }
+                ?.let { get(it, false) }
+                ?.takeIf { it.isFile }
             if (certFile != null) {
                 certFile.inputStream().use { parseCertFromStream(it) }?.let { encoded ->
                     populateFromEncoded(encoded, "input-apk-v1")
