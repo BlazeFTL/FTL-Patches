@@ -26,7 +26,7 @@ Click **[Add To Morphe↗️](https://morphe.software/add-source?github=BlazeFTL
 ## 🐉 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.6](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.6)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;111 patches total
+> **[v1.43.7](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.7)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;117 patches total
 <a id="all-video-downloader-ace-player"></a>
 <details>
 <summary><img src=".github/assets/icons/videoplayer.videodownloader.downloader.png" width="18" align="absmiddle">&nbsp;&nbsp;All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;9 patches</summary>
@@ -58,8 +58,8 @@ Click **[Add To Morphe↗️](https://morphe.software/add-source?github=BlazeFTL
 
 **🎯 Supported versions:**
 
-| 3.3.1 | 3.3.0 |
-| :---: | :---: |
+| 3.4.0 |
+| :---: |
 
 | 🩹&nbsp;Patch | 🔥&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
@@ -304,6 +304,23 @@ Click **[Add To Morphe↗️](https://morphe.software/add-source?github=BlazeFTL
 
 </details>
 
+<a id="1dm"></a>
+<details>
+<summary><img src=".github/assets/icons/idm.internet.download.manager.plus.png" width="18" align="absmiddle">&nbsp;&nbsp;1DM+&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
+<br>
+
+**🎯 Supported versions:**
+
+| 20.0 |
+| :---: |
+
+| 🩹&nbsp;Patch | 🔥&nbsp;Description |
+|----------|----------------|
+| <a id="1dm-disable-sale-notification"></a>[Disable sale notification](patches/src/main/kotlin/app/ftl/patches/1DM/DisableSaleNotificationPatch.kt) | Disables server pushed sale notifications. |
+| <a id="1dm-rename-1dm-to-idm"></a>[Rename 1DM to IDM](patches/src/main/kotlin/app/ftl/patches/1DM/Change1DMToIDMPatch.kt) | Replaces 1DM+ with IDM+ and 1DM with IDM in app strings. |
+
+</details>
+
 <a id="es-file-explorer"></a>
 <details>
 <summary><img src=".github/assets/icons/com.estrongs.android.pop.png" width="18" align="absmiddle">&nbsp;&nbsp;ES File Explorer&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
@@ -353,6 +370,25 @@ Click **[Add To Morphe↗️](https://morphe.software/add-source?github=BlazeFTL
 |----------|----------------|
 | <a id="video-player-hide-bottom-bar"></a>[Hide bottom bar](patches/src/main/kotlin/app/ftl/patches/AllVideoPlayer/RemoveBottomBar.kt) | Hides the bottom navigation bar. |
 | <a id="video-player-skip-splash-screen"></a>[Skip splash screen](patches/src/main/kotlin/app/ftl/patches/AllVideoPlayer/SkipSplashPatch.kt) | Launches the app directly into the main screen. |
+
+</details>
+
+<a id="mobilism"></a>
+<details>
+<summary><img src=".github/assets/icons/demigos.com.mobilism.png" width="18" align="absmiddle">&nbsp;&nbsp;Mobilism&nbsp;&nbsp;•&nbsp;&nbsp;4 patches</summary>
+<br>
+
+**🎯 Supported versions:**
+
+| Any version |
+| :---: |
+
+| 🩹&nbsp;Patch | 🔥&nbsp;Description |
+|----------|----------------|
+| <a id="mobilism-keyword-filter"></a>[Keyword filter](patches/src/main/kotlin/app/ftl/patches/Mobilism/KeywordFilterPatch.kt) | Adds a Keyword filter entry to the 3-dot menu to hide posts by title keywords, with long-press hide and copy. |
+| <a id="mobilism-material-colors"></a>[Material colors](patches/src/main/kotlin/app/ftl/patches/Mobilism/MaterialColorsPatch.kt) | Applies the Material red and purple palette to the Apps and Games tabs. |
+| <a id="mobilism-mod-settings"></a>[Mod settings](patches/src/main/kotlin/app/ftl/patches/Mobilism/ModSettingsPatch.kt) | Adds a Mod settings entry to the 3-dot menu to show or hide sidebar items. |
+| <a id="mobilism-skip-splash-screen"></a>[Skip splash screen](patches/src/main/kotlin/app/ftl/patches/Mobilism/SkipSplashScreenPatch.kt) | Launches the home screen directly instead of the splash screen. |
 
 </details>
 
