@@ -12,6 +12,7 @@ import android.os.Looper
 import android.os.SystemClock
 import android.util.DisplayMetrics
 import android.util.Log
+import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
@@ -163,8 +164,6 @@ object DensityPatch {
         private var windowStart = 0L
         private var fixes = 0
         private var lastScan = 0L
-        private var lastSig = 0
-        private var lastSigAt = 0L
 
         override fun onPreDraw(): Boolean {
             val activity = ref.get() ?: return true
@@ -176,22 +175,12 @@ object DensityPatch {
             }
         }
 
-        private fun trackTop(activity: Activity, now: Long) {
-            if (dumpBudget <= 0 || now - lastSigAt < 60L) return
-            lastSigAt = now
-            val decor = activity.window?.peekDecorView() ?: return
-            val sig = topSignature(decor, 0)
-            if (sig != lastSig) {
-                lastSig = sig
-                dumpTop(activity, decor, "change")
-            }
-        }
-
         // Runs after layout, before draw. Returns false to cancel the frame so a wrong-density
         // frame is never shown; refresh() schedules the re-measure that replaces it.
         private fun evaluate(activity: Activity): Boolean {
             val now = SystemClock.uptimeMillis()
             var fixed = false
+            var relayout = false
 
             if (!isDensityOk(activity.resources)) {
                 fixed = forceDensity(activity, "predraw")
@@ -205,9 +194,11 @@ object DensityPatch {
             }
 
             if (!fixed) {
-                trackTop(activity, now)
-                return true
+                val decor = activity.window?.peekDecorView()
+                if (decor != null && fixToolbars(decor, actionBarSizePx(activity), 0, 0)) relayout = true
             }
+
+            if (!fixed && !relayout) return true
 
             if (now - windowStart > 1000L) {
                 windowStart = now
@@ -216,9 +207,52 @@ object DensityPatch {
             if (fixes >= MAX_FIXES_PER_SECOND) return true
             fixes++
 
-            refresh(activity)
+            if (fixed) refresh(activity)
             return false
         }
+    }
+
+    private fun actionBarSizePx(activity: Activity): Int {
+        val metrics = activity.resources.displayMetrics
+        val value = TypedValue()
+        if (activity.theme.resolveAttribute(android.R.attr.actionBarSize, value, true)) {
+            val px = TypedValue.complexToDimensionPixelSize(value.data, metrics)
+            if (px > 0) return px
+        }
+        return Math.round(56f * metrics.density)
+    }
+
+    private fun isToolbar(view: View): Boolean {
+        var c: Class<*>? = view.javaClass
+        while (c != null && c != View::class.java) {
+            if (c.name.endsWith(".Toolbar")) return true
+            c = c.superclass
+        }
+        return false
+    }
+
+    // Window insets (status bar / cutout) are real pixels and do not follow the patched
+    // density, while a toolbar's fixed height is dp-based. Toolbar = top inset padding + dp
+    // height, so lowering density squeezes the content area to nothing and the bar clips its
+    // own icons. Guarantee room for one action bar below the inset padding.
+    private fun fixToolbars(view: View, need: Int, y: Int, depth: Int): Boolean {
+        if (depth > 14 || y > 400 || view.visibility == View.GONE || view !is ViewGroup) return false
+        var fixed = false
+        val lp = view.layoutParams
+        if (lp != null && lp.height > 0 && view.paddingTop > 0 && isToolbar(view)) {
+            val minHeight = view.paddingTop + need
+            if (lp.height < minHeight - 1) {
+                Log.d(TAG, "toolbar height ${lp.height} -> $minHeight (pad=${view.paddingTop} bar=$need)")
+                lp.height = minHeight
+                view.layoutParams = lp
+                fixed = true
+            }
+        }
+        for (i in 0 until view.childCount) {
+            val child = view.getChildAt(i)
+            if (fixToolbars(child, need, y + child.top - view.scrollY, depth + 1)) fixed = true
+        }
+        return fixed
     }
 
     private fun attachWatchdog(activity: Activity) {
@@ -287,6 +321,7 @@ object DensityPatch {
         } catch (t: Throwable) {
             Log.e(TAG, "dispatchConfigurationChanged failed", t)
         }
+        fixToolbars(decor, actionBarSizePx(activity), 0, 0)
         forceLayoutTree(decor)
         decor.requestApplyInsets()
         decor.requestLayout()
@@ -310,23 +345,6 @@ object DensityPatch {
         } catch (t: Throwable) {
             Log.e(TAG, "dump failed", t)
         }
-    }
-
-    private fun topSignature(view: View, depth: Int): Int {
-        if (depth > 12) return 0
-        val loc = IntArray(2)
-        view.getLocationInWindow(loc)
-        if (loc[1] > 330 || view.visibility != View.VISIBLE) return 0
-        var h = loc[0]
-        h = h * 31 + loc[1]
-        h = h * 31 + view.width
-        h = h * 31 + view.height
-        h = h * 31 + (view.layoutParams?.height ?: 0)
-        h = h * 31 + view.paddingTop
-        if (view is ViewGroup) {
-            for (i in 0 until view.childCount) h = h * 31 + topSignature(view.getChildAt(i), depth + 1)
-        }
-        return h
     }
 
     private fun dumpView(view: View, depth: Int, out: MutableList<String>) {
