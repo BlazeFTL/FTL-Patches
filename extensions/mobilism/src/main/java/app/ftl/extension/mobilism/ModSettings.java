@@ -7,7 +7,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 
@@ -54,7 +53,7 @@ public final class ModSettings {
         root.removeAllViews();
 
         root.addView(ModUi.text(activity, "Mod settings", 22, ModUi.TEXT, true));
-        View sub = ModUi.text(activity, "Changes apply instantly.", 13, ModUi.SUB, false);
+        View sub = ModUi.text(activity, "Switch ON to show an item in the sidebar. Switch OFF to hide it. Changes apply instantly.", 13, ModUi.SUB, false);
         sub.setPadding(0, ModUi.dp(activity, 2), 0, ModUi.dp(activity, 4));
         root.addView(sub);
 
@@ -105,10 +104,11 @@ public final class ModSettings {
             if (i > 0) {
                 card.addView(ModUi.divider(activity));
             }
-            card.addView(ModUi.switchRow(activity, item.title, null, ModDrawer.isShown(item),
-                    new CompoundButton.OnCheckedChangeListener() {
+            card.addView(ModUi.switchRow(activity, item.title, "Shown in sidebar", "Hidden from sidebar",
+                    ModDrawer.isShown(item),
+                    new PillSwitch.Listener() {
                         @Override
-                        public void onCheckedChanged(CompoundButton b, boolean checked) {
+                        public void onChanged(boolean checked) {
                             ModDrawer.setShown(item, checked);
                             ModDrawer.refresh(activity);
                         }
