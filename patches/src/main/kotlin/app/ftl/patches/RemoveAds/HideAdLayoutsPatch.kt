@@ -138,8 +138,8 @@ val hideAdLayoutsPatch = resourcePatch(
     description = "Zeroes size and hides visibility of ad-related view containers in layout XML.",
 ) {
     execute {
-        val layoutDir = get("res/layout", false)
-        layoutDir.walkTopDown()
+        decode("res/layout/**")
+            .map { get(it, false) }
             .filter { it.isFile && it.extension.equals("xml", ignoreCase = true) }
             .forEach { file ->
                 val original = file.readText()

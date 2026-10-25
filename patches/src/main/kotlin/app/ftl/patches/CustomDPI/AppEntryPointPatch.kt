@@ -19,6 +19,8 @@ internal object AppEntryPoint {
     var processEntryActivities: Map<String, String> = emptyMap()
         internal set
 
+    // Every enabled <activity> class. DensityPatch hooks each one's onConfigurationChanged()
+    // so density is restored before the app's own handler runs.
     var activityClassNames: Set<String> = emptySet()
         internal set
 }
@@ -62,6 +64,21 @@ private fun Document.findLauncherActivity(packageName: String): String? {
     return null
 }
 
+private fun Document.findActivityClassNames(packageName: String): Set<String> {
+    val result = LinkedHashSet<String>()
+    val elements = getElementsByTagName("activity")
+
+    for (i in 0 until elements.length) {
+        val element = elements.item(i) as Element
+
+        if (element.getAttribute("android:enabled") == "false") continue
+
+        resolveClassName(element.getAttribute("android:name"), packageName)?.let { result.add(it) }
+    }
+
+    return result
+}
+
 private fun resolveProcessName(process: String, packageName: String, defaultProcess: String): String = when {
     process.isEmpty() -> defaultProcess
     process.startsWith(":") -> packageName + process
@@ -94,25 +111,6 @@ private fun Document.findProcessEntryActivities(
 
     return result
 }
-private fun Document.findActivityClassNames(packageName: String): Set<String> {
-    val result = LinkedHashSet<String>()
-
-    for (tag in listOf("activity", "activity-alias")) {
-        val elements = getElementsByTagName(tag)
-
-        for (i in 0 until elements.length) {
-            val element = elements.item(i) as Element
-
-            if (element.getAttribute("android:enabled") == "false") continue
-
-            val nameAttr = if (tag == "activity-alias") "android:targetActivity" else "android:name"
-            resolveClassName(element.getAttribute(nameAttr), packageName)?.let { result.add(it) }
-        }
-    }
-
-    return result
-}
-
 // Universal patch (no compatibleWith), so `default` must be false.
 // Unnamed: this only ever runs as a dependency of universalDpiPatch, never selected on its own.
 internal val findAppEntryPointPatch = resourcePatch(

@@ -3,7 +3,6 @@ package app.ftl.patches.apkcleanup
 import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.resourcePatch
 import app.morphe.patcher.patch.stringOption
-import java.io.File
 import java.util.logging.Logger
 
 private val DENSITIES = listOf("ldpi", "mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi")
@@ -31,61 +30,54 @@ private fun densityPriorityOrder(target: String): List<String> {
     return descending.subList(index, descending.size) + descending.subList(0, index)
 }
 
-private fun typeDirs(resDir: File, typePrefix: String): List<File> =
-    resDir.listFiles { f -> f.isDirectory && f.name.startsWith(typePrefix) }?.toList() ?: emptyList()
+private typealias ResDirs = MutableMap<String, MutableList<String>>
 
-private fun densityDirs(dirs: List<File>, density: String): List<File> {
-    val suffix = "-$density"
-    return dirs.filter { it.name.contains(suffix) }
-}
+private fun extensionOf(name: String) = name.substringAfterLast('.', "").lowercase()
 
-/**
- * One dedup pass, within a single package's res/ directory, for a resource type
- * ([typePrefix] "drawable" or "mipmap"): for each density in [order], collect every file with
- * an extension in [extensions] under that density's directories, then delete any same-named
- * file found under any *other* directory of the same type -- density-qualified or not.
- * Directories that share a density (e.g. a plain and a "night" variant both at hdpi) are
- * never deduped against each other in the same step, only against directories outside that
- * density's set. Matching is exact filename (extension included); "icon.png" is never
- * treated as a duplicate of "icon.webp".
- */
-private fun dedupeType(resDir: File, typePrefix: String, extensions: Set<String>, order: List<String>): Int {
+private fun dedupeType(
+    dirs: ResDirs,
+    typePrefix: String,
+    extensions: Set<String>,
+    order: List<String>,
+    remove: (String, String) -> Unit,
+): Int {
     var removed = 0
-    val allDirs = typeDirs(resDir, typePrefix)
+    val typeDirNames = dirs.keys.filter { it.startsWith(typePrefix) }
 
     for (density in order) {
-        val refDirs = densityDirs(allDirs, density)
+        val suffix = "-$density"
+        val refDirs = typeDirNames.filter { it.contains(suffix) }.toSet()
         if (refDirs.isEmpty()) continue
 
         val refNames = refDirs.flatMap { dir ->
-            dir.walkTopDown().filter { it.isFile && it.extension.lowercase() in extensions }.map { it.name }
+            dirs[dir].orEmpty().filter { extensionOf(it) in extensions }
         }.toSet()
         if (refNames.isEmpty()) continue
 
-        val victimDirs = allDirs.filter { it !in refDirs }
-        for (dir in victimDirs) {
-            dir.walkTopDown()
-                .filter { it.isFile && it.name in refNames }
-                .toList()
-                .forEach { if (it.delete()) removed++ }
+        for (dir in typeDirNames) {
+            if (dir in refDirs) continue
+            val files = dirs[dir] ?: continue
+            val victims = files.filter { it in refNames }
+            victims.forEach { remove(dir, it) }
+            files.removeAll(victims.toSet())
+            removed += victims.size
         }
     }
 
     return removed
 }
 
-private fun stripUiModeDirs(resDir: File, uiModes: Set<String>): Int {
+private fun stripUiModeDirs(dirs: ResDirs, uiModes: Set<String>, remove: (String, String) -> Unit): Int {
     if (uiModes.isEmpty()) return 0
     var removedDirs = 0
-    resDir.listFiles { f -> f.isDirectory }?.forEach { dir ->
-        val qualifiers = dir.name.split("-").drop(1)
+    dirs.entries.toList().forEach { (dirName, files) ->
+        val qualifiers = dirName.split("-").drop(1)
         if (qualifiers.none { it in uiModes }) return@forEach
 
-        val fileCount = dir.walkTopDown().count { it.isFile }
-        if (dir.deleteRecursively()) {
-            removedDirs++
-            logger.fine("Removed ${dir.name}/ ($fileCount file(s)) -- matched uiMode qualifier.")
-        }
+        files.toList().forEach { remove(dirName, it) }
+        logger.fine("Removed $dirName/ (${files.size} file(s)) -- matched uiMode qualifier.")
+        dirs.remove(dirName)
+        removedDirs++
     }
     return removedDirs
 }
@@ -138,17 +130,11 @@ val drawableCleanPatch = resourcePatch(
     )
 
     execute {
-        // get("res", false) is scoped to the manifest package only. Morphe decodes each ARSC
-        // package into its own directory under <work>/resources/, each with its own res/.
-        // res -> packageDir -> resourcesRoot -- walk up two levels and process every package,
-        // the same way LangCleanPatch does, or resources in secondary packages are silently
-        // never seen at all.
-        val mainRes = get("res", false)
-        if (!mainRes.isDirectory) {
-            logger.warning("Remove Duplicate Graphics: res/ directory not found")
+        val packages = resourcePackageDirs().keys
+        if (packages.isEmpty()) {
+            logger.warning("Remove Duplicate Graphics: no resource packages found")
             return@execute
         }
-        val resourcesRoot = mainRes.parentFile.parentFile
 
         val stripSet = buildSet {
             if (stripSmartwatch == true) add("watch")
@@ -166,19 +152,15 @@ val drawableCleanPatch = resourcePatch(
         var drawableTotal = 0
         var mipmapTotal = 0
 
-        resourcesRoot.listFiles { f -> f.isDirectory }.orEmpty().forEach { pkgDir ->
-            val resDir = pkgDir.resolve("res")
-            if (!resDir.isDirectory) return@forEach
+        packages.forEach { pkgName ->
+            val dirs = resDirectories(pkgName)
+            val remove = { dir: String, file: String -> delete("res/$dir/$file", pkgName) }
 
             if (stripSet.isNotEmpty()) {
-                strippedTotal += stripUiModeDirs(resDir, stripSet)
+                strippedTotal += stripUiModeDirs(dirs, stripSet, remove)
             }
-            drawableTotal += dedupeType(resDir, "drawable", DRAWABLE_EXTENSIONS, order)
-            mipmapTotal += dedupeType(resDir, "mipmap", MIPMAP_EXTENSIONS, order)
-
-            resDir.walkBottomUp()
-                .filter { it.isDirectory && it.listFiles()?.isEmpty() == true }
-                .forEach { it.delete() }
+            drawableTotal += dedupeType(dirs, "drawable", DRAWABLE_EXTENSIONS, order, remove)
+            mipmapTotal += dedupeType(dirs, "mipmap", MIPMAP_EXTENSIONS, order, remove)
         }
 
         if (stripSet.isNotEmpty()) {
@@ -186,7 +168,7 @@ val drawableCleanPatch = resourcePatch(
         }
         logger.info(
             "Done. Removed $drawableTotal duplicate drawable file(s) and $mipmapTotal " +
-                "duplicate mipmap file(s), across all resource packages.",
+                "duplicate mipmap file(s), across ${packages.size} resource package(s).",
         )
     }
 }
