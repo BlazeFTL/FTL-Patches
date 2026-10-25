@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Canvas;
+import android.graphics.CornerPathEffect;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
@@ -527,37 +528,37 @@ public final class ModSettings {
         }
 
         LinearLayout header = new LinearLayout(dc);
-        header.setOrientation(LinearLayout.HORIZONTAL);
-        header.setGravity(Gravity.CENTER_VERTICAL);
-        header.setPadding(dp(dc, 22), dp(dc, 22), dp(dc, 22), dp(dc, 14));
+        header.setOrientation(LinearLayout.VERTICAL);
+        header.setGravity(Gravity.CENTER_HORIZONTAL);
+        header.setPadding(dp(dc, 24), dp(dc, 24), dp(dc, 24), dp(dc, 14));
 
         FrameLayout headerTile = new FrameLayout(dc);
-        headerTile.setBackground(gradient(dc, COLOR_ACCENT_LIGHT, COLOR_ACCENT, 14));
-        FrameLayout.LayoutParams headerIconParams = new FrameLayout.LayoutParams(dp(dc, 24), dp(dc, 24));
+        headerTile.setBackground(gradient(dc, COLOR_ACCENT_LIGHT, COLOR_ACCENT, 18));
+        FrameLayout.LayoutParams headerIconParams = new FrameLayout.LayoutParams(dp(dc, 30), dp(dc, 30));
         headerIconParams.gravity = Gravity.CENTER;
-        headerTile.addView(new IconView(dc, IconView.ICON_TUNE, 0xFFFFFFFF), headerIconParams);
-        header.addView(headerTile, new LinearLayout.LayoutParams(dp(dc, 46), dp(dc, 46)));
+        headerTile.addView(new IconView(dc, IconView.ICON_GEAR, 0xFFFFFFFF), headerIconParams);
+        header.addView(headerTile, new LinearLayout.LayoutParams(dp(dc, 56), dp(dc, 56)));
 
-        LinearLayout headerTexts = new LinearLayout(dc);
-        headerTexts.setOrientation(LinearLayout.VERTICAL);
         TextView headerTitle = new TextView(dc);
         headerTitle.setText(titleCase("Mod Settings"));
         headerTitle.setTextSize(21f);
         headerTitle.setTextColor(COLOR_TEXT);
         headerTitle.setTypeface(Typeface.DEFAULT_BOLD);
-        headerTexts.addView(headerTitle);
+        headerTitle.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        titleParams.topMargin = dp(dc, 12);
+        header.addView(headerTitle, titleParams);
+
         TextView headerHint = new TextView(dc);
         headerHint.setText(titleCase("Tap a section to expand"));
         headerHint.setTextSize(13f);
         headerHint.setTextColor(COLOR_TEXT_SECONDARY);
+        headerHint.setGravity(Gravity.CENTER);
         LinearLayout.LayoutParams hintParams = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         hintParams.topMargin = dp(dc, 2);
-        headerTexts.addView(headerHint, hintParams);
-        LinearLayout.LayoutParams headerTextsParams = new LinearLayout.LayoutParams(
-            0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-        headerTextsParams.leftMargin = dp(dc, 14);
-        header.addView(headerTexts, headerTextsParams);
+        header.addView(headerHint, hintParams);
 
         LinearLayout footer = new LinearLayout(dc);
         footer.setOrientation(LinearLayout.HORIZONTAL);
@@ -623,7 +624,7 @@ public final class ModSettings {
         Window window = dialog.getWindow();
         if (window != null) {
             DisplayMetrics metrics = dc.getResources().getDisplayMetrics();
-            int width = Math.min(metrics.widthPixels - dp(dc, 32), dp(dc, 440));
+            int width = Math.min(metrics.widthPixels - dp(dc, 32), dp(dc, 600));
             window.setBackgroundDrawable(new ColorDrawable(0x00000000));
             window.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT);
             window.setGravity(Gravity.CENTER);
@@ -656,8 +657,8 @@ public final class ModSettings {
         header.setBackground(ripple(dc, withAlpha(hue, 0x26), 20));
 
         FrameLayout tile = new FrameLayout(dc);
-        tile.setBackground(gradient(dc, withAlpha(hue, 0x26), withAlpha(hue, 0x52), 14));
-        IconView icon = new IconView(dc, iconFor(name), hue);
+        tile.setBackground(gradient(dc, blend(hue, 0xFFFFFFFF, 0.28f), hue, 14));
+        IconView icon = new IconView(dc, iconFor(name), 0xFFFFFFFF);
         FrameLayout.LayoutParams iconParams = new FrameLayout.LayoutParams(dp(dc, 26), dp(dc, 26));
         iconParams.gravity = Gravity.CENTER;
         tile.addView(icon, iconParams);
@@ -976,32 +977,17 @@ public final class ModSettings {
         static final int ICON_PERSON = 3;
         static final int ICON_SIDEBAR = 4;
         static final int ICON_CHEVRON = 5;
-        static final int ICON_TUNE = 6;
+        static final int ICON_GEAR = 6;
 
         private final int kind;
-        private final Paint stroke;
-        private final Paint fill;
-        private final Paint pane;
-        private final Paint solid;
+        private final Paint paint;
 
         IconView(Context context, int kind, int color) {
             super(context);
             this.kind = kind;
-            stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
-            stroke.setStyle(Paint.Style.STROKE);
-            stroke.setStrokeWidth(1.7f);
-            stroke.setStrokeCap(Paint.Cap.ROUND);
-            stroke.setStrokeJoin(Paint.Join.ROUND);
-            stroke.setColor(color);
-            fill = new Paint(Paint.ANTI_ALIAS_FLAG);
-            fill.setStyle(Paint.Style.FILL);
-            fill.setColor(withAlpha(color, 0x40));
-            pane = new Paint(Paint.ANTI_ALIAS_FLAG);
-            pane.setStyle(Paint.Style.FILL);
-            pane.setColor(withAlpha(color, 0x80));
-            solid = new Paint(Paint.ANTI_ALIAS_FLAG);
-            solid.setStyle(Paint.Style.FILL);
-            solid.setColor(color);
+            paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(color);
         }
 
         @Override
@@ -1032,8 +1018,8 @@ public final class ModSettings {
                 case ICON_CHEVRON:
                     drawChevron(canvas);
                     break;
-                case ICON_TUNE:
-                    drawTune(canvas);
+                case ICON_GEAR:
+                    drawGear(canvas);
                     break;
                 default:
                     break;
@@ -1041,31 +1027,29 @@ public final class ModSettings {
             canvas.restore();
         }
 
-        private void filled(Canvas canvas, Path path) {
-            canvas.drawPath(path, fill);
-            canvas.drawPath(path, stroke);
+        private void soften(float radius) {
+            paint.setPathEffect(radius > 0f ? new CornerPathEffect(radius) : null);
+        }
+
+        private Path polygon(float... xy) {
+            Path path = new Path();
+            path.moveTo(xy[0], xy[1]);
+            for (int i = 2; i < xy.length; i += 2) path.lineTo(xy[i], xy[i + 1]);
+            path.close();
+            return path;
         }
 
         private void drawSpeed(Canvas canvas) {
-            Path first = new Path();
-            first.moveTo(3.5f, 6f);
-            first.lineTo(11f, 12f);
-            first.lineTo(3.5f, 18f);
-            first.close();
-            filled(canvas, first);
-            Path second = new Path();
-            second.moveTo(12.5f, 6f);
-            second.lineTo(20f, 12f);
-            second.lineTo(12.5f, 18f);
-            second.close();
-            filled(canvas, second);
+            soften(1.9f);
+            canvas.drawPath(polygon(3.8f, 5.8f, 11.2f, 12f, 3.8f, 18.2f), paint);
+            canvas.drawPath(polygon(12.6f, 5.8f, 20f, 12f, 12.6f, 18.2f), paint);
         }
 
         private void drawEnhance(Canvas canvas) {
-            filled(canvas, star(10.5f, 13.5f, 8.3f, 2.0f));
-            Path small = star(19f, 5.3f, 3.3f, 0.9f);
-            canvas.drawPath(small, solid);
-            canvas.drawPath(small, stroke);
+            soften(0f);
+            canvas.drawPath(star(10f, 14f, 8.6f, 2.4f), paint);
+            canvas.drawPath(star(19f, 6f, 3.6f, 1.0f), paint);
+            canvas.drawPath(star(4.8f, 5f, 2.3f, 0.7f), paint);
         }
 
         private Path star(float cx, float cy, float r, float k) {
@@ -1080,68 +1064,50 @@ public final class ModSettings {
         }
 
         private void drawHome(Canvas canvas) {
-            Path house = new Path();
-            house.moveTo(4.5f, 10.8f);
-            house.lineTo(12f, 4.2f);
-            house.lineTo(19.5f, 10.8f);
-            house.lineTo(19.5f, 18.8f);
-            house.quadTo(19.5f, 20.2f, 18.1f, 20.2f);
-            house.lineTo(5.9f, 20.2f);
-            house.quadTo(4.5f, 20.2f, 4.5f, 18.8f);
-            house.close();
-            filled(canvas, house);
-            Path door = new Path();
-            door.moveTo(9.8f, 20.2f);
-            door.lineTo(9.8f, 15.6f);
-            door.quadTo(9.8f, 14.6f, 10.8f, 14.6f);
-            door.lineTo(13.2f, 14.6f);
-            door.quadTo(14.2f, 14.6f, 14.2f, 15.6f);
-            door.lineTo(14.2f, 20.2f);
-            canvas.drawPath(door, stroke);
+            soften(1.6f);
+            canvas.drawPath(polygon(
+                3.4f, 11.6f, 12f, 3.8f, 20.6f, 11.6f, 20.6f, 20.6f,
+                14.8f, 20.6f, 14.8f, 14.6f, 9.2f, 14.6f, 9.2f, 20.6f, 3.4f, 20.6f), paint);
         }
 
         private void drawPerson(Canvas canvas) {
-            canvas.drawCircle(12f, 8.2f, 3.7f, fill);
-            canvas.drawCircle(12f, 8.2f, 3.7f, stroke);
+            soften(0f);
+            canvas.drawCircle(12f, 7.8f, 4f, paint);
             Path body = new Path();
-            body.moveTo(5f, 20f);
-            body.cubicTo(5f, 16.5f, 8f, 14.8f, 12f, 14.8f);
-            body.cubicTo(16f, 14.8f, 19f, 16.5f, 19f, 20f);
-            body.close();
-            filled(canvas, body);
+            body.addRoundRect(new RectF(4.5f, 14f, 19.5f, 20.6f),
+                new float[] {7.5f, 6f, 7.5f, 6f, 1.8f, 1.8f, 1.8f, 1.8f}, Path.Direction.CW);
+            canvas.drawPath(body, paint);
         }
 
         private void drawSidebar(Canvas canvas) {
-            Path outer = new Path();
-            outer.addRoundRect(new RectF(3.5f, 4.5f, 20.5f, 19.5f), 3.5f, 3.5f, Path.Direction.CW);
-            canvas.drawPath(outer, fill);
-            canvas.save();
-            canvas.clipPath(outer);
-            canvas.drawRect(new RectF(14.5f, 4f, 21f, 20f), pane);
-            canvas.restore();
-            canvas.drawPath(outer, stroke);
-            canvas.drawLine(14.5f, 4.5f, 14.5f, 19.5f, stroke);
-            canvas.drawLine(7f, 9.5f, 11f, 9.5f, stroke);
-            canvas.drawLine(7f, 13f, 11f, 13f, stroke);
+            soften(0f);
+            Path panel = new Path();
+            panel.setFillType(Path.FillType.EVEN_ODD);
+            panel.addRoundRect(new RectF(3f, 4.5f, 21f, 19.5f), 3.5f, 3.5f, Path.Direction.CW);
+            panel.addRoundRect(new RectF(14.2f, 7.2f, 18.2f, 16.8f), 1.2f, 1.2f, Path.Direction.CW);
+            panel.addRoundRect(new RectF(6f, 9.2f, 11f, 10.8f), 0.8f, 0.8f, Path.Direction.CW);
+            panel.addRoundRect(new RectF(6f, 13.2f, 11f, 14.8f), 0.8f, 0.8f, Path.Direction.CW);
+            canvas.drawPath(panel, paint);
         }
 
         private void drawChevron(Canvas canvas) {
-            Path path = new Path();
-            path.moveTo(6.5f, 9.5f);
-            path.lineTo(12f, 15f);
-            path.lineTo(17.5f, 9.5f);
-            canvas.drawPath(path, stroke);
+            soften(1.4f);
+            canvas.drawPath(polygon(6.3f, 9f, 17.7f, 9f, 12f, 15.4f), paint);
         }
 
-        private void drawTune(Canvas canvas) {
-            float[][] knobs = {{9f, 7f}, {15.5f, 12f}, {8f, 17f}};
-            float r = 2.3f;
-            for (float[] knob : knobs) {
-                canvas.drawLine(4f, knob[1], knob[0] - r, knob[1], stroke);
-                canvas.drawLine(knob[0] + r, knob[1], 20f, knob[1], stroke);
-                canvas.drawCircle(knob[0], knob[1], r, fill);
-                canvas.drawCircle(knob[0], knob[1], r, stroke);
+        private void drawGear(Canvas canvas) {
+            soften(0f);
+            for (int i = 0; i < 8; i++) {
+                canvas.save();
+                canvas.rotate(i * 45f, 12f, 12f);
+                canvas.drawRoundRect(new RectF(10.2f, 2.4f, 13.8f, 8f), 1f, 1f, paint);
+                canvas.restore();
             }
+            Path ring = new Path();
+            ring.setFillType(Path.FillType.EVEN_ODD);
+            ring.addCircle(12f, 12f, 7.4f, Path.Direction.CW);
+            ring.addCircle(12f, 12f, 3.1f, Path.Direction.CW);
+            canvas.drawPath(ring, paint);
         }
     }
 
