@@ -19,7 +19,6 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.view.animation.DecelerateInterpolator;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -37,7 +36,6 @@ public final class ModUi {
     public static final int SURFACE_ALT = 0xFFF6EEEE;
     public static final int OUTLINE = 0xFF857375;
     public static final int TRACK_OFF = 0xFFEADFE0;
-    public static final int HANDLE = 0xFFD8CDCE;
 
     private ModUi() {
     }
@@ -283,22 +281,13 @@ public final class ModUi {
     public static LinearLayout sheet(Context c) {
         LinearLayout root = new LinearLayout(c);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackground(corners(c, SURFACE, 28, 0));
-        root.setPadding(dp(c, 20), dp(c, 10), dp(c, 20), dp(c, 16));
-
-        View handle = new View(c);
-        handle.setBackground(rounded(c, HANDLE, 2));
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(c, 36), dp(c, 4));
-        lp.gravity = Gravity.CENTER_HORIZONTAL;
-        lp.bottomMargin = dp(c, 16);
-        root.addView(handle, lp);
+        root.setBackground(rounded(c, SURFACE, 28));
+        root.setPadding(dp(c, 20), dp(c, 24), dp(c, 20), dp(c, 14));
         return root;
     }
 
     public static void clearSheet(LinearLayout root) {
-        if (root.getChildCount() > 1) {
-            root.removeViews(1, root.getChildCount() - 1);
-        }
+        root.removeAllViews();
     }
 
     public static int maxBodyHeight(Context a) {
@@ -336,27 +325,20 @@ public final class ModUi {
         return b;
     }
 
-    public static Dialog show(Context a, final View content) {
+    public static Dialog show(Context a, View content) {
         Dialog d = new Dialog(a);
         d.requestWindowFeature(Window.FEATURE_NO_TITLE);
         d.setContentView(content);
-        DisplayMetrics m = a.getResources().getDisplayMetrics();
         Window w = d.getWindow();
         if (w != null) {
             w.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-            w.setLayout(Math.min(m.widthPixels, dp(a, 560)), ViewGroup.LayoutParams.WRAP_CONTENT);
-            w.setGravity(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+            DisplayMetrics m = a.getResources().getDisplayMetrics();
+            int width = Math.min((int) (m.widthPixels * 0.92f), dp(a, 440));
+            w.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT);
             w.setDimAmount(0.5f);
             w.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         }
-        content.setTranslationY(m.heightPixels);
         d.show();
-        content.post(new Runnable() {
-            @Override
-            public void run() {
-                content.animate().translationY(0f).setDuration(280).setInterpolator(new DecelerateInterpolator(1.8f)).start();
-            }
-        });
         return d;
     }
 }
