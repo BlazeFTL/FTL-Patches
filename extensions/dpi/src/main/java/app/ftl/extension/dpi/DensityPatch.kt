@@ -195,7 +195,7 @@ object DensityPatch {
 
             if (!fixed) {
                 val decor = activity.window?.peekDecorView()
-                if (decor != null && fixToolbars(decor, actionBarSizePx(activity), 0, 0)) relayout = true
+                if (decor != null && safeFixToolbars(activity, decor)) relayout = true
             }
 
             if (!fixed && !relayout) return true
@@ -222,13 +222,39 @@ object DensityPatch {
         return Math.round(56f * metrics.density)
     }
 
+    // No ==/!= on objects, endsWith() etc. in here: the host app's shrunk Kotlin runtime can
+    // lack kotlin.jvm.internal.Intrinsics.areEqual (NoSuchMethodError seen on MX Player).
     private fun isToolbar(view: View): Boolean {
         var c: Class<*>? = view.javaClass
-        while (c != null && c != View::class.java) {
-            if (c.name.endsWith(".Toolbar")) return true
+        while (c != null && c !== View::class.java) {
+            if (nameEndsWithToolbar(c.name)) return true
             c = c.superclass
         }
         return false
+    }
+
+    private fun nameEndsWithToolbar(name: String): Boolean {
+        val suffix = ".Toolbar"
+        val offset = name.length - suffix.length
+        if (offset < 0) return false
+        for (i in 0 until suffix.length) {
+            if (name[offset + i] != suffix[i]) return false
+        }
+        return true
+    }
+
+    @Volatile
+    private var toolbarFixBroken = false
+
+    private fun safeFixToolbars(activity: Activity, decor: View): Boolean {
+        if (toolbarFixBroken) return false
+        return try {
+            fixToolbars(decor, actionBarSizePx(activity), 0, 0)
+        } catch (t: Throwable) {
+            toolbarFixBroken = true
+            Log.e(TAG, "toolbar fix disabled", t)
+            false
+        }
     }
 
     // Window insets (status bar / cutout) are real pixels and do not follow the patched
@@ -321,8 +347,8 @@ object DensityPatch {
         } catch (t: Throwable) {
             Log.e(TAG, "dispatchConfigurationChanged failed", t)
         }
-        fixToolbars(decor, actionBarSizePx(activity), 0, 0)
         forceLayoutTree(decor)
+        safeFixToolbars(activity, decor)
         decor.requestApplyInsets()
         decor.requestLayout()
         decor.invalidate()
