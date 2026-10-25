@@ -1,16 +1,8 @@
 package app.ftl.patches.mxplayerad
 
-import app.morphe.patcher.patch.AppTarget
-import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.resourcePatch
 import java.io.File
-
-private val MX_PLAYER_AD_CPU_COMPAT = Compatibility(
-    packageName = "com.mxtech.videoplayer.ad",
-    name = "MX Player",
-    targets = listOf(AppTarget(version = "3.3.0")),
-)
 
 private class Hunk(
     val name: String,
@@ -77,7 +69,7 @@ val fixHighCpuUsagePatch = resourcePatch(
     description = "Patches libmx-bh.so to kill signature verification.",
     default = true,
 ) {
-    compatibleWith(MX_PLAYER_AD_CPU_COMPAT)
+    compatibleWith(COMPATIBILITY_MX_PLAYER_AD)
 
     execute {
         val entries = listApkEntries("lib/").toSet()
