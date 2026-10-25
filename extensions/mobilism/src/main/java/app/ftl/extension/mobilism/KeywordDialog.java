@@ -54,12 +54,12 @@ public final class KeywordDialog {
         titleRow = new LinearLayout(a);
         titleRow.setOrientation(LinearLayout.HORIZONTAL);
         titleRow.setGravity(Gravity.CENTER_VERTICAL);
-        TextView title = ModUi.text(a, "Keyword filter", 22, ModUi.TEXT, true);
+        TextView title = ModUi.text(a, "Keyword filter", 24, ModUi.TEXT, true);
         titleRow.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        count = ModUi.text(a, "0", 13, ModUi.ACCENT, true);
-        count.setBackground(ModUi.rounded(a, ModUi.ACCENT_SOFT, 12));
+        count = ModUi.text(a, "0", 13, ModUi.ON_TEXT, true);
+        count.setBackground(ModUi.rounded(a, ModUi.ACCENT_SOFT, 14));
         count.setGravity(Gravity.CENTER);
-        count.setPadding(ModUi.dp(a, 12), ModUi.dp(a, 4), ModUi.dp(a, 12), ModUi.dp(a, 4));
+        count.setPadding(ModUi.dp(a, 12), ModUi.dp(a, 5), ModUi.dp(a, 12), ModUi.dp(a, 5));
         titleRow.addView(count);
         View searchButton = ModUi.iconButton(a, ModUi.Icon.SEARCH, ModUi.TEXT, ModUi.SURFACE_ALT, 40,
                 new View.OnClickListener() {
@@ -101,15 +101,15 @@ public final class KeywordDialog {
         searchBar.addView(clearButton);
         root.addView(searchBar);
 
-        sub = ModUi.text(a, SUB_TEXT, 13, ModUi.SUB, false);
-        sub.setPadding(0, ModUi.dp(a, 6), 0, ModUi.dp(a, 12));
+        sub = ModUi.text(a, SUB_TEXT, 14, ModUi.SUB, false);
+        sub.setPadding(0, ModUi.dp(a, 6), 0, ModUi.dp(a, 14));
         root.addView(sub);
 
         switchCard = ModUi.card(a);
         switchCard.addView(ModUi.switchRow(a, "Hide in search results",
-                "ON: matching apps are also hidden in search (applies to new searches).",
-                "OFF: search shows every app, even matching ones.",
-                TitleFilter.isSearchFilterEnabled(),
+                "On: matching apps are hidden in search too (new searches)",
+                "Off: search shows every app",
+                TitleFilter.isSearchFilterEnabled(), 0, 1,
                 new PillSwitch.Listener() {
                     @Override
                     public void onChanged(boolean checked) {
@@ -121,28 +121,28 @@ public final class KeywordDialog {
         addRow = new LinearLayout(a);
         addRow.setOrientation(LinearLayout.HORIZONTAL);
         addRow.setGravity(Gravity.CENTER_VERTICAL);
-        addRow.setPadding(0, ModUi.dp(a, 14), 0, 0);
+        addRow.setPadding(0, ModUi.dp(a, 16), 0, 0);
         addField = ModUi.inputField(a, "Add keyword, e.g. MX Player");
         addField.setImeOptions(EditorInfo.IME_ACTION_DONE);
         addRow.addView(addField, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        TextView addButton = ModUi.circleButton(a, "+", ModUi.ACCENT, 0xFFFFFFFF, 44, 24);
+        View addButton = ModUi.iconButton(a, ModUi.Icon.PLUS, 0xFFFFFFFF, ModUi.ACCENT, 52, null);
         ((LinearLayout.LayoutParams) addButton.getLayoutParams()).leftMargin = ModUi.dp(a, 10);
         addRow.addView(addButton);
         root.addView(addRow);
 
-        scroll = ModUi.cappedScroll(a, ModUi.heightFraction(a, 0.34f));
+        scroll = ModUi.cappedScroll(a, ModUi.heightFraction(a, 0.32f));
         scroll.setVerticalScrollBarEnabled(false);
         list = new LinearLayout(a);
         list.setOrientation(LinearLayout.VERTICAL);
-        list.setPadding(0, ModUi.dp(a, 12), 0, 0);
+        list.setPadding(0, ModUi.dp(a, 14), 0, 0);
         scroll.addView(list, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         root.addView(scroll);
 
         LinearLayout footer = new LinearLayout(a);
         footer.setOrientation(LinearLayout.HORIZONTAL);
         footer.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
-        footer.setPadding(0, ModUi.dp(a, 8), 0, 0);
-        footer.addView(ModUi.textButton(a, "Done", ModUi.ACCENT, new View.OnClickListener() {
+        footer.setPadding(0, ModUi.dp(a, 16), 0, 0);
+        footer.addView(ModUi.filledButton(a, "Done", new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (dialog != null) {
@@ -217,7 +217,7 @@ public final class KeywordDialog {
         searchBar.setVisibility(on ? View.VISIBLE : View.GONE);
         switchCard.setVisibility(on ? View.GONE : View.VISIBLE);
         addRow.setVisibility(on ? View.GONE : View.VISIBLE);
-        scroll.setMaxHeightPx(ModUi.heightFraction(activity, on ? 0.46f : 0.34f));
+        scroll.setMaxHeightPx(ModUi.heightFraction(activity, on ? 0.5f : 0.32f));
         if (on) {
             searchField.requestFocus();
             searchField.postDelayed(new Runnable() {
@@ -267,14 +267,17 @@ public final class KeywordDialog {
         count.setText(String.valueOf(all.size()));
         String query = searching ? searchField.getText().toString().trim() : "";
         String q = query.toLowerCase(Locale.ROOT);
-        int shown = 0;
+        java.util.ArrayList<String> matches = new java.util.ArrayList<String>();
         for (int i = all.size() - 1; i >= 0; i--) {
-            final String keyword = all.get(i);
+            String keyword = all.get(i);
             if (q.length() != 0 && !keyword.toLowerCase(Locale.ROOT).contains(q)) {
                 continue;
             }
-            shown++;
-            list.addView(row(keyword));
+            matches.add(keyword);
+        }
+        int shown = matches.size();
+        for (int i = 0; i < shown; i++) {
+            list.addView(row(matches.get(i), i, shown));
         }
         if (searching) {
             String info;
@@ -302,22 +305,21 @@ public final class KeywordDialog {
         }
     }
 
-    private View row(final String keyword) {
+    private View row(final String keyword, int index, int total) {
         LinearLayout row = new LinearLayout(activity);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setBackground(ModUi.rounded(activity, ModUi.SURFACE_ALT, 14));
-        row.setPadding(ModUi.dp(activity, 16), ModUi.dp(activity, 4), ModUi.dp(activity, 6), ModUi.dp(activity, 4));
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        lp.bottomMargin = ModUi.dp(activity, 8);
-        row.setLayoutParams(lp);
+        row.setMinimumHeight(ModUi.dp(activity, 56));
+        row.setBackground(ModUi.segment(activity, index, total, false));
+        row.setPadding(ModUi.dp(activity, 20), ModUi.dp(activity, 4), ModUi.dp(activity, 8), ModUi.dp(activity, 4));
+        row.setLayoutParams(ModUi.segmentParams(activity, index, total));
 
         TextView label = ModUi.text(activity, keyword, 16, ModUi.TEXT, false);
         label.setSingleLine(true);
         label.setEllipsize(android.text.TextUtils.TruncateAt.END);
         row.addView(label, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
-        View remove = ModUi.iconButton(activity, ModUi.Icon.CLOSE, ModUi.SUB, 0x00000000, 40,
+        View remove = ModUi.iconButton(activity, ModUi.Icon.CLOSE, ModUi.SUB, 0x00000000, 44,
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {

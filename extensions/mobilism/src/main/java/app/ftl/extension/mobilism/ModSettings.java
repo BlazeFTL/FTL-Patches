@@ -50,11 +50,11 @@ public final class ModSettings {
     }
 
     private static void build(final Activity activity, final LinearLayout root, final Dialog[] ref) {
-        root.removeAllViews();
+        ModUi.clearSheet(root);
 
-        root.addView(ModUi.text(activity, "Mod settings", 22, ModUi.TEXT, true));
-        View sub = ModUi.text(activity, "Switch ON to show an item in the sidebar. Switch OFF to hide it. Changes apply instantly.", 13, ModUi.SUB, false);
-        sub.setPadding(0, ModUi.dp(activity, 2), 0, ModUi.dp(activity, 4));
+        root.addView(ModUi.text(activity, "Mod settings", 24, ModUi.TEXT, true));
+        View sub = ModUi.text(activity, "ON shows an item in the sidebar, OFF hides it. Changes apply instantly.", 14, ModUi.SUB, false);
+        sub.setPadding(0, ModUi.dp(activity, 4), 0, ModUi.dp(activity, 4));
         root.addView(sub);
 
         ScrollView scroll = ModUi.cappedScroll(activity, ModUi.maxBodyHeight(activity));
@@ -73,7 +73,7 @@ public final class ModSettings {
         LinearLayout footer = new LinearLayout(activity);
         footer.setOrientation(LinearLayout.HORIZONTAL);
         footer.setGravity(Gravity.CENTER_VERTICAL);
-        footer.setPadding(0, ModUi.dp(activity, 12), 0, 0);
+        footer.setPadding(0, ModUi.dp(activity, 16), 0, 0);
 
         footer.addView(ModUi.textButton(activity, "Reset", ModUi.SUB, new View.OnClickListener() {
             @Override
@@ -86,7 +86,7 @@ public final class ModSettings {
         }));
         View spacer = new View(activity);
         footer.addView(spacer, new LinearLayout.LayoutParams(0, 1, 1f));
-        footer.addView(ModUi.textButton(activity, "Done", ModUi.ACCENT, new View.OnClickListener() {
+        footer.addView(ModUi.filledButton(activity, "Done", new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (ref[0] != null) {
@@ -101,11 +101,8 @@ public final class ModSettings {
         LinearLayout card = ModUi.card(activity);
         for (int i = 0; i < items.length; i++) {
             final ModDrawer.Item item = items[i];
-            if (i > 0) {
-                card.addView(ModUi.divider(activity));
-            }
             card.addView(ModUi.switchRow(activity, item.title, "Shown in sidebar", "Hidden from sidebar",
-                    ModDrawer.isShown(item),
+                    ModDrawer.isShown(item), i, items.length,
                     new PillSwitch.Listener() {
                         @Override
                         public void onChanged(boolean checked) {

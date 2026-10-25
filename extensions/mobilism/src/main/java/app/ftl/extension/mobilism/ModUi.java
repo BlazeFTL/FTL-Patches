@@ -11,6 +11,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.RippleDrawable;
+import android.graphics.drawable.StateListDrawable;
 import android.os.Build;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
@@ -18,20 +19,25 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.animation.DecelerateInterpolator;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
 public final class ModUi {
-    public static final int ACCENT = 0xFFFF645E;
-    public static final int ACCENT_SOFT = 0xFFFFD9D6;
-    public static final int PURPLE = 0xFF9191FF;
-    public static final int TEXT = 0xFF1F1B24;
-    public static final int SUB = 0xFF6F6879;
-    public static final int LINE = 0xFFEFEAF3;
-    public static final int SURFACE = 0xFFFFFFFF;
-    public static final int SURFACE_ALT = 0xFFF8F5FB;
-    public static final int ON_TEXT = 0xFF1E8449;
+    public static final int ACCENT = 0xFFDB4A44;
+    public static final int ACCENT_SOFT = 0xFFFFDAD6;
+    public static final int ON_TEXT = 0xFFB3261E;
+    public static final int PURPLE = 0xFF5B5BD6;
+    public static final int TEXT = 0xFF201A1A;
+    public static final int SUB = 0xFF6F6365;
+    public static final int LINE = 0xFFE8DEDF;
+    public static final int SURFACE = 0xFFFFFBFA;
+    public static final int SURFACE_ALT = 0xFFF6EEEE;
+    public static final int OUTLINE = 0xFF857375;
+    public static final int TRACK_OFF = 0xFFEADFE0;
+    public static final int HANDLE = 0xFFD8CDCE;
 
     private ModUi() {
     }
@@ -47,13 +53,44 @@ public final class ModUi {
         return d;
     }
 
+    private static GradientDrawable corners(Context c, int color, float top, float bottom) {
+        float t = dp(c, top);
+        float b = dp(c, bottom);
+        GradientDrawable d = new GradientDrawable();
+        d.setColor(color);
+        d.setCornerRadii(new float[]{t, t, t, t, b, b, b, b});
+        return d;
+    }
+
     public static Drawable ripple(Context c, int color, float radiusDp) {
+        return ripple(c, color, radiusDp, 0x22DB4A44);
+    }
+
+    public static Drawable ripple(Context c, int color, float radiusDp, int rippleColor) {
         GradientDrawable content = rounded(c, color, radiusDp);
         if (Build.VERSION.SDK_INT >= 21) {
             GradientDrawable mask = rounded(c, Color.WHITE, radiusDp);
-            return new RippleDrawable(ColorStateList.valueOf(0x22FF645E), content, mask);
+            return new RippleDrawable(ColorStateList.valueOf(rippleColor), content, mask);
         }
         return content;
+    }
+
+    public static Drawable segment(Context c, int index, int total, boolean clickable) {
+        float top = index == 0 ? 22 : 5;
+        float bottom = index == total - 1 ? 22 : 5;
+        GradientDrawable content = corners(c, SURFACE_ALT, top, bottom);
+        if (clickable && Build.VERSION.SDK_INT >= 21) {
+            return new RippleDrawable(ColorStateList.valueOf(0x22DB4A44), content, corners(c, Color.WHITE, top, bottom));
+        }
+        return content;
+    }
+
+    public static LinearLayout.LayoutParams segmentParams(Context c, int index, int total) {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        if (index < total - 1) {
+            lp.bottomMargin = dp(c, 2);
+        }
+        return lp;
     }
 
     public static TextView text(Context c, CharSequence s, float sp, int color, boolean bold) {
@@ -62,24 +99,23 @@ public final class ModUi {
         t.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp);
         t.setTextColor(color);
         if (bold) {
-            t.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+            t.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         }
         return t;
     }
 
     public static TextView sectionLabel(Context c, String s) {
-        TextView t = text(c, s.toUpperCase(), 12, ACCENT, true);
+        TextView t = text(c, s.toUpperCase(), 12, ON_TEXT, true);
         if (Build.VERSION.SDK_INT >= 21) {
-            t.setLetterSpacing(0.08f);
+            t.setLetterSpacing(0.1f);
         }
-        t.setPadding(dp(c, 6), dp(c, 18), dp(c, 6), dp(c, 8));
+        t.setPadding(dp(c, 6), dp(c, 20), dp(c, 6), dp(c, 8));
         return t;
     }
 
     public static LinearLayout card(Context c) {
         LinearLayout l = new LinearLayout(c);
         l.setOrientation(LinearLayout.VERTICAL);
-        l.setBackground(rounded(c, SURFACE_ALT, 18));
         return l;
     }
 
@@ -93,13 +129,14 @@ public final class ModUi {
     }
 
     public static View switchRow(Context c, CharSequence title, final CharSequence onText, final CharSequence offText,
-                                 boolean checked, final PillSwitch.Listener listener) {
+                                 boolean checked, int index, int total, final PillSwitch.Listener listener) {
         LinearLayout row = new LinearLayout(c);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setMinimumHeight(dp(c, 60));
-        row.setPadding(dp(c, 16), dp(c, 8), dp(c, 14), dp(c, 8));
-        row.setBackground(ripple(c, Color.TRANSPARENT, 18));
+        row.setMinimumHeight(dp(c, 68));
+        row.setPadding(dp(c, 20), dp(c, 10), dp(c, 18), dp(c, 10));
+        row.setBackground(segment(c, index, total, true));
+        row.setLayoutParams(segmentParams(c, index, total));
 
         LinearLayout labels = new LinearLayout(c);
         labels.setOrientation(LinearLayout.VERTICAL);
@@ -114,7 +151,7 @@ public final class ModUi {
             status = null;
         }
         LinearLayout.LayoutParams labelLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        labelLp.rightMargin = dp(c, 12);
+        labelLp.rightMargin = dp(c, 14);
         row.addView(labels, labelLp);
 
         final PillSwitch sw = new PillSwitch(c);
@@ -144,10 +181,22 @@ public final class ModUi {
     }
 
     public static TextView textButton(Context c, String label, int color, View.OnClickListener l) {
-        TextView b = text(c, label, 14, color, true);
+        TextView b = text(c, label, 15, color, true);
         b.setGravity(Gravity.CENTER);
-        b.setPadding(dp(c, 16), dp(c, 10), dp(c, 16), dp(c, 10));
-        b.setBackground(ripple(c, Color.TRANSPARENT, 20));
+        b.setMinHeight(dp(c, 48));
+        b.setPadding(dp(c, 20), dp(c, 10), dp(c, 20), dp(c, 10));
+        b.setBackground(ripple(c, Color.TRANSPARENT, 28));
+        b.setOnClickListener(l);
+        return b;
+    }
+
+    public static TextView filledButton(Context c, String label, View.OnClickListener l) {
+        TextView b = text(c, label, 15, Color.WHITE, true);
+        b.setGravity(Gravity.CENTER);
+        b.setMinHeight(dp(c, 48));
+        b.setMinWidth(dp(c, 104));
+        b.setPadding(dp(c, 28), dp(c, 12), dp(c, 28), dp(c, 12));
+        b.setBackground(ripple(c, ACCENT, 28, 0x33FFFFFF));
         b.setOnClickListener(l);
         return b;
     }
@@ -179,6 +228,7 @@ public final class ModUi {
         public static final int SEARCH = 0;
         public static final int BACK = 1;
         public static final int CLOSE = 2;
+        public static final int PLUS = 3;
 
         private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final int type;
@@ -210,6 +260,9 @@ public final class ModUi {
                 cv.drawLine(28f, 20f, 12f, 20f, p);
                 cv.drawLine(12f, 20f, 19f, 13f, p);
                 cv.drawLine(12f, 20f, 19f, 27f, p);
+            } else if (type == PLUS) {
+                cv.drawLine(20f, 12f, 20f, 28f, p);
+                cv.drawLine(12f, 20f, 28f, 20f, p);
             } else {
                 cv.drawLine(14f, 14f, 26f, 26f, p);
                 cv.drawLine(26f, 14f, 14f, 26f, p);
@@ -230,13 +283,26 @@ public final class ModUi {
     public static LinearLayout sheet(Context c) {
         LinearLayout root = new LinearLayout(c);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackground(rounded(c, SURFACE, 28));
-        root.setPadding(dp(c, 18), dp(c, 22), dp(c, 18), dp(c, 12));
+        root.setBackground(corners(c, SURFACE, 28, 0));
+        root.setPadding(dp(c, 20), dp(c, 10), dp(c, 20), dp(c, 16));
+
+        View handle = new View(c);
+        handle.setBackground(rounded(c, HANDLE, 2));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(c, 36), dp(c, 4));
+        lp.gravity = Gravity.CENTER_HORIZONTAL;
+        lp.bottomMargin = dp(c, 16);
+        root.addView(handle, lp);
         return root;
     }
 
+    public static void clearSheet(LinearLayout root) {
+        if (root.getChildCount() > 1) {
+            root.removeViews(1, root.getChildCount() - 1);
+        }
+    }
+
     public static int maxBodyHeight(Context a) {
-        return heightFraction(a, 0.58f);
+        return heightFraction(a, 0.5f);
     }
 
     public static int heightFraction(Context a, float fraction) {
@@ -244,15 +310,21 @@ public final class ModUi {
         return (int) (m.heightPixels * fraction);
     }
 
-    public static android.widget.EditText inputField(Context c, String hint) {
-        android.widget.EditText e = new android.widget.EditText(c);
+    public static EditText inputField(Context c, String hint) {
+        EditText e = new EditText(c);
         e.setHint(hint);
-        e.setHintTextColor(0xFF9A93A5);
+        e.setHintTextColor(0xFF9A8E90);
         e.setTextColor(TEXT);
-        e.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+        e.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
         e.setSingleLine(true);
-        e.setBackground(rounded(c, SURFACE_ALT, 14));
-        e.setPadding(dp(c, 16), dp(c, 12), dp(c, 16), dp(c, 12));
+        StateListDrawable bg = new StateListDrawable();
+        GradientDrawable focused = rounded(c, SURFACE_ALT, 28);
+        focused.setStroke(dp(c, 2), ACCENT);
+        bg.addState(new int[]{android.R.attr.state_focused}, focused);
+        bg.addState(new int[]{}, rounded(c, SURFACE_ALT, 28));
+        e.setBackground(bg);
+        e.setMinHeight(dp(c, 52));
+        e.setPadding(dp(c, 20), dp(c, 14), dp(c, 20), dp(c, 14));
         return e;
     }
 
@@ -264,20 +336,27 @@ public final class ModUi {
         return b;
     }
 
-    public static Dialog show(Context a, View content) {
+    public static Dialog show(Context a, final View content) {
         Dialog d = new Dialog(a);
         d.requestWindowFeature(Window.FEATURE_NO_TITLE);
         d.setContentView(content);
+        DisplayMetrics m = a.getResources().getDisplayMetrics();
         Window w = d.getWindow();
         if (w != null) {
             w.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-            DisplayMetrics m = a.getResources().getDisplayMetrics();
-            int width = Math.min((int) (m.widthPixels * 0.92f), dp(a, 440));
-            w.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT);
-            w.setDimAmount(0.4f);
+            w.setLayout(Math.min(m.widthPixels, dp(a, 560)), ViewGroup.LayoutParams.WRAP_CONTENT);
+            w.setGravity(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+            w.setDimAmount(0.5f);
             w.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         }
+        content.setTranslationY(m.heightPixels);
         d.show();
+        content.post(new Runnable() {
+            @Override
+            public void run() {
+                content.animate().translationY(0f).setDuration(280).setInterpolator(new DecelerateInterpolator(1.8f)).start();
+            }
+        });
         return d;
     }
 }
