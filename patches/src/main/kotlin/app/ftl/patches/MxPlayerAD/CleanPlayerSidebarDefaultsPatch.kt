@@ -5,12 +5,12 @@ import app.morphe.patcher.InstructionLocation
 import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.InstructionLocation.MatchAfterWithin
 import app.morphe.patcher.OpcodesFilter
-import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.fieldAccess
 import app.morphe.patcher.opcode
 import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.util.addInstructionsAtControlFlowLabel
 import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.BuilderOffsetInstruction
@@ -95,13 +95,17 @@ internal val cleanSidebarShortcutItemsPatch = bytecodePatch(
     )
 
     execute {
-        // Inserted right before each block's own first instruction: check the flag, and if it
+        // Inserted right before each block's own first instruction, and any branch that targeted
+        // that instruction now lands on the check (addInstructionsAtControlFlowLabel; plain
+        // addInstructions leaves the label on the original, so those branches skipped the check -
+        // Tutorial when quit_button is off, Favourite when Cut is skipped, Playing Queue when the
+        // preceding goto fires). Check the flag, and if it
         // says "hide", jump straight to hideTarget (the same place the block's own stock
         // condition would have jumped to skip it). If the flag says "keep", fall through into
         // the ORIGINAL, completely untouched instructions, which still run their own stock
         // check exactly as before.
         fun conditionalHide(fingerprint: Fingerprint, insertIndex: Int, key: String, hideTarget: Instruction) =
-            fingerprint.method.addInstructionsWithLabels(
+            fingerprint.method.addInstructionsAtControlFlowLabel(
                 insertIndex,
                 """
                     const-string v4, "$key"
