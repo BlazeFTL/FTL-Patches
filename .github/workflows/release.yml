@@ -21,7 +21,7 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      NOTES_FILE: ${{ runner.temp }}/release-notes.md
+      NOTES_FILE: /tmp/release-notes.md
     steps:
       - name: Checkout
         uses: actions/checkout@v7
