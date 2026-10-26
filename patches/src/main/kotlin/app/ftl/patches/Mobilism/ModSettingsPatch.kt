@@ -60,7 +60,7 @@ internal object ModSettingsMenuItemSetVisibleIntFingerprint : Fingerprint(
 @Suppress("unused")
 val modSettingsPatch = bytecodePatch(
     name = "Mod settings",
-    description = "Adds a Mod settings entry to the 3-dot menu to show or hide sidebar items."
+    description = "Adds a Mod settings entry to the 3-dot menu to show or hide sidebar items and toggle mod features."
 ) {
     compatibleWith(COMPATIBILITY_MOBILISM)
 
