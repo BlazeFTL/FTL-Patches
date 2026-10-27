@@ -51,7 +51,7 @@ jobs:
             echo "release=false" >> "$GITHUB_OUTPUT"
           fi
 
-            - name: Determine next version
+      - name: Determine next version
         id: ver
         run: |
           last_tag=$(git for-each-ref refs/tags --sort=-creatordate --format='%(refname:short)' | head -n1)
