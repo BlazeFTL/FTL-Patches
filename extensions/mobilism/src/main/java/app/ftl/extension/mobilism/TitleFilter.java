@@ -78,7 +78,7 @@ public final class TitleFilter {
         for (String part : getRaw().split("[\n,]+")) {
             String t = part.trim();
             if (t.length() != 0) {
-                out.add(t.toLowerCase(Locale.ROOT));
+                out.add(decode(t).toLowerCase(Locale.ROOT));
             }
         }
         return out;
@@ -96,7 +96,7 @@ public final class TitleFilter {
     }
 
     public static boolean has(String keyword) {
-        return getKeywords().contains(keyword.toLowerCase(Locale.ROOT));
+        return getKeywords().contains(decode(keyword).toLowerCase(Locale.ROOT));
     }
 
     public static void add(String keyword) {
@@ -127,13 +127,26 @@ public final class TitleFilter {
         if (subject == null) {
             return false;
         }
-        String s = subject.toLowerCase(Locale.ROOT);
+        String s = decode(subject).toLowerCase(Locale.ROOT);
         for (String k : keywords) {
             if (s.contains(k)) {
                 return true;
             }
         }
         return false;
+    }
+
+    static String decode(String text) {
+        if (text == null || (text.indexOf('&') < 0 && text.indexOf('<') < 0)) {
+            return text == null ? "" : text;
+        }
+        String out;
+        if (Build.VERSION.SDK_INT >= 24) {
+            out = Html.fromHtml(text, 0).toString();
+        } else {
+            out = Html.fromHtml(text).toString();
+        }
+        return out.replace('\u00a0', ' ').trim();
     }
 
     public static String baseName(String subject) {
