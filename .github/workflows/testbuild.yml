@@ -60,15 +60,10 @@ jobs:
           fi
           ver="${last_tag#v}"
 
-          if [[ "$ver" =~ ^([0-9]+\.[0-9]+\.[0-9]+)-dev\.([0-9]+)$ ]]; then
-            base="${BASH_REMATCH[1]}"
-            dev="${BASH_REMATCH[2]}"
-            next="${base}-dev.$((dev + 1))"
-          elif [[ "$ver" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
-            major="${BASH_REMATCH[1]}"
-            minor="${BASH_REMATCH[2]}"
-            patch="${BASH_REMATCH[3]}"
-            next="${major}.${minor}.$((patch + 1))"
+          if [[ "$ver" =~ ^([0-9]+(\.[0-9]+)+)-dev\.([0-9]+)$ ]]; then
+            next="${BASH_REMATCH[1]}-dev.$((BASH_REMATCH[3] + 1))"
+          elif [[ "$ver" =~ ^([0-9]+(\.[0-9]+)*)\.([0-9]+)$ ]]; then
+            next="${BASH_REMATCH[1]}.$((BASH_REMATCH[3] + 1))"
           else
             echo "Unrecognized tag format: $last_tag" >&2
             exit 1

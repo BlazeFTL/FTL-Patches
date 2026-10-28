@@ -17,7 +17,7 @@
 
 ## 🔥 About
 
-Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans build artifacts and dex debug info, trims resource bloat — unused density buckets, unused language packs, lossless PNG recompression — and lets you scale the app's display density independent of system settings, for smaller, cleaner APKs.
+Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans build artifacts and dex debug info, trims resource bloat — unused density buckets, unused language packs, lossless PNG recompression — and lets you scale the app's display density independent of system settings, for smaller, cleaner APKs
 
 ## ⚡ Usage
 
@@ -26,7 +26,7 @@ Click **[Add To Morphe↗️](https://morphe.software/add-source?github=BlazeFTL
 ## 🐉 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.7](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.7)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;117 patches total
+> **[v1.43.7.1-dev.1](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.7.1-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;121 patches total
 <a id="all-video-downloader-ace-player"></a>
 <details>
 <summary><img src=".github/assets/icons/videoplayer.videodownloader.downloader.png" width="18" align="absmiddle">&nbsp;&nbsp;All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;9 patches</summary>
@@ -249,6 +249,29 @@ Click **[Add To Morphe↗️](https://morphe.software/add-source?github=BlazeFTL
 
 </details>
 
+<a id="mobilism"></a>
+<details>
+<summary><img src=".github/assets/icons/demigos.com.mobilism.png" width="18" align="absmiddle">&nbsp;&nbsp;Mobilism&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
+<br>
+
+**🎯 Supported versions:**
+
+| Any version |
+| :---: |
+
+| 🩹&nbsp;Patch | 🔥&nbsp;Description |
+|----------|----------------|
+| <a id="mobilism-copy-link-button"></a>[Copy link button](patches/src/main/kotlin/app/ftl/patches/Mobilism/CopyLinksPatch.kt) | Adds a copy icon after every link in release details. Configurable in Mod settings. |
+| <a id="mobilism-hide-discussions"></a>[Hide discussions](patches/src/main/kotlin/app/ftl/patches/Mobilism/HideDiscussionsPatch.kt) | Hides Recent discussions, Reviews and Contests sections on Home. Configurable in Mod settings. |
+| <a id="mobilism-hide-premium"></a>[Hide premium](patches/src/main/kotlin/app/ftl/patches/Mobilism/HidePremiumPatch.kt) | Hides the Go premium button and the premium download button. Configurable in Mod settings. |
+| <a id="mobilism-keyword-filter"></a>[Keyword filter](patches/src/main/kotlin/app/ftl/patches/Mobilism/KeywordFilterPatch.kt) | Adds a Keyword filter entry to the 3-dot menu to hide posts by title keywords, with long-press hide and copy. |
+| <a id="mobilism-material-colors"></a>[Material colors](patches/src/main/kotlin/app/ftl/patches/Mobilism/MaterialColorsPatch.kt) | Applies the Material red and purple palette to the Apps and Games tabs. |
+| <a id="mobilism-mod-settings"></a>[Mod settings](patches/src/main/kotlin/app/ftl/patches/Mobilism/ModSettingsPatch.kt) | Adds a Mod settings entry to the 3-dot menu to show or hide sidebar items and toggle mod features. |
+| <a id="mobilism-open-in-latest"></a>[Open in latest](patches/src/main/kotlin/app/ftl/patches/Mobilism/OpenInLatestPatch.kt) | Opens the Latest list for the current content type on launch. Configurable in Mod settings. |
+| <a id="mobilism-skip-splash-screen"></a>[Skip splash screen](patches/src/main/kotlin/app/ftl/patches/Mobilism/SkipSplashScreenPatch.kt) | Launches the home screen directly instead of the splash screen. |
+
+</details>
+
 <a id="mixplorer"></a>
 <details>
 <summary><img src=".github/assets/icons/com.mixplorer.jpg" width="18" align="absmiddle">&nbsp;&nbsp;MiXplorer&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
@@ -370,25 +393,6 @@ Click **[Add To Morphe↗️](https://morphe.software/add-source?github=BlazeFTL
 |----------|----------------|
 | <a id="video-player-hide-bottom-bar"></a>[Hide bottom bar](patches/src/main/kotlin/app/ftl/patches/AllVideoPlayer/RemoveBottomBar.kt) | Hides the bottom navigation bar. |
 | <a id="video-player-skip-splash-screen"></a>[Skip splash screen](patches/src/main/kotlin/app/ftl/patches/AllVideoPlayer/SkipSplashPatch.kt) | Launches the app directly into the main screen. |
-
-</details>
-
-<a id="mobilism"></a>
-<details>
-<summary><img src=".github/assets/icons/demigos.com.mobilism.png" width="18" align="absmiddle">&nbsp;&nbsp;Mobilism&nbsp;&nbsp;•&nbsp;&nbsp;4 patches</summary>
-<br>
-
-**🎯 Supported versions:**
-
-| Any version |
-| :---: |
-
-| 🩹&nbsp;Patch | 🔥&nbsp;Description |
-|----------|----------------|
-| <a id="mobilism-keyword-filter"></a>[Keyword filter](patches/src/main/kotlin/app/ftl/patches/Mobilism/KeywordFilterPatch.kt) | Adds a Keyword filter entry to the 3-dot menu to hide posts by title keywords, with long-press hide and copy. |
-| <a id="mobilism-material-colors"></a>[Material colors](patches/src/main/kotlin/app/ftl/patches/Mobilism/MaterialColorsPatch.kt) | Applies the Material red and purple palette to the Apps and Games tabs. |
-| <a id="mobilism-mod-settings"></a>[Mod settings](patches/src/main/kotlin/app/ftl/patches/Mobilism/ModSettingsPatch.kt) | Adds a Mod settings entry to the 3-dot menu to show or hide sidebar items. |
-| <a id="mobilism-skip-splash-screen"></a>[Skip splash screen](patches/src/main/kotlin/app/ftl/patches/Mobilism/SkipSplashScreenPatch.kt) | Launches the home screen directly instead of the splash screen. |
 
 </details>
 

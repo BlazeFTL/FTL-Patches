@@ -18,6 +18,10 @@ jobs:
       id-token: write
       attestations: write
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NOTES_FILE: /tmp/release-notes.md
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -33,36 +37,68 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 'lts/*'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Release
+      - name: Prepare release
         if: |
           github.event_name == 'workflow_dispatch' ||
           startsWith(github.event.head_commit.message, 'fix:') ||
           startsWith(github.event.head_commit.message, 'feat:') ||
           startsWith(github.event.head_commit.message, 'Merge pull request') ||
           startsWith(github.event.head_commit.message, 'Merge branch')
-        uses: cycjimmy/semantic-release-action@v6
         id: release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 .github/scripts/release.py
+
+      - name: Build and update lists
+        if: steps.release.outputs.released == 'true'
+        run: |
+          ./gradlew generatePatchesList :patches:buildAndroid --no-daemon
+          jq --arg v "${{ steps.release.outputs.version }}" '.version=$v' patches-list.json > patches-list.json.tmp
+          mv patches-list.json.tmp patches-list.json
+          python3 .github/scripts/generate_patches_readme.py "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME" patches-list.json README.md
+
+      - name: Commit and tag
+        if: steps.release.outputs.released == 'true'
+        run: |
+          VERSION="${{ steps.release.outputs.version }}"
+          TAG="${{ steps.release.outputs.tag }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md gradle.properties patches-bundle.json patches-list.json README.md .github/assets/icons
+          { printf 'chore: Release v%s [skip ci]\n\n' "$VERSION"; cat "$NOTES_FILE"; } > "$RUNNER_TEMP/commit-msg.txt"
+          git commit -F "$RUNNER_TEMP/commit-msg.txt"
+          git tag "$TAG"
+          git push origin "HEAD:$GITHUB_REF_NAME" "$TAG"
+
+      - name: Publish GitHub release
+        if: steps.release.outputs.released == 'true'
+        run: |
+          shopt -s extglob nullglob
+          files=(patches/build/libs/patches-!(*sources*|*javadoc*).mpp?(.asc))
+          flags=()
+          if [ "${{ steps.release.outputs.prerelease }}" = "true" ]; then flags+=(--prerelease); fi
+          gh release create "${{ steps.release.outputs.tag }}" "${files[@]}" \
+            --title "${{ steps.release.outputs.tag }}" \
+            --notes-file "$NOTES_FILE" \
+            "${flags[@]}"
 
       - name: Attest
-        if: steps.release.outputs.new_release_published == 'true'
+        if: steps.release.outputs.released == 'true'
         uses: actions/attest-build-provenance@v4
         with:
-          subject-name: 'Morphe Patches ${{ steps.release.outputs.new_release_git_tag }}'
+          subject-name: 'Morphe Patches ${{ steps.release.outputs.tag }}'
           subject-path: patches/build/libs/patches-*.mpp
 
+      - name: Backmerge main into dev
+        if: steps.release.outputs.released == 'true' && github.ref_name == 'main'
+        run: |
+          git fetch origin dev
+          git checkout dev
+          if ! git merge origin/main --no-edit -m "chore: Backmerge main into dev [skip ci]"; then
+            git merge --abort
+            echo "::warning::backmerge conflict, merge main into dev manually"
+            exit 0
+          fi
+          git push origin dev
+
       - name: Verify project compiles
-        if: steps.release.outputs.new_release_published != 'true'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: steps.release.outputs.released != 'true'
         run: ./gradlew :patches:buildAndroid clean --no-daemon

@@ -48,8 +48,15 @@ public final class ModPrefs {
 
     public static void clear() {
         SharedPreferences p = prefs();
-        if (p != null) {
-            p.edit().clear().apply();
+        if (p == null) {
+            return;
         }
+        SharedPreferences.Editor e = p.edit();
+        for (String key : p.getAll().keySet()) {
+            if (!key.startsWith("present_")) {
+                e.remove(key);
+            }
+        }
+        e.apply();
     }
 }

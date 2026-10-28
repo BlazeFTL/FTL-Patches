@@ -30,7 +30,7 @@ public final class ModDrawer {
             new Item("announcements", "announcements", "top_group", "Announcements", true),
             new Item("messages", "messages", "top_group", "Messages", true),
             new Item("books", "books", "second_middle_group", "Books", true),
-            new Item("premium", "premiumDownloads", "premium_group", "Mobilism Premium", true),
+            new Item("premium", "premiumDownloads", "premium_group", "Mobilism Premium", false),
             new Item("logout", "nav_logout", "bottom_group", "Log out", true)
     };
 
@@ -179,7 +179,7 @@ public final class ModDrawer {
         }
     }
 
-    private static View findNav(View v) {
+    static View findNav(View v) {
         if (v.getClass().getName().equals(NAV_VIEW)) {
             return v;
         }

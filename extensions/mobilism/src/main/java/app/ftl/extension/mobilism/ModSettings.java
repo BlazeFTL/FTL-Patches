@@ -53,7 +53,7 @@ public final class ModSettings {
         ModUi.clearSheet(root);
 
         root.addView(ModUi.text(activity, "Mod settings", 24, ModUi.TEXT, true));
-        View sub = ModUi.text(activity, "ON shows an item in the sidebar, OFF hides it. Changes apply instantly.", 14, ModUi.SUB, false);
+        View sub = ModUi.text(activity, "Sidebar and premium button changes apply instantly. Other changes apply next time the screen loads.", 14, ModUi.SUB, false);
         sub.setPadding(0, ModUi.dp(activity, 4), 0, ModUi.dp(activity, 4));
         root.addView(sub);
 
@@ -69,6 +69,8 @@ public final class ModSettings {
 
         body.addView(ModUi.sectionLabel(activity, "More sidebar items"));
         body.addView(itemCard(activity, ModDrawer.EXTRA));
+
+        addFeatureSections(activity, body);
 
         LinearLayout footer = new LinearLayout(activity);
         footer.setOrientation(LinearLayout.HORIZONTAL);
@@ -95,6 +97,78 @@ public final class ModSettings {
             }
         }));
         root.addView(footer);
+    }
+
+    private static final class Toggle {
+        final String key;
+        final String title;
+        final String onText;
+        final String offText;
+
+        Toggle(String key, String title, String onText, String offText) {
+            this.key = key;
+            this.title = title;
+            this.onText = onText;
+            this.offText = offText;
+        }
+    }
+
+    private static void addFeatureSections(Activity activity, LinearLayout body) {
+        if (ModFeatures.present(ModFeatures.PREMIUM)) {
+            body.addView(ModUi.sectionLabel(activity, "Premium"));
+            body.addView(toggleCard(activity, new Toggle[]{
+                    new Toggle(ModFeatures.HIDE_PREMIUM_HEADER, "Hide Go premium button", "Hidden", "Shown"),
+                    new Toggle(ModFeatures.HIDE_PREMIUM_DOWNLOAD, "Hide premium download button", "Hidden", "Shown")
+            }));
+        }
+        if (ModFeatures.present(ModFeatures.DISCUSSIONS)) {
+            body.addView(ModUi.sectionLabel(activity, "Home sections"));
+            body.addView(toggleCard(activity, new Toggle[]{
+                    new Toggle(ModFeatures.HIDE_RECENT_DISCUSSIONS, "Hide Recent discussions", "Hidden", "Shown"),
+                    new Toggle(ModFeatures.HIDE_REVIEWS, "Hide Reviews", "Hidden", "Shown"),
+                    new Toggle(ModFeatures.HIDE_CONTESTS, "Hide Contests", "Hidden", "Shown")
+            }));
+        }
+        boolean latest = ModFeatures.present(ModFeatures.LATEST);
+        boolean links = ModFeatures.present(ModFeatures.LINKS);
+        if (latest || links) {
+            body.addView(ModUi.sectionLabel(activity, "Extras"));
+            Toggle[] extras;
+            if (latest && links) {
+                extras = new Toggle[]{
+                        new Toggle(ModFeatures.OPEN_LATEST, "Open Latest on launch", "Opens Latest list", "Opens Home"),
+                        new Toggle(ModFeatures.COPY_LINKS, "Copy button on links", "Shown", "Hidden")
+                };
+            } else if (latest) {
+                extras = new Toggle[]{
+                        new Toggle(ModFeatures.OPEN_LATEST, "Open Latest on launch", "Opens Latest list", "Opens Home")
+                };
+            } else {
+                extras = new Toggle[]{
+                        new Toggle(ModFeatures.COPY_LINKS, "Copy button on links", "Shown", "Hidden")
+                };
+            }
+            body.addView(toggleCard(activity, extras));
+        }
+    }
+
+    private static View toggleCard(final Activity activity, Toggle[] toggles) {
+        LinearLayout card = ModUi.card(activity);
+        for (int i = 0; i < toggles.length; i++) {
+            final Toggle t = toggles[i];
+            card.addView(ModUi.switchRow(activity, t.title, t.onText, t.offText,
+                    ModFeatures.isOn(t.key), i, toggles.length,
+                    new PillSwitch.Listener() {
+                        @Override
+                        public void onChanged(boolean checked) {
+                            ModPrefs.setBoolean(t.key, checked);
+                            if (ModFeatures.HIDE_PREMIUM_HEADER.equals(t.key)) {
+                                HidePremium.applyHeader(activity);
+                            }
+                        }
+                    }));
+        }
+        return card;
     }
 
     private static View itemCard(final Activity activity, ModDrawer.Item[] items) {
