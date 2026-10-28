@@ -27,8 +27,12 @@ public final class HidePremium {
     public static void applyHeader(Activity activity) {
         try {
             View nav = ModDrawer.findNav(activity.getWindow().getDecorView());
-            if (nav != null) {
-                apply(nav, ModFeatures.isOn(ModFeatures.HIDE_PREMIUM_HEADER));
+            if (nav == null) {
+                return;
+            }
+            View header = (View) nav.getClass().getMethod("getHeaderView", int.class).invoke(nav, 0);
+            if (header != null) {
+                apply(header, ModFeatures.isOn(ModFeatures.HIDE_PREMIUM_HEADER));
             }
         } catch (Throwable ignored) {
         }
