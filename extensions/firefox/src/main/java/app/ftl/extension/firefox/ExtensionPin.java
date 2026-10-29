@@ -1,7 +1,9 @@
 package app.ftl.extension.firefox;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
@@ -494,17 +496,44 @@ public final class ExtensionPin {
             .show();
     }
 
+    private static Activity activityOf(Context context) {
+        Context c = context;
+        while (c instanceof ContextWrapper) {
+            if (c instanceof Activity) return (Activity) c;
+            c = ((ContextWrapper) c).getBaseContext();
+        }
+        return null;
+    }
+
+    private static Activity liveActivity(Context fallback) {
+        try {
+            Object middleware = mw != null ? mw.get() : null;
+            if (middleware != null) {
+                Activity activity = activityOf((Context) field(middleware, "uiContext"));
+                if (activity != null && !activity.isFinishing()) return activity;
+            }
+        } catch (Throwable ignored) {
+        }
+        Activity activity = activityOf(fallback);
+        return activity != null && !activity.isFinishing() ? activity : null;
+    }
+
     static void showDialog(final Context context, final Object item) {
         try {
+            final Activity activity = liveActivity(context);
+            if (activity == null) {
+                toggle(context, item);
+                return;
+            }
             String id = (String) field(item, "id");
-            boolean pinned = isPinned(context, id);
-            new AlertDialog.Builder(context)
+            boolean pinned = isPinned(activity, id);
+            new AlertDialog.Builder(activity)
                 .setTitle((String) field(item, "label"))
                 .setItems(new CharSequence[]{pinned ? "Unpin from top bar" : "Pin to top bar"},
                     new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            toggle(context, item);
+                            toggle(activity, item);
                         }
                     })
                 .show();
