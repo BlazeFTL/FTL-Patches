@@ -3,7 +3,6 @@ package app.ftl.extension.mobilism;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.res.ColorStateList;
-import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -28,9 +27,9 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 public final class ModUi {
-    public static int ACCENT = 0xFFDB4A44;
-    public static int ACCENT_SOFT = 0xFFFFDAD6;
-    public static int ON_TEXT = 0xFFB3261E;
+    public static final int ACCENT = 0xFFDB4A44;
+    public static final int ACCENT_SOFT = 0xFFFFDAD6;
+    public static final int ON_TEXT = 0xFFB3261E;
     public static final int PURPLE = 0xFF5B5BD6;
     public static final int TEXT = 0xFF1F1B1C;
     public static final int SUB = 0xFF6F6365;
@@ -41,41 +40,6 @@ public final class ModUi {
     public static final int TRACK_OFF = 0xFFFFFFFF;
 
     private ModUi() {
-    }
-
-    public static void init(Context c) {
-        if (Build.VERSION.SDK_INT < 31) {
-            return;
-        }
-        try {
-            Resources r = c.getResources();
-            int accentId = r.getIdentifier("accent", "color", c.getPackageName());
-            if (accentId == 0) {
-                return;
-            }
-            int current = r.getColor(accentId, c.getTheme());
-            for (int family = 1; family <= 3; family++) {
-                if (system(c, "system_accent" + family + "_600") == current) {
-                    int soft = system(c, "system_accent" + family + "_100");
-                    int on = system(c, "system_accent" + family + "_700");
-                    ACCENT = current;
-                    if (soft != 0) {
-                        ACCENT_SOFT = soft;
-                    }
-                    if (on != 0) {
-                        ON_TEXT = on;
-                    }
-                    return;
-                }
-            }
-        } catch (Throwable ignored) {
-        }
-    }
-
-    private static int system(Context c, String name) {
-        Resources r = c.getResources();
-        int id = r.getIdentifier(name, "color", "android");
-        return id == 0 ? 0 : r.getColor(id, c.getTheme());
     }
 
     public static int dp(Context c, float v) {
@@ -516,7 +480,6 @@ public final class ModUi {
     }
 
     public static LinearLayout sheet(Context c) {
-        init(c);
         LinearLayout root = new LinearLayout(c);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackground(rounded(c, SURFACE, 24));
