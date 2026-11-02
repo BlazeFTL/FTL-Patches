@@ -46,7 +46,7 @@ internal val COMPOSE_METHODS = listOf(
             sget v1, Lmozilla/components/ui/icons/R$drawable;->mozac_ic_extension_24:I
             const/4 v5, 0x0
             move-object/from16 v4, v17
-            invoke-static {v1, v4, v5}, Landroidx/compose/ui/res/PainterResources_androidKt;->painterResource(ILandroidx/compose/runtime/Composer;I)Landroidx/compose/ui/graphics/painter/Painter;
+            invoke-static {v1, v5, v4}, Landroidx/compose/ui/res/PainterResources_androidKt;->painterResource(IILandroidx/compose/runtime/Composer;)Landroidx/compose/ui/graphics/painter/Painter;
             move-result-object v22
             const-string v21, "Extensions Manager"
             move-object/from16 v0, v21
@@ -93,7 +93,7 @@ internal val COMPOSE_METHODS = listOf(
             move-result-object v21
             sget v1, Lmozilla/components/ui/icons/R$drawable;->mozac_ic_back_24:I
             const/4 v5, 0x0
-            invoke-static {v1, v4, v5}, Landroidx/compose/ui/res/PainterResources_androidKt;->painterResource(ILandroidx/compose/runtime/Composer;I)Landroidx/compose/ui/graphics/painter/Painter;
+            invoke-static {v1, v5, v4}, Landroidx/compose/ui/res/PainterResources_androidKt;->painterResource(IILandroidx/compose/runtime/Composer;)Landroidx/compose/ui/graphics/painter/Painter;
             move-result-object v22
             move-object/from16 v10, p1
             check-cast v10, Lkotlin/jvm/functions/Function0;
@@ -135,7 +135,7 @@ internal val COMPOSE_METHODS = listOf(
             invoke-static {v1, v0}, Landroidx/compose/ui/res/StringResources_androidKt;->stringResource(ILandroidx/compose/runtime/Composer;)Ljava/lang/String;
             move-result-object v1
             const/4 v3, 0x0
-            invoke-static {v2, v0, v3}, Landroidx/compose/ui/res/PainterResources_androidKt;->painterResource(ILandroidx/compose/runtime/Composer;I)Landroidx/compose/ui/graphics/painter/Painter;
+            invoke-static {v2, v3, v0}, Landroidx/compose/ui/res/PainterResources_androidKt;->painterResource(IILandroidx/compose/runtime/Composer;)Landroidx/compose/ui/graphics/painter/Painter;
             move-result-object v2
             move-object v0, v1
             move-object v1, v2
@@ -248,7 +248,7 @@ internal val COMPOSE_METHODS = listOf(
             move-result v1
             const/4 v5, 0x0
             move-object/from16 v4, v17
-            invoke-static {v1, v4, v5}, Landroidx/compose/ui/res/PainterResources_androidKt;->painterResource(ILandroidx/compose/runtime/Composer;I)Landroidx/compose/ui/graphics/painter/Painter;
+            invoke-static {v1, v5, v4}, Landroidx/compose/ui/res/PainterResources_androidKt;->painterResource(IILandroidx/compose/runtime/Composer;)Landroidx/compose/ui/graphics/painter/Painter;
             move-result-object v22
             const-string v21, "Mod Settings"
             move-object/from16 v0, v21

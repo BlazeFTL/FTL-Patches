@@ -17,7 +17,7 @@
 
 ## 🔥 About
 
-Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans build artifacts and dex debug info, trims resource bloat — unused density buckets, unused language packs, lossless PNG recompression — and lets you scale the app's display density independent of system settings, for smaller, cleaner APKs
+Strips ads and analytics/crash-reporting SDKs at the bytecode level, cleans build artifacts and dex debug info, trims resource bloat — unused density buckets, unused language packs, lossless PNG recompression — and lets you scale the app's display density independent of system settings, for smaller, cleaner APKs.
 
 ## ⚡ Usage
 
@@ -26,7 +26,7 @@ Click **[Add To Morphe↗️](https://morphe.software/add-source?github=BlazeFTL
 ## 🐉 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.7.1](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.7.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;121 patches total
+> **[v1.43.7.2-dev.1](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.7.2-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;121 patches total
 <a id="all-video-downloader-ace-player"></a>
 <details>
 <summary><img src=".github/assets/icons/videoplayer.videodownloader.downloader.png" width="18" align="absmiddle">&nbsp;&nbsp;All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;9 patches</summary>

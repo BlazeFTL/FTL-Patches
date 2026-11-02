@@ -27,6 +27,7 @@ public final class TitleFilter {
 
     private static final String KEY_KEYWORDS = "title_filter_keywords";
     private static final String KEY_IN_SEARCH = "title_filter_in_search";
+    private static final String KEY_ENABLED = "title_filter_enabled";
     private static final int PAGE_SIZE = 10;
     private static final int MIN_VISIBLE = 6;
     private static final Class<?>[] NO_TYPES = new Class<?>[0];
@@ -70,6 +71,18 @@ public final class TitleFilter {
         SharedPreferences p = prefs();
         if (p != null) {
             p.edit().putBoolean(KEY_IN_SEARCH, enabled).apply();
+        }
+    }
+
+    public static boolean isEnabled() {
+        SharedPreferences p = prefs();
+        return p == null || p.getBoolean(KEY_ENABLED, true);
+    }
+
+    public static void setEnabled(boolean enabled) {
+        SharedPreferences p = prefs();
+        if (p != null) {
+            p.edit().putBoolean(KEY_ENABLED, enabled).apply();
         }
     }
 
@@ -169,6 +182,9 @@ public final class TitleFilter {
 
     public static void filter(List list) {
         if (list == null) {
+            return;
+        }
+        if (!isEnabled()) {
             return;
         }
         List<String> kws = getKeywords();
@@ -292,7 +308,7 @@ public final class TitleFilter {
             return;
         }
         List items = (List) itemsObj;
-        List<String> kws = getKeywords();
+        List<String> kws = isEnabled() ? getKeywords() : new ArrayList<String>();
         int i = 0;
         for (Object model : new ArrayList<Object>(all)) {
             boolean hidden = matches(subjectOf(model), kws);

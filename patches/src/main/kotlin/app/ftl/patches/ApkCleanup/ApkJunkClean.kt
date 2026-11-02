@@ -20,6 +20,11 @@ private val PROTECTED_PATTERNS = listOf(
     Regex(""".*AndroidManifest\.xml$"""),
 )
 
+private val PROFILE_PATTERNS = listOf(
+    Regex("""^assets/dexopt/.*"""),
+    Regex(""".*(?:^|/)baseline\.profm?$"""),
+)
+
 private val JUNK_PATTERNS = listOf(
     Regex(""".*play-services-.*\.properties$"""),
     Regex(""".*firebase-.*\.properties$"""),
@@ -56,8 +61,6 @@ private val JUNK_PATTERNS = listOf(
     Regex(""".*androidannotations-api\.properties$"""),
     Regex(""".*transport-.*\.properties$"""),
     Regex(""".*jetty-dir\.css$"""),
-    // ART baseline profiles (also catches APKs that ship them outside assets/dexopt/)
-    Regex(""".*(?:^|/)baseline\.profm?$"""),
     // MX Player ad-webview templates / notices at assets root (exact names)
     Regex("""^assets/(?:privacy_notice|index|image_interstitial|fyb_static_endcard_tmpl|fyb_iframe_endcard_tmpl)\.html$"""),
     // libphonenumber per-region proto blobs in assets/data/: EVERY match goes, seen or
@@ -143,7 +146,6 @@ private val JUNK_TREES = listOf(
 
 // Directories whose ENTIRE content gets deleted, no matter what's inside.
 private val JUNK_DIRECTORY_PREFIXES = listOf(
-    "assets/dexopt/",
     "com/clevertap/",
     "org/jacoco/",
     "org/joda/",
@@ -156,8 +158,8 @@ private val EXCLUDED_PREFIXES = listOf("res/")
 val apkCleanupPatch = rawResourcePatch(
     name = "APK Junk Cleanup",
     description = "Removes junk and useless files with no runtime purpose inside apk. " +
-        "Native libraries are left untouched unless the " +
-        "'Strip native architectures' toggle is enabled.",
+        "Native libraries and ART baseline profiles are left untouched unless their " +
+        "toggles are enabled.",
     default = false,
 ) {
     // Master on/off switch for ABI stripping. OFF by default, so merely selecting
@@ -190,6 +192,15 @@ val apkCleanupPatch = rawResourcePatch(
         validator = { it == null || it in KNOWN_ABIS },
     )
 
+    val stripProfiles by booleanOption(
+        "stripProfiles",
+        default = false,
+        title = "Remove baseline profiles",
+        description = "OFF (default): assets/dexopt/ and baseline.prof/.profm are kept, " +
+            "preserving profile-guided startup optimization. " +
+            "ON: deletes them; app may start slower and use more JIT at first launch.",
+    )
+
     execute {
         var removedFiles = 0
         var removedAbiTrees = 0
@@ -217,6 +228,11 @@ val apkCleanupPatch = rawResourcePatch(
             // Native libs are handled exclusively by the stripLibs option below.
             if (entryName.startsWith("lib/")) return@forEach
             if (EXCLUDED_PREFIXES.any { entryName.startsWith(it) }) return@forEach
+
+            if (PROFILE_PATTERNS.any { it.matches(entryName) }) {
+                if (stripProfiles == true) deleteEntry(entryName)
+                return@forEach
+            }
 
             val shouldDelete = when {
                 JUNK_PATTERNS.any { it.matches(entryName) } -> true
