@@ -16,9 +16,15 @@
  *              (TabManagementFragment lambdas, RenderTabsTray, getEntryProvider, redux, tabgroups/flow all checked).
  *              Creator lives in a package not yet supplied (try tabstray/ui subpackages, tabstray/controller).
  *
- *   RangeClickFingerprint
- *     Need: class containing  new-instance TabGroupAction$TabGroupClicked
- *     161.0a1: TabManagementFragment$$ExternalSyntheticLambda43 (unique). Lambda numbers shift between builds.
+ *   RangeTabClickFingerprint
+ *     TabManagementFragment.performTabClick(TabsTrayItem$Tab)V. Named, not synthetic: survives lambda renumbering.
+ *     161.0a1: public final method on TabManagementFragment; selection-mode toggling happens inside it
+ *              (-> controller.handleTabSelected).
+ *
+ *   RangeGroupClickFingerprint (optional)
+ *     Need: class containing  new-instance TabGroupClicked
+ *     161.0a1: creator not in the supplied smali (old TabManagementFragment$$ExternalSyntheticLambda43 is gone).
+ *              Skipped with a log line if no match.
  *
  *   InteractableGestureFingerprint
  *     Need: InteractableListKt$detectListPressAndDrag$1
@@ -41,7 +47,6 @@ import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.fieldAccess
-import app.morphe.patcher.instanceOf
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.newInstance
 import app.morphe.patcher.opcode
@@ -49,6 +54,7 @@ import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
 import com.android.tools.smali.dexlib2.Opcode
+import java.util.logging.Logger
 
 private const val RS_SELECT = "Lapp/ftl/extension/firefox/RangeSelect;"
 private const val RS_START = "Lapp/ftl/extension/firefox/RangeSelectStart;"
@@ -63,7 +69,6 @@ private const val RS_CONTINUATION = "Lkotlin/coroutines/Continuation;"
 private const val RS_DRAG_KT = "Landroidx/compose/foundation/gestures/DragGestureDetectorKt;"
 
 private const val RS_FRAGMENT = "Lorg/mozilla/fenix/tabstray/ui/TabManagementFragment;"
-private const val RS_FRAGMENT_LAMBDA = "Lorg/mozilla/fenix/tabstray/ui/TabManagementFragment\$\$ExternalSyntheticLambda"
 private const val RS_TAB = "Lorg/mozilla/fenix/tabstray/data/TabsTrayItem\$Tab;"
 private const val RS_LONG_CLICKED = "Lorg/mozilla/fenix/tabstray/redux/action/TabsTrayAction\$TabItemLongClicked;"
 private const val RS_GROUP_CLICKED = "Lorg/mozilla/fenix/tabstray/redux/action/TabGroupAction\$TabGroupClicked;"
@@ -84,15 +89,20 @@ private object RangeLongClickFingerprint : Fingerprint(
     ),
 )
 
-// Tap on a tab item -> Tab: forwards to Function1; TabGroup: dispatches TabGroupClicked.
-// Fragment lambda number changes per build; matched by prefix + instance-of Tab + TabGroupClicked.
-private object RangeClickFingerprint : Fingerprint(
-    definingClass = RS_FRAGMENT_LAMBDA,
+// Tap on a tab item. 161.0a1 moved the Tab branch into a named method on the fragment.
+private object RangeTabClickFingerprint : Fingerprint(
+    definingClass = RS_FRAGMENT,
+    name = "performTabClick",
+    returnType = "V",
+    parameters = listOf(RS_TAB),
+)
+
+// Tap on a tab group item. definingClass intentionally NOT pinned (lambda numbers shift per build).
+private object RangeGroupClickFingerprint : Fingerprint(
     name = "invoke",
     returnType = RS_OBJ,
     parameters = listOf(RS_OBJ),
     filters = listOf(
-        instanceOf(RS_TAB),
         newInstance(RS_GROUP_CLICKED),
     ),
 )
@@ -147,22 +157,41 @@ private fun BytecodePatchContext.hookLongClick() {
 }
 
 private fun BytecodePatchContext.hookClick() {
-    val method = RangeClickFingerprint.method
-    val scratch = Liveness(method).takeLow(1, 0)[0]
-
-    method.applyEdits(
+    val tab = RangeTabClickFingerprint.method
+    val tabScratch = Liveness(tab).takeLow(1, 0)[0]
+    tab.applyEdits(
         insert(
             0,
             """
                 invoke-static {}, $RS_SELECT->consume()Z
-                move-result v$scratch
-                if-eqz v$scratch, :ftl_click
-                sget-object v$scratch, Lkotlin/Unit;->INSTANCE:Lkotlin/Unit;
-                return-object v$scratch
+                move-result v$tabScratch
+                if-eqz v$tabScratch, :ftl_click
+                return-void
             """,
             mapOf("ftl_click" to { 0 }),
         ),
     )
+
+    try {
+        val group = RangeGroupClickFingerprint.method
+        val groupScratch = Liveness(group).takeLow(1, 0)[0]
+        group.applyEdits(
+            insert(
+                0,
+                """
+                    invoke-static {}, $RS_SELECT->consume()Z
+                    move-result v$groupScratch
+                    if-eqz v$groupScratch, :ftl_click
+                    sget-object v$groupScratch, Lkotlin/Unit;->INSTANCE:Lkotlin/Unit;
+                    return-object v$groupScratch
+                """,
+                mapOf("ftl_click" to { 0 }),
+            ),
+        )
+    } catch (e: Exception) {
+        Logger.getLogger("RangeSelectTabsPatch")
+            .info("Skipped group click hook: ${e::class.simpleName}: ${e.message?.lineSequence()?.firstOrNull()}")
+    }
 }
 
 private fun BytecodePatchContext.hookGesture(fingerprint: Fingerprint) {
