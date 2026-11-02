@@ -413,6 +413,21 @@ private fun BytecodePatchContext.installPinHooks() {
     longPress?.invoke()
 }
 
+private const val SETTINGS = "Lorg/mozilla/fenix/utils/Settings;"
+
+private fun BytecodePatchContext.routeToLegacyMenu() {
+    val method = ToolbarMiddlewareFingerprint.method
+    val at = method.firstIndexFrom(0) { _, instruction ->
+        val field = (instruction as? ReferenceInstruction)?.reference as? FieldReference
+        instruction.opcode == Opcode.IGET_BOOLEAN &&
+            field != null &&
+            field.definingClass == SETTINGS &&
+            field.name == "isMenuCustomizationEnabled"
+    }
+    if (at < 0) unsupported("Menu customization switch")
+    method.applyEdits(zeroTo(at))
+}
+
 private fun BytecodePatchContext.installMenuTweaks() {
     optional("BadgeHide") {
         BadgeHideFingerprint.method.applyEdits(
@@ -818,5 +833,6 @@ val oldMenuPatch = bytecodePatch(
         installWindowHooks()
         installMenuTweaks()
         installPinHooks()
+        routeToLegacyMenu()
     }
 }
