@@ -26,7 +26,7 @@ Click **[Add To Morphe↗️](https://morphe.software/add-source?github=BlazeFTL
 ## 🐉 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.7.2-dev.1](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.7.2-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;121 patches total
+> **[v1.43.7.2](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.7.2)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;121 patches total
 <a id="all-video-downloader-ace-player"></a>
 <details>
 <summary><img src=".github/assets/icons/videoplayer.videodownloader.downloader.png" width="18" align="absmiddle">&nbsp;&nbsp;All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;9 patches</summary>
@@ -500,7 +500,7 @@ Click **[Add To Morphe↗️](https://morphe.software/add-source?github=BlazeFTL
 
 | 🩹&nbsp;Patch | 🔥&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
-| <a id="universal-apk-junk-cleanup"></a>[APK Junk Cleanup](patches/src/main/kotlin/app/ftl/patches/ApkCleanup/ApkJunkClean.kt) | Removes junk and useless files with no runtime purpose inside apk. Native libraries are left untouched unless the 'Strip native architectures' toggle is enabled. | • Strip native architectures<br>• Architecture to keep |
+| <a id="universal-apk-junk-cleanup"></a>[APK Junk Cleanup](patches/src/main/kotlin/app/ftl/patches/ApkCleanup/ApkJunkClean.kt) | Removes junk and useless files with no runtime purpose inside apk. Native libraries and ART baseline profiles are left untouched unless their toggles are enabled. | • Strip native architectures<br>• Architecture to keep<br>• Remove baseline profiles |
 | <a id="universal-add-save-data"></a>[Add Save Data](patches/src/main/kotlin/app/ftl/patches/AddSaveData/AddSaveDataPatch.kt) | Unpacks bundled save-data zip(s) into the app's storage on first launch. | • 1. Select data/data zip<br>• 2. Select Android/data zip<br>• 3. Select Android/obb zip<br>• Add toast<br>• Toast message<br>• Show toast once |
 | <a id="universal-add-toast"></a>[Add Toast](patches/src/main/kotlin/app/ftl/patches/Toast/AddToastPatch.kt) | Shows a custom toast message when the app starts. Works on any app. | • Toast message<br>• Show once |
 | <a id="universal-change-display-size"></a>[Change Display Size](patches/src/main/kotlin/app/ftl/patches/CustomDPI/UniversalDpiPatch.kt) | Change any app's display size without touching your phone's system settings. Make it bigger if things look too small, or smaller to fit more on screen. You Need To Configure 100(No Change), 90(10% Smaller App Ui), 110(10% Bigger App Ui). | • Display scale |
