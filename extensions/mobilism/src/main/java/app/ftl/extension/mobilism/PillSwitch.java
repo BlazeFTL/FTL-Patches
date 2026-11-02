@@ -5,7 +5,6 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.graphics.RectF;
 import android.view.View;
 
@@ -16,7 +15,6 @@ public final class PillSwitch extends View {
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF rect = new RectF();
-    private final Path path = new Path();
     private final float d1;
     private final int w;
     private final int h;
@@ -28,10 +26,8 @@ public final class PillSwitch extends View {
     public PillSwitch(Context c) {
         super(c);
         d1 = ModUi.dp(c, 1);
-        w = ModUi.dp(c, 52);
-        h = ModUi.dp(c, 32);
-        paint.setStrokeCap(Paint.Cap.ROUND);
-        paint.setStrokeJoin(Paint.Join.ROUND);
+        w = ModUi.dp(c, 44);
+        h = ModUi.dp(c, 26);
         setClickable(false);
     }
 
@@ -61,7 +57,7 @@ public final class PillSwitch extends View {
         }
         if (animate && changed && isShown()) {
             anim = ValueAnimator.ofFloat(pos, target);
-            anim.setDuration(180);
+            anim.setDuration(160);
             anim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                 @Override
                 public void onAnimationUpdate(ValueAnimator a) {
@@ -112,27 +108,15 @@ public final class PillSwitch extends View {
         canvas.drawRoundRect(rect, h / 2f, h / 2f, paint);
 
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(2 * d1);
+        paint.setStrokeWidth(1.6f * d1);
         paint.setColor(blend(ModUi.OUTLINE, ModUi.ACCENT, t));
         rect.set(d1, d1, w - d1, h - d1);
         canvas.drawRoundRect(rect, (h - 2 * d1) / 2f, (h - 2 * d1) / 2f, paint);
 
-        float r = (8 + 4 * t) * d1;
-        float cx = (16 + 20 * t) * d1;
+        float r = (6f + 3f * t) * d1;
+        float cx = (13f + 18f * t) * d1;
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(blend(ModUi.OUTLINE, Color.WHITE, t));
         canvas.drawCircle(cx, cy, r, paint);
-
-        if (t > 0.05f) {
-            path.reset();
-            path.moveTo(cx - 4.5f * d1, cy + 0.5f * d1);
-            path.lineTo(cx - 1.5f * d1, cy + 3.5f * d1);
-            path.lineTo(cx + 4.5f * d1, cy - 3f * d1);
-            paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeWidth(2f * d1);
-            paint.setColor(ModUi.ACCENT);
-            paint.setAlpha((int) (255 * t));
-            canvas.drawPath(path, paint);
-        }
     }
 }

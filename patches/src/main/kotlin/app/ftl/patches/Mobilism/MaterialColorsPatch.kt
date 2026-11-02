@@ -1,6 +1,7 @@
 package app.ftl.patches.mobilism
 
 import app.morphe.patcher.patch.PatchException
+import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.resourcePatch
 import org.w3c.dom.Element
 
@@ -15,12 +16,46 @@ private val MATERIAL_COLORS = mapOf(
     "games_color" to "#ff9191ff"
 )
 
+private val DYNAMIC_COLORS = mapOf(
+    "accent" to "system_accent1_600",
+    "apps_accent_color" to "system_accent1_600",
+    "apps_color" to "system_accent1_600",
+    "darkerBlue" to "system_accent1_700",
+    "blue" to "system_accent3_600",
+    "colorPrimaryDark" to "system_accent3_600",
+    "games_accent_color" to "system_accent3_600",
+    "games_color" to "system_accent3_600"
+)
+
+private val DYNAMIC_COLORS_XML = buildString {
+    appendLine("""<?xml version="1.0" encoding="utf-8"?>""")
+    appendLine("<resources>")
+    DYNAMIC_COLORS.forEach { (name, system) ->
+        appendLine("""    <color name="$name">@android:color/$system</color>""")
+    }
+    appendLine("</resources>")
+}
+
+private const val DYNAMIC_FLAG_XML = """<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <bool name="mod_dynamic_theme">true</bool>
+</resources>
+"""
+
 @Suppress("unused")
 val materialColorsPatch = resourcePatch(
     name = "Material colors",
     description = "Applies the Material red and purple palette to the Apps and Games tabs."
 ) {
     compatibleWith(COMPATIBILITY_MOBILISM)
+
+    val dynamicTheme by booleanOption(
+        key = "dynamicTheme",
+        default = false,
+        title = "Dynamic theme",
+        description = "Use the wallpaper color palette on Android 12 and newer. " +
+            "Older Android versions keep the Material red and purple palette."
+    )
 
     execute {
         document("res/values/colors.xml").use { document ->
@@ -35,6 +70,17 @@ val materialColorsPatch = resourcePatch(
             }
             if (remaining.isNotEmpty()) {
                 throw PatchException("Colors not found: ${remaining.joinToString()}")
+            }
+        }
+
+        if (dynamicTheme == true) {
+            get("res/values-v31/colors.xml", copy = false).apply {
+                parentFile?.mkdirs()
+                writeText(DYNAMIC_COLORS_XML)
+            }
+            get("res/values/mod_flags.xml", copy = false).apply {
+                parentFile?.mkdirs()
+                writeText(DYNAMIC_FLAG_XML)
             }
         }
     }

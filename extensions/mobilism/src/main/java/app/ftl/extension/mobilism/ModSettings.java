@@ -52,9 +52,9 @@ public final class ModSettings {
     private static void build(final Activity activity, final LinearLayout root, final Dialog[] ref) {
         ModUi.clearSheet(root);
 
-        root.addView(ModUi.text(activity, "Mod settings", 24, ModUi.TEXT, true));
-        View sub = ModUi.text(activity, "Sidebar and premium button changes apply instantly. Other changes apply next time the screen loads.", 14, ModUi.SUB, false);
-        sub.setPadding(0, ModUi.dp(activity, 4), 0, ModUi.dp(activity, 4));
+        root.addView(ModUi.text(activity, "Mod settings", 20, ModUi.TEXT, true));
+        View sub = ModUi.text(activity, "Sidebar and premium changes apply instantly. Others apply next time the screen loads.", 12.5f, ModUi.SUB, false);
+        sub.setPadding(0, ModUi.dp(activity, 3), 0, ModUi.dp(activity, 2));
         root.addView(sub);
 
         ScrollView scroll = ModUi.cappedScroll(activity, ModUi.maxBodyHeight(activity));
@@ -75,7 +75,7 @@ public final class ModSettings {
         LinearLayout footer = new LinearLayout(activity);
         footer.setOrientation(LinearLayout.HORIZONTAL);
         footer.setGravity(Gravity.CENTER_VERTICAL);
-        footer.setPadding(0, ModUi.dp(activity, 16), 0, 0);
+        footer.setPadding(0, ModUi.dp(activity, 12), 0, 0);
 
         footer.addView(ModUi.textButton(activity, "Reset", ModUi.SUB, new View.OnClickListener() {
             @Override
@@ -101,12 +101,14 @@ public final class ModSettings {
 
     private static final class Toggle {
         final String key;
+        final int icon;
         final String title;
         final String onText;
         final String offText;
 
-        Toggle(String key, String title, String onText, String offText) {
+        Toggle(String key, int icon, String title, String onText, String offText) {
             this.key = key;
+            this.icon = icon;
             this.title = title;
             this.onText = onText;
             this.offText = offText;
@@ -117,36 +119,31 @@ public final class ModSettings {
         if (ModFeatures.present(ModFeatures.PREMIUM)) {
             body.addView(ModUi.sectionLabel(activity, "Premium"));
             body.addView(toggleCard(activity, new Toggle[]{
-                    new Toggle(ModFeatures.HIDE_PREMIUM_HEADER, "Hide Go premium button", "Hidden", "Shown"),
-                    new Toggle(ModFeatures.HIDE_PREMIUM_DOWNLOAD, "Hide premium download button", "Hidden", "Shown")
+                    new Toggle(ModFeatures.HIDE_PREMIUM_HEADER, ModUi.Icon.STAR, "Hide Go premium button", "Hidden", "Shown"),
+                    new Toggle(ModFeatures.HIDE_PREMIUM_DOWNLOAD, ModUi.Icon.DOWNLOAD, "Hide premium download button", "Hidden", "Shown")
             }));
         }
         if (ModFeatures.present(ModFeatures.DISCUSSIONS)) {
             body.addView(ModUi.sectionLabel(activity, "Home sections"));
             body.addView(toggleCard(activity, new Toggle[]{
-                    new Toggle(ModFeatures.HIDE_RECENT_DISCUSSIONS, "Hide Recent discussions", "Hidden", "Shown"),
-                    new Toggle(ModFeatures.HIDE_REVIEWS, "Hide Reviews", "Hidden", "Shown"),
-                    new Toggle(ModFeatures.HIDE_CONTESTS, "Hide Contests", "Hidden", "Shown")
+                    new Toggle(ModFeatures.HIDE_RECENT_DISCUSSIONS, ModUi.Icon.CHAT, "Hide Recent discussions", "Hidden", "Shown"),
+                    new Toggle(ModFeatures.HIDE_REVIEWS, ModUi.Icon.STAR, "Hide Reviews", "Hidden", "Shown"),
+                    new Toggle(ModFeatures.HIDE_CONTESTS, ModUi.Icon.TROPHY, "Hide Contests", "Hidden", "Shown")
             }));
         }
         boolean latest = ModFeatures.present(ModFeatures.LATEST);
         boolean links = ModFeatures.present(ModFeatures.LINKS);
         if (latest || links) {
             body.addView(ModUi.sectionLabel(activity, "Extras"));
+            Toggle open = new Toggle(ModFeatures.OPEN_LATEST, ModUi.Icon.CLOCK, "Open Latest on launch", "Opens Latest list", "Opens Home");
+            Toggle copy = new Toggle(ModFeatures.COPY_LINKS, ModUi.Icon.COPY, "Copy button on links", "Shown", "Hidden");
             Toggle[] extras;
             if (latest && links) {
-                extras = new Toggle[]{
-                        new Toggle(ModFeatures.OPEN_LATEST, "Open Latest on launch", "Opens Latest list", "Opens Home"),
-                        new Toggle(ModFeatures.COPY_LINKS, "Copy button on links", "Shown", "Hidden")
-                };
+                extras = new Toggle[]{open, copy};
             } else if (latest) {
-                extras = new Toggle[]{
-                        new Toggle(ModFeatures.OPEN_LATEST, "Open Latest on launch", "Opens Latest list", "Opens Home")
-                };
+                extras = new Toggle[]{open};
             } else {
-                extras = new Toggle[]{
-                        new Toggle(ModFeatures.COPY_LINKS, "Copy button on links", "Shown", "Hidden")
-                };
+                extras = new Toggle[]{copy};
             }
             body.addView(toggleCard(activity, extras));
         }
@@ -154,10 +151,9 @@ public final class ModSettings {
 
     private static View toggleCard(final Activity activity, Toggle[] toggles) {
         LinearLayout card = ModUi.card(activity);
-        for (int i = 0; i < toggles.length; i++) {
-            final Toggle t = toggles[i];
-            card.addView(ModUi.switchRow(activity, t.title, t.onText, t.offText,
-                    ModFeatures.isOn(t.key), i, toggles.length,
+        for (final Toggle t : toggles) {
+            ModUi.addRow(activity, card, ModUi.switchRow(activity, t.icon, t.title, t.onText, t.offText,
+                    ModFeatures.isOn(t.key),
                     new PillSwitch.Listener() {
                         @Override
                         public void onChanged(boolean checked) {
@@ -171,12 +167,46 @@ public final class ModSettings {
         return card;
     }
 
+    private static int iconFor(String key) {
+        if ("announcements".equals(key)) {
+            return ModUi.Icon.BELL;
+        }
+        if ("messages".equals(key)) {
+            return ModUi.Icon.CHAT;
+        }
+        if ("books".equals(key)) {
+            return ModUi.Icon.BOOK;
+        }
+        if ("premium".equals(key)) {
+            return ModUi.Icon.STAR;
+        }
+        if ("logout".equals(key)) {
+            return ModUi.Icon.LOGOUT;
+        }
+        if ("contests".equals(key)) {
+            return ModUi.Icon.TROPHY;
+        }
+        if ("qr".equals(key)) {
+            return ModUi.Icon.QR;
+        }
+        if ("chitchat".equals(key)) {
+            return ModUi.Icon.SMILE;
+        }
+        if ("services".equals(key)) {
+            return ModUi.Icon.GRID;
+        }
+        if ("feedback".equals(key)) {
+            return ModUi.Icon.BULB;
+        }
+        return -1;
+    }
+
     private static View itemCard(final Activity activity, ModDrawer.Item[] items) {
         LinearLayout card = ModUi.card(activity);
-        for (int i = 0; i < items.length; i++) {
-            final ModDrawer.Item item = items[i];
-            card.addView(ModUi.switchRow(activity, item.title, "Shown in sidebar", "Hidden from sidebar",
-                    ModDrawer.isShown(item), i, items.length,
+        for (final ModDrawer.Item item : items) {
+            ModUi.addRow(activity, card, ModUi.switchRow(activity, iconFor(item.key), item.title,
+                    "Shown in sidebar", "Hidden from sidebar",
+                    ModDrawer.isShown(item),
                     new PillSwitch.Listener() {
                         @Override
                         public void onChanged(boolean checked) {
