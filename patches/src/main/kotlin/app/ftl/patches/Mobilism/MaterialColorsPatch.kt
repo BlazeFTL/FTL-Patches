@@ -16,22 +16,28 @@ private val MATERIAL_COLORS = mapOf(
     "games_color" to "#ff9191ff"
 )
 
+// Mobilism targets SDK 28, so the patcher's framework has no system_accent names.
+// These are the fixed framework ids (API 31): accent1_600, accent1_700, accent3_600.
+private const val ACCENT1_600 = "@0x01060025"
+private const val ACCENT1_700 = "@0x01060026"
+private const val ACCENT3_600 = "@0x0106003f"
+
 private val DYNAMIC_COLORS = mapOf(
-    "accent" to "system_accent1_600",
-    "apps_accent_color" to "system_accent1_600",
-    "apps_color" to "system_accent1_600",
-    "darkerBlue" to "system_accent1_700",
-    "blue" to "system_accent3_600",
-    "colorPrimaryDark" to "system_accent3_600",
-    "games_accent_color" to "system_accent3_600",
-    "games_color" to "system_accent3_600"
+    "accent" to ACCENT1_600,
+    "apps_accent_color" to ACCENT1_600,
+    "apps_color" to ACCENT1_600,
+    "darkerBlue" to ACCENT1_700,
+    "blue" to ACCENT3_600,
+    "colorPrimaryDark" to ACCENT3_600,
+    "games_accent_color" to ACCENT3_600,
+    "games_color" to ACCENT3_600
 )
 
 private val DYNAMIC_COLORS_XML = buildString {
     appendLine("""<?xml version="1.0" encoding="utf-8"?>""")
     appendLine("<resources>")
-    DYNAMIC_COLORS.forEach { (name, system) ->
-        appendLine("""    <color name="$name">@android:color/$system</color>""")
+    DYNAMIC_COLORS.forEach { (name, ref) ->
+        appendLine("""    <color name="$name">$ref</color>""")
     }
     appendLine("</resources>")
 }
