@@ -49,8 +49,9 @@ public final class ModUi {
         }
         try {
             Resources r = c.getResources();
-            int flag = r.getIdentifier("mod_dynamic_theme", "bool", c.getPackageName());
-            if (flag == 0 || !r.getBoolean(flag)) {
+            int accentId = r.getIdentifier("accent", "color", c.getPackageName());
+            int sys600 = system(c, "system_accent1_600");
+            if (accentId == 0 || sys600 == 0 || r.getColor(accentId, c.getTheme()) != sys600) {
                 return;
             }
             int accent = system(c, "system_accent1_600");

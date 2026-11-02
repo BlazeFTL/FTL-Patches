@@ -36,12 +36,6 @@ private val DYNAMIC_COLORS_XML = buildString {
     appendLine("</resources>")
 }
 
-private const val DYNAMIC_FLAG_XML = """<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <bool name="mod_dynamic_theme">true</bool>
-</resources>
-"""
-
 @Suppress("unused")
 val materialColorsPatch = resourcePatch(
     name = "Material colors",
@@ -77,10 +71,6 @@ val materialColorsPatch = resourcePatch(
             get("res/values-v31/colors.xml", copy = false).apply {
                 parentFile?.mkdirs()
                 writeText(DYNAMIC_COLORS_XML)
-            }
-            get("res/values/mod_flags.xml", copy = false).apply {
-                parentFile?.mkdirs()
-                writeText(DYNAMIC_FLAG_XML)
             }
         }
     }
