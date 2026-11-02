@@ -3,6 +3,7 @@ package app.ftl.patches.mobilism
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.booleanOption
 import app.morphe.patcher.patch.resourcePatch
+import app.morphe.patcher.patch.stringOption
 import org.w3c.dom.Element
 
 private val MATERIAL_COLORS = mapOf(
@@ -17,29 +18,33 @@ private val MATERIAL_COLORS = mapOf(
 )
 
 // Mobilism targets SDK 28, so the patcher's framework has no system_accent names.
-// These are the fixed framework ids (API 31): accent1_600, accent1_700, accent3_600.
-private const val ACCENT1_600 = "@0x01060025"
-private const val ACCENT1_700 = "@0x01060026"
-private const val ACCENT3_600 = "@0x0106003f"
-
-private val DYNAMIC_COLORS = mapOf(
-    "accent" to ACCENT1_600,
-    "apps_accent_color" to ACCENT1_600,
-    "apps_color" to ACCENT1_600,
-    "darkerBlue" to ACCENT1_700,
-    "blue" to ACCENT3_600,
-    "colorPrimaryDark" to ACCENT3_600,
-    "games_accent_color" to ACCENT3_600,
-    "games_color" to ACCENT3_600
+// These are the fixed framework ids (API 31): tone 600 and 700 of accent1, accent2 and accent3.
+private val DYNAMIC_FAMILIES = mapOf(
+    "Primary" to Pair("@0x01060025", "@0x01060026"),
+    "Secondary" to Pair("@0x01060032", "@0x01060033"),
+    "Tertiary" to Pair("@0x0106003f", "@0x01060040")
 )
 
-private val DYNAMIC_COLORS_XML = buildString {
-    appendLine("""<?xml version="1.0" encoding="utf-8"?>""")
-    appendLine("<resources>")
-    DYNAMIC_COLORS.forEach { (name, ref) ->
-        appendLine("""    <color name="$name">$ref</color>""")
+private fun dynamicColorsXml(family: String): String {
+    val (main, dark) = DYNAMIC_FAMILIES[family] ?: DYNAMIC_FAMILIES.getValue("Primary")
+    val colors = mapOf(
+        "accent" to main,
+        "apps_accent_color" to main,
+        "apps_color" to main,
+        "darkerBlue" to dark,
+        "blue" to main,
+        "colorPrimaryDark" to main,
+        "games_accent_color" to main,
+        "games_color" to main
+    )
+    return buildString {
+        appendLine("""<?xml version="1.0" encoding="utf-8"?>""")
+        appendLine("<resources>")
+        colors.forEach { (name, ref) ->
+            appendLine("""    <color name="$name">$ref</color>""")
+        }
+        appendLine("</resources>")
     }
-    appendLine("</resources>")
 }
 
 @Suppress("unused")
@@ -55,6 +60,15 @@ val materialColorsPatch = resourcePatch(
         title = "Dynamic theme",
         description = "Use the wallpaper color palette on Android 12 and newer. " +
             "Older Android versions keep the Material red and purple palette."
+    )
+
+    val dynamicFamily by stringOption(
+        key = "dynamicColorFamily",
+        default = "Primary",
+        values = DYNAMIC_FAMILIES.keys.associateWith { it },
+        title = "Dynamic color family",
+        description = "Which system color family tints the app when Dynamic theme is on. " +
+            "Change it if the default looks grey or off on your device."
     )
 
     execute {
@@ -76,7 +90,7 @@ val materialColorsPatch = resourcePatch(
         if (dynamicTheme == true) {
             get("res/values-v31/colors.xml", copy = false).apply {
                 parentFile?.mkdirs()
-                writeText(DYNAMIC_COLORS_XML)
+                writeText(dynamicColorsXml(dynamicFamily ?: "Primary"))
             }
         }
     }

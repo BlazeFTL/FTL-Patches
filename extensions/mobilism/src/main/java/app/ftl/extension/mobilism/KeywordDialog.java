@@ -25,6 +25,7 @@ import java.util.Locale;
 
 public final class KeywordDialog {
     private static final String SUB_TEXT = "Posts with any of these words in the title are hidden. Separate several with commas.";
+    private static final String OFF_TEXT = "Keyword filtering is off. Every post is shown.";
 
     private final Activity activity;
     private Dialog dialog;
@@ -120,6 +121,18 @@ public final class KeywordDialog {
         root.addView(sub);
 
         tunePanel = ModUi.card(a);
+        ModUi.addRow(a, tunePanel, ModUi.switchRow(a, ModUi.Icon.EYEOFF, "Keyword filtering",
+                "On: matching posts are hidden",
+                "Off: every post is shown",
+                TitleFilter.isEnabled(),
+                new PillSwitch.Listener() {
+                    @Override
+                    public void onChanged(boolean checked) {
+                        TitleFilter.setEnabled(checked);
+                        TitleFilter.applyLive();
+                        render();
+                    }
+                }));
         ModUi.addRow(a, tunePanel, ModUi.switchRow(a, ModUi.Icon.SEARCH, "Hide in search results",
                 "Matching apps are hidden in search too",
                 "Search shows every app",
@@ -359,7 +372,7 @@ public final class KeywordDialog {
             }
             sub.setText(info);
         } else {
-            sub.setText(SUB_TEXT);
+            sub.setText(TitleFilter.isEnabled() ? SUB_TEXT : OFF_TEXT);
         }
         sub.setVisibility(View.VISIBLE);
         if (shown == 0) {

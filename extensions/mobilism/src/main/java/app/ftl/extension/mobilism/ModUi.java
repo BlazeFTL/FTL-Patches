@@ -50,21 +50,23 @@ public final class ModUi {
         try {
             Resources r = c.getResources();
             int accentId = r.getIdentifier("accent", "color", c.getPackageName());
-            int sys600 = system(c, "system_accent1_600");
-            if (accentId == 0 || sys600 == 0 || r.getColor(accentId, c.getTheme()) != sys600) {
+            if (accentId == 0) {
                 return;
             }
-            int accent = system(c, "system_accent1_600");
-            int soft = system(c, "system_accent1_100");
-            int on = system(c, "system_accent1_700");
-            if (accent != 0) {
-                ACCENT = accent;
-            }
-            if (soft != 0) {
-                ACCENT_SOFT = soft;
-            }
-            if (on != 0) {
-                ON_TEXT = on;
+            int current = r.getColor(accentId, c.getTheme());
+            for (int family = 1; family <= 3; family++) {
+                if (system(c, "system_accent" + family + "_600") == current) {
+                    int soft = system(c, "system_accent" + family + "_100");
+                    int on = system(c, "system_accent" + family + "_700");
+                    ACCENT = current;
+                    if (soft != 0) {
+                        ACCENT_SOFT = soft;
+                    }
+                    if (on != 0) {
+                        ON_TEXT = on;
+                    }
+                    return;
+                }
             }
         } catch (Throwable ignored) {
         }
