@@ -217,6 +217,7 @@ public final class OldMenu {
             if (behavior != null) {
                 setHideable(behavior, false);
                 setBoolean(behavior, "draggable", false);
+                if (applyWidth(extensionsActive ? 314 : 240)) moved = true;
             }
 
             float density = sheet.getContext().getResources().getDisplayMetrics().density;
@@ -266,11 +267,11 @@ public final class OldMenu {
         });
     }
 
-    private static void applyWidth(int dp) {
+    private static boolean applyWidth(int dp) {
         try {
             View sheet = sheetRef.get();
             Object behavior = behaviorRef.get();
-            if (sheet == null || behavior == null) return;
+            if (sheet == null || behavior == null) return false;
             Resources res = sheet.getContext().getResources();
             int width = Math.min(menuWidth(res, dp), res.getDisplayMetrics().widthPixels);
             Field f = behavior.getClass().getDeclaredField("maxWidth");
@@ -278,10 +279,12 @@ public final class OldMenu {
             if (f.getInt(behavior) != width) {
                 f.setInt(behavior, width);
                 sheet.requestLayout();
+                return true;
             }
         } catch (Throwable t) {
             Log.e(TAG, "applyWidth failed", t);
         }
+        return false;
     }
 
     private static View findSheet(Dialog dialog) {
