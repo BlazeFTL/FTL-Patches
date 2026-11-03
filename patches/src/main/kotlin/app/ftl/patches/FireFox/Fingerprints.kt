@@ -348,6 +348,21 @@ internal object ToolbarMiddlewareFingerprint : Fingerprint(
     ),
 )
 
+// Custom tab (external) menu entry: picks MenuFragment vs MenuDialogFragment from isMenuCustomizationEnabled.
+internal object CustomTabToolbarMiddlewareFingerprint : Fingerprint(
+    definingClass = "Lorg/mozilla/fenix/components/toolbar/CustomTabBrowserToolbarMiddleware;",
+    name = "invoke",
+    returnType = OBJ,
+    parameters = listOf(OBJ, OBJ, OBJ),
+    filters = listOf(
+        fieldAccess(
+            definingClass = "Lorg/mozilla/fenix/utils/Settings;",
+            name = "isMenuCustomizationEnabled",
+            opcode = Opcode.IGET_BOOLEAN,
+        ),
+    ),
+)
+
 internal object WebExtensionMenuItemsPinFingerprint : Fingerprint(
     definingClass = EXTENSIONS_MENU_ITEM_KT,
     name = "WebExtensionMenuItems",

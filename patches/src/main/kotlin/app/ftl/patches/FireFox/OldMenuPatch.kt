@@ -415,8 +415,7 @@ private fun BytecodePatchContext.installPinHooks() {
 
 private const val SETTINGS = "Lorg/mozilla/fenix/utils/Settings;"
 
-private fun BytecodePatchContext.routeToLegacyMenu() {
-    val method = ToolbarMiddlewareFingerprint.method
+private fun forceLegacyMenu(method: MutableMethod) {
     val at = method.firstIndexFrom(0) { _, instruction ->
         val field = (instruction as? ReferenceInstruction)?.reference as? FieldReference
         instruction.opcode == Opcode.IGET_BOOLEAN &&
@@ -426,6 +425,11 @@ private fun BytecodePatchContext.routeToLegacyMenu() {
     }
     if (at < 0) unsupported("Menu customization switch")
     method.applyEdits(zeroTo(at))
+}
+
+private fun BytecodePatchContext.routeToLegacyMenu() {
+    forceLegacyMenu(ToolbarMiddlewareFingerprint.method)
+    forceLegacyMenu(CustomTabToolbarMiddlewareFingerprint.method)
 }
 
 private fun BytecodePatchContext.installMenuTweaks() {
