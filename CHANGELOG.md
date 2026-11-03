@@ -1,3 +1,9 @@
+## [1.43.7.3](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.7.2...v1.43.7.3) (2026-11-03)
+
+### 🐛 Bug Fixes
+
+* For FireFox Nightly 3 Dot Menu In External Links ([c673a94](https://github.com/BlazeFTL/FTL-Patches/commit/c673a9482941f3ff0f00357f4ec61d9934301483))
+
 ## [1.43.7.2](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.7.1...v1.43.7.2) (2026-11-02)
 
 ### 🐛 Bug Fixes
