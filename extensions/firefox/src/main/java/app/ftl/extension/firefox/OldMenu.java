@@ -13,6 +13,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
+import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowInsets;
 import android.view.animation.AccelerateDecelerateInterpolator;
@@ -84,6 +85,7 @@ public final class OldMenu {
             window.clearFlags(FLAG_DIM_BEHIND);
             window.setDimAmount(0f);
             window.setWindowAnimations(animStyle(dialog.getContext()));
+            armPreDraw(dialog);
         } catch (Throwable t) {
             Log.e(TAG, "onCreateDialog failed", t);
         }
@@ -184,8 +186,9 @@ public final class OldMenu {
         return ModSettings.oldMenu() ? null : stock;
     }
 
-    private static void apply(Dialog dialog) {
-        if (dialog == null) return;
+    private static boolean apply(Dialog dialog) {
+        boolean moved = false;
+        if (dialog == null) return false;
         try {
             Window window = dialog.getWindow();
             if (window != null) {
@@ -198,13 +201,15 @@ public final class OldMenu {
             }
 
             View sheet = findSheet(dialog);
-            if (sheet == null) return;
+            if (sheet == null) return false;
 
             if (sheetRef.get() != sheet) {
                 sheetRef = new WeakReference<>(sheet);
                 sheet.addOnLayoutChangeListener(LAYOUT);
                 sheet.setOutlineProvider(OUTLINE);
                 sheet.setClipToOutline(true);
+                LAYOUT.onLayoutChange(sheet, sheet.getLeft(), sheet.getTop(), sheet.getRight(),
+                    sheet.getBottom(), 0, 0, 0, 0);
             }
 
             Object behavior = behaviorOf(sheet);
@@ -212,6 +217,7 @@ public final class OldMenu {
             if (behavior != null) {
                 setHideable(behavior, false);
                 setBoolean(behavior, "draggable", false);
+                if (applyWidth(extensionsActive ? 314 : 240)) moved = true;
             }
 
             float density = sheet.getContext().getResources().getDisplayMetrics().density;
@@ -221,20 +227,51 @@ public final class OldMenu {
 
             ViewGroup.LayoutParams lp = sheet.getLayoutParams();
             if (lp != null && lp.getClass().getName().equals("androidx.coordinatorlayout.widget.CoordinatorLayout$LayoutParams")) {
-                lp.getClass().getField("gravity").setInt(lp, 0x800035);
-                ((ViewGroup.MarginLayoutParams) lp).setMarginEnd((int) (8 * density));
-                sheet.setLayoutParams(lp);
+                Field gravity = lp.getClass().getField("gravity");
+                int margin = (int) (8 * density);
+                if (gravity.getInt(lp) != 0x800035 || ((ViewGroup.MarginLayoutParams) lp).getMarginEnd() != margin) {
+                    gravity.setInt(lp, 0x800035);
+                    ((ViewGroup.MarginLayoutParams) lp).setMarginEnd(margin);
+                    sheet.setLayoutParams(lp);
+                    moved = true;
+                }
             }
         } catch (Throwable t) {
             Log.e(TAG, "apply failed", t);
         }
+        return moved;
     }
 
-    private static void applyWidth(int dp) {
+    private static void armPreDraw(final Dialog dialog) {
+        Window window = dialog.getWindow();
+        if (window == null) return;
+        final View decor = window.getDecorView();
+        decor.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            private int tries;
+
+            @Override
+            public boolean onPreDraw() {
+                View sheet = findSheet(dialog);
+                if (sheet == null) {
+                    if (++tries > 30) removeSelf();
+                    return true;
+                }
+                removeSelf();
+                return !apply(dialog);
+            }
+
+            private void removeSelf() {
+                ViewTreeObserver observer = decor.getViewTreeObserver();
+                if (observer.isAlive()) observer.removeOnPreDrawListener(this);
+            }
+        });
+    }
+
+    private static boolean applyWidth(int dp) {
         try {
             View sheet = sheetRef.get();
             Object behavior = behaviorRef.get();
-            if (sheet == null || behavior == null) return;
+            if (sheet == null || behavior == null) return false;
             Resources res = sheet.getContext().getResources();
             int width = Math.min(menuWidth(res, dp), res.getDisplayMetrics().widthPixels);
             Field f = behavior.getClass().getDeclaredField("maxWidth");
@@ -242,10 +279,12 @@ public final class OldMenu {
             if (f.getInt(behavior) != width) {
                 f.setInt(behavior, width);
                 sheet.requestLayout();
+                return true;
             }
         } catch (Throwable t) {
             Log.e(TAG, "applyWidth failed", t);
         }
+        return false;
     }
 
     private static View findSheet(Dialog dialog) {
