@@ -424,7 +424,7 @@ private fun forceLegacyMenu(method: MutableMethod) {
             field.name == "isMenuCustomizationEnabled"
     }
     if (at < 0) unsupported("Menu customization switch")
-    method.applyEdits(zeroTo(at))
+    method.applyEdits(zeroFieldRead(at))
 }
 
 private fun BytecodePatchContext.routeToLegacyMenu() {
