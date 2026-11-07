@@ -431,6 +431,11 @@ private fun BytecodePatchContext.routeToLegacyMenu() {
     forceLegacyMenu(ToolbarMiddlewareFingerprint.method)
     forceLegacyMenu(CustomTabToolbarMiddlewareFingerprint.method)
     forceLegacyMenu(HomeActivityMenuFingerprint.method)
+    try {
+        forceLegacyMenu(HomeToolbarMiddlewareFingerprint.method)
+    } catch (e: Exception) {
+        logger.warning("Home toolbar menu switch skipped: ${e::class.simpleName}: ${e.message?.lineSequence()?.firstOrNull()}")
+    }
 }
 
 private fun BytecodePatchContext.installMenuTweaks() {
