@@ -81,13 +81,16 @@ internal fun zeroTo(index: Int) = Edit(index) {
 
 internal fun filterFieldRead(index: Int) = Edit(index) {
     val register = getInstruction<OneRegisterInstruction>(index).registerA
+    val after = getInstruction(index + 1)
     insertAt(
         index + 1,
         """
-            invoke-static/range {v$register .. v$register}, $MOD_SETTINGS->menuCustomization(Z)Z
+            if-eqz v$register, :ftl_done
+            invoke-static {}, $MOD_SETTINGS->oldMenu()Z
             move-result v$register
+            xor-int/lit8 v$register, v$register, 0x1
         """.trimIndent(),
-        emptyArray(),
+        arrayOf(ExternalLabel("ftl_done", after)),
     )
 }
 
