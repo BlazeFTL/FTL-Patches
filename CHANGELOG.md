@@ -1,3 +1,9 @@
+## [1.43.7.4](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.7.3...v1.43.7.4) (2026-11-07)
+
+### 🐛 Bug Fixes
+
+* NewTab HomePage Still Showed Old 3 Dot Menu In FireFox ([3220a56](https://github.com/BlazeFTL/FTL-Patches/commit/3220a565f2e4c60e2d64255a648360d39c9e0960))
+
 ## [1.43.7.4-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.7.3...v1.43.7.4-dev.1) (2026-11-07)
 
 ### 🐛 Bug Fixes
