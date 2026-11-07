@@ -79,12 +79,19 @@ internal fun zeroTo(index: Int) = Edit(index) {
     swapAt(index, register, "const/16 v$register, 0x0")
 }
 
-internal fun zeroFieldRead(index: Int) = Edit(index) {
-    val instruction = getInstruction<TwoRegisterInstruction>(index)
-    val target = instruction.registerA
-    val source = instruction.registerB
-    val scratch = if (target != source) target else Liveness(this).free(index, exclude = setOf(source)).first()
-    swapAt(index, scratch, "const/16 v$target, 0x0")
+internal fun filterFieldRead(index: Int) = Edit(index) {
+    val register = getInstruction<OneRegisterInstruction>(index).registerA
+    val after = getInstruction(index + 1)
+    insertAt(
+        index + 1,
+        """
+            if-eqz v$register, :ftl_done
+            invoke-static {}, $MOD_SETTINGS->oldMenu()Z
+            move-result v$register
+            xor-int/lit8 v$register, v$register, 0x1
+        """.trimIndent(),
+        arrayOf(ExternalLabel("ftl_done", after)),
+    )
 }
 
 internal fun surface(index: Int) = Edit(index) {
