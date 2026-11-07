@@ -363,6 +363,21 @@ internal object CustomTabToolbarMiddlewareFingerprint : Fingerprint(
     ),
 )
 
+// Home (new tab page) menu entry: picks MenuFragment vs MenuDialogFragment from isMenuCustomizationEnabled.
+internal object HomeActivityMenuFingerprint : Fingerprint(
+    definingClass = "Lorg/mozilla/fenix/HomeActivity;",
+    name = "dispatchKeyEvent",
+    returnType = "Z",
+    parameters = listOf("Landroid/view/KeyEvent;"),
+    filters = listOf(
+        fieldAccess(
+            definingClass = "Lorg/mozilla/fenix/utils/Settings;",
+            name = "isMenuCustomizationEnabled",
+            opcode = Opcode.IGET_BOOLEAN,
+        ),
+    ),
+)
+
 internal object WebExtensionMenuItemsPinFingerprint : Fingerprint(
     definingClass = EXTENSIONS_MENU_ITEM_KT,
     name = "WebExtensionMenuItems",

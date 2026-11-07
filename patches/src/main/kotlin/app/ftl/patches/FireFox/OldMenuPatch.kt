@@ -424,12 +424,13 @@ private fun forceLegacyMenu(method: MutableMethod) {
             field.name == "isMenuCustomizationEnabled"
     }
     if (at < 0) unsupported("Menu customization switch")
-    method.applyEdits(zeroFieldRead(at))
+    method.applyEdits(filterFieldRead(at))
 }
 
 private fun BytecodePatchContext.routeToLegacyMenu() {
     forceLegacyMenu(ToolbarMiddlewareFingerprint.method)
     forceLegacyMenu(CustomTabToolbarMiddlewareFingerprint.method)
+    forceLegacyMenu(HomeActivityMenuFingerprint.method)
 }
 
 private fun BytecodePatchContext.installMenuTweaks() {
