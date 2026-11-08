@@ -73,7 +73,7 @@ internal object SettingsSetVisibleCallFingerprint : Fingerprint(
 @Suppress("unused")
 val hideSnaptubeSettingsPatch = bytecodePatch(
     name = "Clean SnapTube Settings Page",
-    description = "Hides the Download tools and Phone clean categories, and their sub-items, from Settings.",
+    description = "Select A Modded Build By Balatan Or HeroMods Not A Stock Apk...Hides the Download tools and Phone clean categories, and their sub-items, from Settings.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_SNAPTUBE)
