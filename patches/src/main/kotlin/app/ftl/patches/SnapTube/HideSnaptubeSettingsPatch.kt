@@ -4,6 +4,8 @@ import app.ftl.util.getFreeRegisterProvider
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.opcode
+import app.morphe.patcher.resource.ResourceType
+import app.morphe.patcher.resourceLiteral
 import app.morphe.patcher.string
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
@@ -16,6 +18,19 @@ private const val EXTENSION_HIDE_CATEGORIES =
 
 private const val EXTENSION_HIDE_PREFERENCES =
     "Lapp/ftl/extension/snaptube/SnaptubeSettingsHider;->hidePreferences(Landroidx/preference/PreferenceFragmentCompat;Ljava/lang/String;)V"
+
+private const val EXTENSION_HIDE_TOOLS =
+    "Lapp/ftl/extension/snaptube/SnaptubeToolsHider;->hide(Landroid/view/View;)V"
+
+/** ViewBinding.bind(View) of the Tools tab layout, matched by its own view ids instead of its obfuscated name. */
+internal object ToolsTabBindFingerprint : Fingerprint(
+    parameters = listOf("Landroid/view/View;"),
+    filters = listOf(
+        resourceLiteral(ResourceType.ID, "cl_whatsapp_clean_cards"),
+        resourceLiteral(ResourceType.ID, "tv_whatsapp_clean_title"),
+        opcode(Opcode.RETURN_OBJECT),
+    ),
+)
 
 /** Matches the no-argument PreferenceScreen getter without hard-coding its obfuscated name.
  *  For the supplied builds this resolves to E2 on the old build and F2 on the new build.
@@ -73,7 +88,7 @@ internal object SettingsSetVisibleCallFingerprint : Fingerprint(
 @Suppress("unused")
 val hideSnaptubeSettingsPatch = bytecodePatch(
     name = "Clean SnapTube Settings Page",
-    description = "Select A Modded Build By Balatan Or HeroMods Not A Stock Apk...Hides the Download tools and Phone clean categories, and their sub-items, from Settings.",
+    description = "Select A Modded Build By Balatan Or HeroMods Not A Stock Apk...Hides WhatsApp clean, System clean and the Vault, Status Saver, Recover deleted files, Share and Feedback tiles from the Tools tab, plus the Download tools and Phone clean categories from Settings.",
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_SNAPTUBE)
@@ -81,52 +96,61 @@ val hideSnaptubeSettingsPatch = bytecodePatch(
     extendWith("extensions/snaptube.mpe")
 
     execute {
-        val setVisibleName = runCatching {
-            val call = SettingsSetVisibleCallFingerprint.instructionMatches[1]
-            (call.getInstruction<ReferenceInstruction>().reference as MethodReference).name
-        }.getOrDefault("")
-
-        SettingsOnCreatePreferencesFingerprint.let {
-            val anchor = it.instructionMatches[0].index
-            val registers = it.method.getFreeRegisterProvider(anchor + 1, 2)
-            val screenRegister = registers.getFreeRegister()
-            val nameRegister = registers.getFreeRegister()
-            val screenGetterName = PreferenceScreenGetterFingerprint.method.name
-
+        ToolsTabBindFingerprint.let {
             it.method.addInstructions(
-                anchor + 1,
-                """
-                invoke-virtual {p0}, Landroidx/preference/PreferenceFragmentCompat;->$screenGetterName()Landroidx/preference/PreferenceScreen;
-
-                move-result-object v$screenRegister
-
-                const-string v$nameRegister, "$setVisibleName"
-
-                invoke-static {v$screenRegister, v$nameRegister}, $EXTENSION_HIDE_CATEGORIES
-                """.trimIndent(),
+                it.instructionMatches[2].index,
+                "invoke-static/range {p0 .. p0}, $EXTENSION_HIDE_TOOLS",
             )
         }
 
-        SettingsOnViewCreatedFingerprint.let {
-            val method = it.method
-            val superCallIndex = it.instructionMatches[0].index
-            val returnIndex = it.instructionMatches[1].index
-            val thisRegister = method.implementation!!.registerCount - method.parameterTypes.size - 1
+        runCatching {
+            val setVisibleName = runCatching {
+                val call = SettingsSetVisibleCallFingerprint.instructionMatches[1]
+                (call.getInstruction<ReferenceInstruction>().reference as MethodReference).name
+            }.getOrDefault("")
 
-            fun hook(index: Int) {
-                val register = method.getFreeRegisterProvider(index, 1, thisRegister).getFreeRegister()
-                method.addInstructions(
-                    index,
+            SettingsOnCreatePreferencesFingerprint.let {
+                val anchor = it.instructionMatches[0].index
+                val registers = it.method.getFreeRegisterProvider(anchor + 1, 2)
+                val screenRegister = registers.getFreeRegister()
+                val nameRegister = registers.getFreeRegister()
+                val screenGetterName = PreferenceScreenGetterFingerprint.method.name
+
+                it.method.addInstructions(
+                    anchor + 1,
                     """
-                    const-string v$register, "$setVisibleName"
+                    invoke-virtual {p0}, Landroidx/preference/PreferenceFragmentCompat;->$screenGetterName()Landroidx/preference/PreferenceScreen;
 
-                    invoke-static {p0, v$register}, $EXTENSION_HIDE_PREFERENCES
+                    move-result-object v$screenRegister
+
+                    const-string v$nameRegister, "$setVisibleName"
+
+                    invoke-static {v$screenRegister, v$nameRegister}, $EXTENSION_HIDE_CATEGORIES
                     """.trimIndent(),
                 )
             }
 
-            hook(returnIndex)
-            hook(superCallIndex + 1)
+            SettingsOnViewCreatedFingerprint.let {
+                val method = it.method
+                val superCallIndex = it.instructionMatches[0].index
+                val returnIndex = it.instructionMatches[1].index
+                val thisRegister = method.implementation!!.registerCount - method.parameterTypes.size - 1
+
+                fun hook(index: Int) {
+                    val register = method.getFreeRegisterProvider(index, 1, thisRegister).getFreeRegister()
+                    method.addInstructions(
+                        index,
+                        """
+                        const-string v$register, "$setVisibleName"
+
+                        invoke-static {p0, v$register}, $EXTENSION_HIDE_PREFERENCES
+                        """.trimIndent(),
+                    )
+                }
+
+                hook(returnIndex)
+                hook(superCallIndex + 1)
+            }
         }
     }
 }
