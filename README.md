@@ -26,7 +26,7 @@ Click **[Add To Morphe↗️](https://morphe.software/add-source?github=BlazeFTL
 ## 🐉 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.7.4](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.7.4)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;121 patches total
+> **[v1.43.7.5-dev.1](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.7.5-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;121 patches total
 <a id="all-video-downloader-ace-player"></a>
 <details>
 <summary><img src=".github/assets/icons/videoplayer.videodownloader.downloader.png" width="18" align="absmiddle">&nbsp;&nbsp;All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;9 patches</summary>
@@ -176,12 +176,12 @@ Click **[Add To Morphe↗️](https://morphe.software/add-source?github=BlazeFTL
 
 **🎯 Supported versions:**
 
-| 7.68.1.76801201 |
+| 7.69.1.76903901 |
 | :---: |
 
 | 🩹&nbsp;Patch | 🔥&nbsp;Description |
 |----------|----------------|
-| <a id="snaptube-clean-snaptube-settings-page"></a>[Clean SnapTube Settings Page](patches/src/main/kotlin/app/ftl/patches/SnapTube/HideSnaptubeSettingsPatch.kt) | Hides the Download tools and Phone clean categories, and their sub-items, from Settings. |
+| <a id="snaptube-clean-snaptube-settings-page"></a>[Clean SnapTube Settings Page](patches/src/main/kotlin/app/ftl/patches/SnapTube/HideSnaptubeSettingsPatch.kt) | Select A Modded Build By Balatan Or HeroMods Not A Stock Apk...Hides WhatsApp clean, System clean and the Vault, Status Saver, Recover deleted files, Share and Feedback tiles from the Tools tab, plus the Download tools and Phone clean categories from Settings. |
 | <a id="snaptube-disable-annoying-snaptube-notifications"></a>[Disable Annoying Snaptube Notifications](patches/src/main/kotlin/app/ftl/patches/SnapTube/DisableSnaptubeNotificationDefaultsPatch.kt) | Turns off the Toolbar, Recommended contents, and Tool notifications channels by default. |
 | <a id="snaptube-remove-watch-ad-to-download"></a>[Remove Watch Ad To Download](patches/src/main/kotlin/app/ftl/patches/SnapTube/RemoveWatchAdToDownloadPatch.kt) | Removes the requirement to watch a rewarded ad before a download starts. |
 | <a id="snaptube-remove-from-default-browser-list"></a>[Remove from default browser list](patches/src/main/kotlin/app/ftl/patches/SnapTube/RemoveBrowserRegistrationPatch.kt) | Strips the LinkHandleActivity alias's unscoped so the app stops appearing as a candidate in the system's default browser / "open with" chooser. |

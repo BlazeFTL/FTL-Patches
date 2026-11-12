@@ -15,7 +15,7 @@ internal val COMPATIBILITY_SNAPTUBE = Compatibility(
     name = "SnapTube",
     packageName = "com.snaptube.premium",
     targets = listOf(
-        AppTarget(version = "7.68.1.76801201", versionCode = 76801201),
+        AppTarget(version = "7.69.1.76903901", versionCode = 76903901),
     ),
 
 )
