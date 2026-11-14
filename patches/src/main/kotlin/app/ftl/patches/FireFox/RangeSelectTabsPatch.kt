@@ -1,50 +1,8 @@
-/*
- * Long press to select tab range.
- *
- * SUPPORT POLICY: one Firefox Nightly build only (161.0a1). No fallbacks, no multi-version matching.
- * On a new Nightly: fix every fingerprint against the new smali, delete anything for the old build.
- *
- * SMALI NEEDED WHEN A FINGERPRINT BREAKS (send these from the NEW build):
- *
- *   RangeLongClickFingerprint
- *     Need: every class containing  TabsTrayAction$TabItemLongClicked;-><init>
- *           + TabManagementFragment.smali (getter getTabsTrayStore$app).
- *     Constraint: must be a Function1 lambda invoke(Object)Object whose fields hold the fragment.
- *                 RangeSelect.store() reflects over the lambda's fields looking for getTabsTrayStore$app.
- *                 If the creator no longer holds the fragment, RangeSelect.java must change too.
- *     161.0a1: UNVERIFIED. No class in the supplied smali creates TabItemLongClicked
- *              (TabManagementFragment lambdas, RenderTabsTray, getEntryProvider, redux, tabgroups/flow all checked).
- *              Creator lives in a package not yet supplied (try tabstray/ui subpackages, tabstray/controller).
- *
- *   RangeTabClickFingerprint
- *     TabManagementFragment.performTabClick(TabsTrayItem$Tab)V. Named, not synthetic: survives lambda renumbering.
- *     161.0a1: public final method on TabManagementFragment; selection-mode toggling happens inside it
- *              (-> controller.handleTabSelected).
- *
- *   RangeGroupClickFingerprint (optional)
- *     Need: class containing  new-instance TabGroupClicked
- *     161.0a1: creator not in the supplied smali (old TabManagementFragment$$ExternalSyntheticLambda43 is gone).
- *              Skipped with a log line if no match.
- *
- *   InteractableGestureFingerprint
- *     Need: InteractableListKt$detectListPressAndDrag$1
- *     161.0a1: mozilla/components/compose/draggable/ (moved out of org/mozilla/fenix/tabstray/browser/compose/interactable/).
- *
- *   ReorderableGestureFingerprint
- *     Need: ReorderableListKt$detectListPressAndDrag$1
- *     161.0a1: org/mozilla/fenix/tabstray/browser/compose/.
- *
- *   Both gesture fingerprints: invoke(PointerInputScope, Continuation)Object with
- *     iget-boolean $shouldLongPressToDrag ; if-eqz (immediately) ; call DragGestureDetectorKt.detectDragGesturesAfterLongPress.
- *     The if-eqz target must be  sget-object Unit ; return-object  (checked in hookGesture).
- *
- * Quick find in a decoded dump:  grep -rl '<needle>' .
- */
-
 package app.ftl.patches.firefox
 
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
+import app.morphe.patcher.Match
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.fieldAccess
 import app.morphe.patcher.methodCall
@@ -54,31 +12,26 @@ import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
 import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.iface.instruction.Instruction
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.reference.FieldReference
+import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import java.util.logging.Logger
 
 private const val RS_SELECT = "Lapp/ftl/extension/firefox/RangeSelect;"
 private const val RS_START = "Lapp/ftl/extension/firefox/RangeSelectStart;"
 private const val RS_NOOP = "Lapp/ftl/extension/firefox/RangeSelectNoOp;"
+private const val RS_MOD_LAMBDA = "Lapp/ftl/extension/firefox/ModLambda;"
 
 private const val RS_OBJ = "Ljava/lang/Object;"
-private const val RS_FUNCTION0 = "Lkotlin/jvm/functions/Function0;"
 private const val RS_FUNCTION1 = "Lkotlin/jvm/functions/Function1;"
-private const val RS_FUNCTION2 = "Lkotlin/jvm/functions/Function2;"
-private const val RS_POINTER_SCOPE = "Landroidx/compose/ui/input/pointer/PointerInputScope;"
-private const val RS_CONTINUATION = "Lkotlin/coroutines/Continuation;"
-private const val RS_DRAG_KT = "Landroidx/compose/foundation/gestures/DragGestureDetectorKt;"
+private const val RS_POINTER_HANDLER = "Landroidx/compose/ui/input/pointer/PointerInputEventHandler;"
 
 private const val RS_FRAGMENT = "Lorg/mozilla/fenix/tabstray/ui/TabManagementFragment;"
 private const val RS_TAB = "Lorg/mozilla/fenix/tabstray/data/TabsTrayItem\$Tab;"
 private const val RS_LONG_CLICKED = "Lorg/mozilla/fenix/tabstray/redux/action/TabsTrayAction\$TabItemLongClicked;"
 private const val RS_GROUP_CLICKED = "Lorg/mozilla/fenix/tabstray/redux/action/TabGroupAction\$TabGroupClicked;"
 
-private const val RS_DETECT = "$RS_DRAG_KT->detectDragGesturesAfterLongPress(" +
-    "$RS_POINTER_SCOPE$RS_FUNCTION1$RS_FUNCTION0$RS_FUNCTION0$RS_FUNCTION2$RS_CONTINUATION)$RS_OBJ"
-
-// Long press on a tab item -> dispatches TabItemLongClicked. definingClass intentionally NOT pinned:
-// the creator lambda moved between builds. Match by shape: invoke(Object)Object that calls the
-// fragment's store getter and creates TabItemLongClicked. See header for what to send if this fails.
 private object RangeLongClickFingerprint : Fingerprint(
     name = "invoke",
     returnType = RS_OBJ,
@@ -89,7 +42,6 @@ private object RangeLongClickFingerprint : Fingerprint(
     ),
 )
 
-// Tap on a tab item. 161.0a1 moved the Tab branch into a named method on the fragment.
 private object RangeTabClickFingerprint : Fingerprint(
     definingClass = RS_FRAGMENT,
     name = "performTabClick",
@@ -97,7 +49,6 @@ private object RangeTabClickFingerprint : Fingerprint(
     parameters = listOf(RS_TAB),
 )
 
-// Tap on a tab group item. definingClass intentionally NOT pinned (lambda numbers shift per build).
 private object RangeGroupClickFingerprint : Fingerprint(
     name = "invoke",
     returnType = RS_OBJ,
@@ -107,35 +58,89 @@ private object RangeGroupClickFingerprint : Fingerprint(
     ),
 )
 
-// 161.0a1: class lives in android-components (mozilla/components/compose/draggable).
-private object InteractableGestureFingerprint : Fingerprint(
-    definingClass = "Lmozilla/components/compose/draggable/" +
-        "InteractableListKt\$detectListPressAndDrag\$1;",
+private object GestureFingerprint : Fingerprint(
+    interfaces = listOf(RS_POINTER_HANDLER),
     name = "invoke",
     returnType = RS_OBJ,
-    parameters = listOf(RS_POINTER_SCOPE, RS_CONTINUATION),
+    parameters = listOf("L", "L"),
     filters = listOf(
         fieldAccess(type = "Z", opcode = Opcode.IGET_BOOLEAN),
         opcode(Opcode.IF_EQZ, MatchAfterImmediately()),
-        methodCall(definingClass = RS_DRAG_KT, name = "detectDragGesturesAfterLongPress"),
+        methodCall(
+            parameters = listOf("L", RS_FUNCTION1, "L", "L", "L", "L"),
+            returnType = RS_OBJ,
+            opcodes = listOf(Opcode.INVOKE_STATIC, Opcode.INVOKE_STATIC_RANGE),
+        ),
     ),
 )
 
-// 161.0a1: class lives in org/mozilla/fenix/tabstray/browser/compose.
-private object ReorderableGestureFingerprint : Fingerprint(
-    definingClass = "Lorg/mozilla/fenix/tabstray/browser/compose/" +
-        "ReorderableListKt\$detectListPressAndDrag\$1;",
-    name = "invoke",
-    returnType = RS_OBJ,
-    parameters = listOf(RS_POINTER_SCOPE, RS_CONTINUATION),
-    filters = listOf(
-        fieldAccess(type = "Z", opcode = Opcode.IGET_BOOLEAN),
-        opcode(Opcode.IF_EQZ, MatchAfterImmediately()),
-        methodCall(definingClass = RS_DRAG_KT, name = "detectDragGesturesAfterLongPress"),
-    ),
-)
+private class Gesture(
+    val match: Match,
+    val gate: Int,
+    val target: Int,
+    val detect: MethodReference,
+    val unit: FieldReference,
+) {
+    val types = detect.parameterTypes.map { it.toString() }
+}
 
-private fun BytecodePatchContext.hookLongClick() {
+private fun FieldReference.smali() = "$definingClass->$name:$type"
+
+private fun BytecodePatchContext.findGestures(): List<Gesture> {
+    val matches = GestureFingerprint.matchAllOrNull()
+        ?: throw PatchException("No drag gesture handler matched")
+
+    val gestures = matches.mapNotNull { match ->
+        val method = match.method
+        val gate = match.instructionMatches[1].index
+        val call = match.instructionMatches[2].index
+        val target = method.jumpTarget(gate)
+        val unit = method.getInstruction<Instruction>(target)
+        val back = method.getInstruction<Instruction>(target + 1)
+        if (unit.opcode != Opcode.SGET_OBJECT || back.opcode != Opcode.RETURN_OBJECT) return@mapNotNull null
+        Gesture(
+            match,
+            gate,
+            target,
+            method.getInstruction<ReferenceInstruction>(call).reference as MethodReference,
+            (unit as ReferenceInstruction).reference as FieldReference,
+        )
+    }
+    if (gestures.isEmpty()) throw PatchException("No drag gesture handler has the select-mode branch")
+
+    val first = gestures.first()
+    if (first.types.size != 6 || first.types[2] != first.types[3]) {
+        throw PatchException("Unexpected drag gesture signature: ${first.types}")
+    }
+    for (gesture in gestures) {
+        if (gesture.types != first.types || gesture.unit.smali() != first.unit.smali()) {
+            throw PatchException("Drag gesture handlers disagree: ${gesture.types} vs ${first.types}")
+        }
+    }
+    return gestures
+}
+
+private fun BytecodePatchContext.installInterfaces(types: List<String>) {
+    val start = mutableClassDefBy(RS_START).interfaces
+    if (types[1] !in start) start.add(types[1])
+    val noop = mutableClassDefBy(RS_NOOP).interfaces
+    for (type in listOf(types[2], types[4])) if (type !in noop) noop.add(type)
+}
+
+private fun BytecodePatchContext.installUnit(unit: FieldReference) {
+    val method = mutableClassDefBy(RS_MOD_LAMBDA).methods.first { it.name == "unit" }
+    method.applyEdits(
+        insert(
+            0,
+            """
+                sget-object v0, ${unit.smali()}
+                return-object v0
+            """,
+        ),
+    )
+}
+
+private fun BytecodePatchContext.hookLongClick(unit: FieldReference) {
     val method = RangeLongClickFingerprint.method
     val item = parameterRegister(method, 0)
     val self = item - 1
@@ -148,7 +153,7 @@ private fun BytecodePatchContext.hookLongClick() {
                 invoke-static/range {v$self .. v$item}, $RS_SELECT->longPress(Ljava/lang/Object;Ljava/lang/Object;)Z
                 move-result v$scratch
                 if-eqz v$scratch, :ftl_stock
-                sget-object v$scratch, Lkotlin/Unit;->INSTANCE:Lkotlin/Unit;
+                sget-object v$scratch, ${unit.smali()}
                 return-object v$scratch
             """,
             mapOf("ftl_stock" to { 0 }),
@@ -156,7 +161,7 @@ private fun BytecodePatchContext.hookLongClick() {
     )
 }
 
-private fun BytecodePatchContext.hookClick() {
+private fun BytecodePatchContext.hookClick(unit: FieldReference) {
     val tab = RangeTabClickFingerprint.method
     val tabScratch = Liveness(tab).takeLow(1, 0)[0]
     tab.applyEdits(
@@ -182,7 +187,7 @@ private fun BytecodePatchContext.hookClick() {
                     invoke-static {}, $RS_SELECT->consume()Z
                     move-result v$groupScratch
                     if-eqz v$groupScratch, :ftl_click
-                    sget-object v$groupScratch, Lkotlin/Unit;->INSTANCE:Lkotlin/Unit;
+                    sget-object v$groupScratch, ${unit.smali()}
                     return-object v$groupScratch
                 """,
                 mapOf("ftl_click" to { 0 }),
@@ -194,16 +199,12 @@ private fun BytecodePatchContext.hookClick() {
     }
 }
 
-private fun BytecodePatchContext.hookGesture(fingerprint: Fingerprint) {
-    val method = fingerprint.method
-    val gate = fingerprint.instructionMatches[1].index
-    val target = method.jumpTarget(gate)
-
-    val unit = method.getInstruction(target)
-    val back = method.getInstruction(target + 1)
-    if (unit.opcode != Opcode.SGET_OBJECT || back.opcode != Opcode.RETURN_OBJECT) {
-        throw PatchException("Unexpected select-mode branch target: ${unit.opcode}, ${back.opcode}")
-    }
+private fun BytecodePatchContext.hookGesture(gesture: Gesture) {
+    val method = gesture.match.method
+    val target = gesture.target
+    val types = gesture.types
+    val detect = gesture.detect
+    val call = "${detect.definingClass}->${detect.name}(${types.joinToString("")})${detect.returnType}"
 
     val scopeParameter = parameterRegister(method, 0)
     val continuationParameter = parameterRegister(method, 1)
@@ -232,30 +233,22 @@ private fun BytecodePatchContext.hookGesture(fingerprint: Fingerprint) {
                 move-object/from16 v$self, p0
                 invoke-static/range {v$self .. v$self}, $RS_SELECT->start(Ljava/lang/Object;)Ljava/lang/Object;
                 move-result-object v$start
-                check-cast v$start, $RS_FUNCTION1
+                check-cast v$start, ${types[1]}
                 invoke-static {}, $RS_SELECT->noop()Ljava/lang/Object;
                 move-result-object v$end
-                check-cast v$end, $RS_FUNCTION0
+                check-cast v$end, ${types[2]}
                 move-object/from16 v$cancel, v$end
                 move-object/from16 v$drag, v$end
-                check-cast v$drag, $RS_FUNCTION2
+                check-cast v$drag, ${types[4]}
                 move-object/from16 v$scope, p1
                 move-object/from16 v$continuation, p2
-                invoke-static/range {v$scope .. v$continuation}, $RS_DETECT
+                invoke-static/range {v$scope .. v$continuation}, $call
                 move-result-object v$scope
                 return-object v$scope
             """,
             mapOf("ftl_orig" to { target }),
         ),
     )
-}
-
-private fun BytecodePatchContext.installInterfaces() {
-    val start = mutableClassDefBy(RS_START).interfaces
-    if (RS_FUNCTION1 !in start) start.add(RS_FUNCTION1)
-    val noop = mutableClassDefBy(RS_NOOP).interfaces
-    if (RS_FUNCTION0 !in noop) noop.add(RS_FUNCTION0)
-    if (RS_FUNCTION2 !in noop) noop.add(RS_FUNCTION2)
 }
 
 @Suppress("unused")
@@ -265,17 +258,17 @@ val rangeSelectTabsPatch = bytecodePatch(
         "Toggle in Mod Settings.",
     default = true,
 ) {
-    // COMPATIBILITY_FIREFOX_NIGHTLY must list the single supported build only (161.0a1).
     compatibleWith(COMPATIBILITY_FIREFOX_NIGHTLY)
 
     extendWith("extensions/firefox.mpe")
 
     execute {
-        // Single supported build: every fingerprint must match, any miss fails the patch loudly.
-        installInterfaces()
-        hookLongClick()
-        hookClick()
-        hookGesture(InteractableGestureFingerprint)
-        hookGesture(ReorderableGestureFingerprint)
+        val gestures = findGestures()
+        val unit = gestures.first().unit
+        installInterfaces(gestures.first().types)
+        installUnit(unit)
+        hookLongClick(unit)
+        hookClick(unit)
+        gestures.forEach { hookGesture(it) }
     }
 }
