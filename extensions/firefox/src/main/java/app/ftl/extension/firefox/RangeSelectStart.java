@@ -4,6 +4,7 @@ import android.util.Log;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.List;
 
 @SuppressWarnings({"unchecked", "rawtypes", "unused"})
@@ -30,7 +31,14 @@ public final class RangeSelectStart {
 
     private void press(Object offset) throws Exception {
         if (listState == null || state == null || offset == null) return;
-        Field packedField = offset.getClass().getDeclaredField("packedValue");
+        Field packedField = null;
+        for (Field field : offset.getClass().getDeclaredFields()) {
+            if (field.getType() == long.class && !Modifier.isStatic(field.getModifiers())) {
+                packedField = field;
+                break;
+            }
+        }
+        if (packedField == null) throw new NoSuchFieldException("packed offset");
         packedField.setAccessible(true);
         long packed = packedField.getLong(offset);
 
