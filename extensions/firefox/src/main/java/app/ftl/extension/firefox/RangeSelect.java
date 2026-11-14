@@ -19,7 +19,6 @@ public final class RangeSelect {
     private static final long ARMED = Long.MAX_VALUE;
     private static final long GRACE_MS = 300L;
     private static final String ADD_SELECT = "org.mozilla.fenix.tabstray.redux.action.TabsTrayAction$AddSelectTab";
-    private static final String LIST_STATE = "androidx.compose.foundation.lazy.LazyListState";
     private static final Map<String, Field> FIELDS = new ConcurrentHashMap<>();
     private static final Map<String, Method> METHODS = new ConcurrentHashMap<>();
     private static final RangeSelectNoOp NOOP = new RangeSelectNoOp();
@@ -74,13 +73,25 @@ public final class RangeSelect {
                 if (field.getType().isPrimitive()) continue;
                 field.setAccessible(true);
                 Object value = field.get(gesture);
-                if (LIST_STATE.equals(field.getType().getName())) listState = value;
-                else state = value;
+                if (value == null) continue;
+                if (hasField(value.getClass(), "onLongPress")) state = value;
+                else listState = value;
             }
         } catch (Throwable t) {
             Log.e(TAG, "range select start failed", t);
         }
         return new RangeSelectStart(listState, state);
+    }
+
+    private static boolean hasField(Class<?> type, String name) {
+        for (Class<?> current = type; current != null; current = current.getSuperclass()) {
+            try {
+                current.getDeclaredField(name);
+                return true;
+            } catch (NoSuchFieldException ignored) {
+            }
+        }
+        return false;
     }
 
     private static void select(Object store, Object state, Set selected, Object item) throws Exception {
