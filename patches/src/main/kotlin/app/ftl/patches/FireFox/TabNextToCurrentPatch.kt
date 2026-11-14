@@ -11,6 +11,7 @@ import app.morphe.patcher.opcode
 import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.string
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
@@ -34,10 +35,6 @@ private const val TAB_OBJ = "Ljava/lang/Object;"
 private const val TAB_FUNCTION0 = "Lkotlin/jvm/functions/Function0;"
 private const val TAB_COMPOSER = "Landroidx/compose/runtime/Composer;"
 
-private const val TAB_LIST_REDUCER = "Lmozilla/components/browser/state/reducer/TabListReducer;"
-private const val TAB_BROWSER_STATE = "Lmozilla/components/browser/state/state/BrowserState;"
-private const val TAB_SESSION_STATE = "Lmozilla/components/browser/state/state/TabSessionState;"
-private const val TAB_LIST_ACTION = "Lmozilla/components/browser/state/action/TabListAction;"
 
 private const val TOOLBAR_KT = "Lorg/mozilla/fenix/tabstray/ui/fab/TabManagerFloatingToolbarKt;"
 private const val TOOLBAR_LAMBDA = "Lorg/mozilla/fenix/tabstray/ui/fab/TabManagerFloatingToolbarKt\$\$ExternalSyntheticLambda"
@@ -45,13 +42,14 @@ private const val TABS_TRAY_STATE = "Lorg/mozilla/fenix/tabstray/redux/state/Tab
 private const val TABS_PAGE = "Lorg/mozilla/fenix/tabstray/redux/state/Page;"
 
 private object TabReduceFingerprint : Fingerprint(
-    definingClass = TAB_LIST_REDUCER,
-    name = "reduce",
-    returnType = TAB_BROWSER_STATE,
-    parameters = listOf(TAB_BROWSER_STATE, TAB_LIST_ACTION),
+    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.STATIC),
+    returnType = "L",
+    parameters = listOf("L", "L"),
     filters = listOf(
-        fieldAccess(definingClass = TAB_SESSION_STATE, name = "parentId", opcode = Opcode.IGET_OBJECT),
+        fieldAccess(type = "Ljava/lang/String;", opcode = Opcode.IGET_OBJECT),
+        fieldAccess(type = "Ljava/lang/String;", opcode = Opcode.IGET_OBJECT),
         opcode(Opcode.IF_EQZ, MatchAfterImmediately()),
+        string("The parent does not exist"),
     ),
 )
 
@@ -86,25 +84,24 @@ private fun BytecodePatchContext.fieldRef(owner: String, name: String): String {
 private fun BytecodePatchContext.hookTabInsert() {
     val fingerprint = TabReduceFingerprint
     val method = fingerprint.method
-    val parentGet = fingerprint.instructionMatches[0]
-    val parentCheck = fingerprint.instructionMatches[1]
+    val selectedGet = fingerprint.instructionMatches[0]
+    val parentGet = fingerprint.instructionMatches[1]
+    val parentCheck = fingerprint.instructionMatches[2]
     val tabRegister = (parentGet.instruction as TwoRegisterInstruction).registerB
+    val selectedRegister = (selectedGet.instruction as OneRegisterInstruction).registerA
 
-    val selectedIndex = method.implementation!!.instructions.indexOfFirst { instruction ->
-        val reference = (instruction as? ReferenceInstruction)?.reference as? FieldReference
-        instruction.opcode == Opcode.IGET_OBJECT && reference != null &&
-            reference.definingClass == TAB_BROWSER_STATE && reference.name == "selectedTabId"
+    val selectedField = (selectedGet.instruction as ReferenceInstruction).reference as FieldReference
+    if (selectedField.definingClass != method.parameterTypes[0].toString()) {
+        throw PatchException("First String read is not on the browser state: $selectedField")
     }
-    if (selectedIndex < 0 || selectedIndex >= parentCheck.index) {
-        throw PatchException("selectedTabId read not found before add-tab branch")
-    }
-    val selectedRegister = method.getInstruction<OneRegisterInstruction>(selectedIndex).registerA
 
     val appendIndex = method.jumpTarget(parentCheck.index)
     val append = method.getInstruction<ReferenceInstruction>(appendIndex)
     val appendReference = append.reference as? MethodReference
     if (append.opcode != Opcode.INVOKE_STATIC || appendReference == null ||
-        appendReference.name != "plus" || appendReference.parameterTypes.size != 2
+        appendReference.parameterTypes.size != 2 ||
+        appendReference.returnType != "Ljava/util/ArrayList;" ||
+        appendReference.parameterTypes[1].toString() != "Ljava/util/Collection;"
     ) {
         throw PatchException("Unexpected add-tab append instruction: ${append.opcode} ${append.reference}")
     }
@@ -320,18 +317,32 @@ private fun BytecodePatchContext.installTabFab() {
 @Suppress("unused")
 val tabNextToCurrentPatch = bytecodePatch(
     name = "New tab next to current tab",
-    description = "Opens new tabs right after the current tab and adds an add-to-end button (+ with a " +
-        "down arrow) beside + that opens a tab at the end. Both are toggles in Mod Settings.",
+    description = "Opens new tabs right after the current tab. Toggle in Mod Settings.",
     default = true,
 ) {
     compatibleWith(COMPATIBILITY_FIREFOX_NIGHTLY)
-
-    dependsOn(tabIconsPatch)
 
     extendWith("extensions/firefox.mpe")
 
     execute {
         hookTabInsert()
+    }
+}
+
+@Suppress("unused")
+val tabEndButtonPatch = bytecodePatch(
+    name = "Add tab to end button",
+    description = "Adds an add-to-end button (+ with a down arrow) beside + that opens a tab at the end. " +
+        "Toggle in Mod Settings.",
+    default = false,
+) {
+    compatibleWith(COMPATIBILITY_FIREFOX_NIGHTLY)
+
+    dependsOn(tabIconsPatch, tabNextToCurrentPatch)
+
+    extendWith("extensions/firefox.mpe")
+
+    execute {
         installTabFab()
     }
 }
