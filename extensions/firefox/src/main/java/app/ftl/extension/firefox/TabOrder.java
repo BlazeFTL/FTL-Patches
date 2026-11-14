@@ -4,6 +4,7 @@ import android.os.SystemClock;
 import android.util.Log;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -53,7 +54,7 @@ public final class TabOrder {
         boolean isPrivate = isPrivate(tab);
         for (int i = 0, n = list.size(); i < n; i++) {
             Object item = list.get(i);
-            if (selectedId.equals(read(item, "id"))) {
+            if (selectedId.equals(call(item, "getId"))) {
                 return isPrivate(item) == isPrivate ? i : -1;
             }
         }
@@ -61,8 +62,34 @@ public final class TabOrder {
     }
 
     private static boolean isPrivate(Object tab) throws Exception {
-        Object content = read(tab, "content");
-        return Boolean.TRUE.equals(read(content, "private"));
+        Object content = call(tab, "getContent");
+        return Boolean.TRUE.equals(privateFlag(content));
+    }
+
+    private static Object call(Object target, String name) throws Exception {
+        return target.getClass().getMethod(name).invoke(target);
+    }
+
+    private static Object privateFlag(Object content) throws Exception {
+        Class<?> type = content.getClass();
+        String key = type.getName() + "#private";
+        Field field = FIELDS.get(key);
+        if (field == null) {
+            try {
+                field = type.getDeclaredField("private");
+            } catch (NoSuchFieldException e) {
+                for (Field candidate : type.getDeclaredFields()) {
+                    if (candidate.getType() == boolean.class && !Modifier.isStatic(candidate.getModifiers())) {
+                        field = candidate;
+                        break;
+                    }
+                }
+            }
+            if (field == null) throw new NoSuchFieldException("private");
+            field.setAccessible(true);
+            FIELDS.put(key, field);
+        }
+        return field.get(content);
     }
 
     private static Object read(Object target, String name) throws Exception {
