@@ -1,5 +1,7 @@
 package app.ftl.extension.firefox;
 
+import android.app.Application;
+import android.content.res.Resources;
 import android.util.Log;
 
 import java.lang.reflect.Constructor;
@@ -42,8 +44,20 @@ public final class TabMenu {
     private static boolean isPrivatePage() throws Exception {
         Object state = trayState;
         if (state == null) return false;
-        Object page = read(state, "selectedPage");
-        return page instanceof Enum && "PrivateTabs".equals(((Enum) page).name());
+        Class<?> type = state.getClass();
+        while (type != null && type != Object.class) {
+            for (Field field : type.getDeclaredFields()) {
+                if (!field.getType().isEnum()) continue;
+                field.setAccessible(true);
+                Object value = field.get(state);
+                if (!(value instanceof Enum)) continue;
+                String name = ((Enum) value).name();
+                if ("PrivateTabs".equals(name)) return true;
+                if ("NormalTabs".equals(name) || "SyncedTabs".equals(name) || "TabGroups".equals(name)) return false;
+            }
+            type = type.getSuperclass();
+        }
+        return false;
     }
 
     private static int indexOfCloseAll(List items) throws Exception {
@@ -68,34 +82,33 @@ public final class TabMenu {
     }
 
     private static Object newItem(Object like, boolean isPrivate) throws Exception {
-        ClassLoader loader = like.getClass().getClassLoader();
-        Class<?> textType = Class.forName("mozilla.components.compose.base.text.Text$String", true, loader);
-        Object text = textType.getConstructor(String.class).newInstance(DUPLICATE_LABEL);
-        int icon = Class.forName("mozilla.components.ui.icons.R$drawable", true, loader)
-            .getField("mozac_ic_delete_24").getInt(null);
-        Object action = TabCloseDuplicates.of(isPrivate);
         for (Constructor<?> constructor : like.getClass().getDeclaredConstructors()) {
             Class<?>[] p = constructor.getParameterTypes();
-            if (p.length == 6 && p[1] == int.class && p[2] == String.class
-                && p[3] == textType && p[5] == int.class) {
+            if (p.length == 6 && p[1] == int.class && p[2] == String.class && p[5] == int.class) {
                 constructor.setAccessible(true);
-                return constructor.newInstance(text, icon, DUPLICATE_TAG, null, action, 0x34);
+                return constructor.newInstance(
+                    newText(p[3]), icon(), DUPLICATE_TAG, null, TabCloseDuplicates.of(isPrivate), 0x34);
             }
         }
         throw new NoSuchMethodException("IconItem constructor");
     }
 
-    private static Object read(Object target, String name) throws Exception {
-        Class<?> type = target.getClass();
-        while (type != null) {
-            try {
-                Field field = type.getDeclaredField(name);
-                field.setAccessible(true);
-                return field.get(target);
-            } catch (NoSuchFieldException e) {
-                type = type.getSuperclass();
+    private static Object newText(Class<?> type) throws Exception {
+        for (Constructor<?> constructor : type.getDeclaredConstructors()) {
+            Class<?>[] p = constructor.getParameterTypes();
+            if (p.length == 1 && p[0] == String.class) {
+                constructor.setAccessible(true);
+                return constructor.newInstance(DUPLICATE_LABEL);
             }
         }
-        throw new NoSuchFieldException(name);
+        throw new NoSuchMethodException("Text constructor");
+    }
+
+    private static int icon() throws Exception {
+        Application app = (Application) Class.forName("android.app.ActivityThread")
+            .getMethod("currentApplication").invoke(null);
+        int id = app.getResources().getIdentifier("mozac_ic_delete_24", "drawable", app.getPackageName());
+        if (id == 0) throw new Resources.NotFoundException("mozac_ic_delete_24");
+        return id;
     }
 }
