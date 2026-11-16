@@ -15,7 +15,7 @@ public final class TabEndClick {
 
     public Object invoke() {
         TabOrder.markEnd();
-        ExtensionPin.invokeFunction0(base);
-        return ModLambda.unit();
+        TabAccess.invoke0(base);
+        return TabAccess.unit();
     }
 }

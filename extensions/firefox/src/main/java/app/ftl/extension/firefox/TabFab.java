@@ -6,6 +6,8 @@ import android.util.Log;
 @SuppressWarnings("unused")
 public final class TabFab {
 
+    private static final float STEP_DP = 72.0f;
+
     private static int endIcon;
 
     private TabFab() {
@@ -13,6 +15,11 @@ public final class TabFab {
 
     public static boolean endButton() {
         return ModSettings.tabNext() && ModSettings.tabEnd();
+    }
+
+    // Distance from the stock + button, in dp (FAB 56 + 16 gap). Added to Modifier.padding(end = ...).
+    public static float endPadding() {
+        return STEP_DP;
     }
 
     public static int endIcon() {

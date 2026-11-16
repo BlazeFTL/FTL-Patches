@@ -3,18 +3,14 @@ package app.ftl.extension.firefox;
 import android.os.SystemClock;
 import android.util.Log;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressWarnings({"unchecked", "rawtypes", "unused"})
 public final class TabOrder {
 
     private static final String TAG = "MorpheFirefox";
     private static final long END_WINDOW_MS = 3000L;
-    private static final Map<String, Field> FIELDS = new ConcurrentHashMap<>();
 
     private static volatile long endUntil;
 
@@ -50,38 +46,13 @@ public final class TabOrder {
     }
 
     private static int indexOfSelected(ArrayList list, Object tab, String selectedId) throws Exception {
-        boolean isPrivate = isPrivate(tab);
+        boolean isPrivate = TabAccess.isPrivate(tab);
         for (int i = 0, n = list.size(); i < n; i++) {
             Object item = list.get(i);
-            if (selectedId.equals(read(item, "id"))) {
-                return isPrivate(item) == isPrivate ? i : -1;
+            if (selectedId.equals(TabAccess.id(item))) {
+                return TabAccess.isPrivate(item) == isPrivate ? i : -1;
             }
         }
         return -1;
-    }
-
-    private static boolean isPrivate(Object tab) throws Exception {
-        Object content = read(tab, "content");
-        return Boolean.TRUE.equals(read(content, "private"));
-    }
-
-    private static Object read(Object target, String name) throws Exception {
-        Class<?> type = target.getClass();
-        String key = type.getName() + '#' + name;
-        Field field = FIELDS.get(key);
-        if (field == null) {
-            Class<?> current = type;
-            while (current != null && field == null) {
-                try {
-                    field = current.getDeclaredField(name);
-                } catch (NoSuchFieldException e) {
-                    current = current.getSuperclass();
-                }
-            }
-            if (field == null) throw new NoSuchFieldException(name);
-            field.setAccessible(true);
-            FIELDS.put(key, field);
-        }
-        return field.get(target);
     }
 }
