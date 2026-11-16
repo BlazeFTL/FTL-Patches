@@ -54,6 +54,7 @@ import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 private const val TAB_ORDER = "Lapp/ftl/extension/firefox/TabOrder;"
 private const val TAB_END_CLICK = "Lapp/ftl/extension/firefox/TabEndClick;"
 private const val TAB_FAB = "Lapp/ftl/extension/firefox/TabFab;"
+private const val TAB_SCROLL = "Lapp/ftl/extension/firefox/TabScroll;"
 
 private const val TOOLBAR_KT = "Lorg/mozilla/fenix/tabstray/ui/fab/TabManagerFloatingToolbarKt;"
 private const val TABS_TRAY_STATE = "Lorg/mozilla/fenix/tabstray/redux/state/TabsTrayState;"
@@ -344,33 +345,42 @@ private fun BytecodePatchContext.installTabFab() {
         """,
     )
 
+    val kinds = (0..2).joinToString("\n") { kind ->
+        """
+            const/4 v0, 0x$kind
+            invoke-static {v3, v0}, $TAB_FAB->shown(II)Z
+            move-result v1
+            if-eqz v1, :ftl_skip$kind
+            invoke-static {v0, p1}, $TAB_FAB->click(ILjava/lang/Object;)Ljava/lang/Object;
+            move-result-object v1
+            check-cast v1, $function0
+            invoke-static {v0}, $TAB_FAB->icon(I)I
+            move-result v2
+            invoke-static {v3, v0}, $TAB_FAB->padding(II)F
+            move-result v4
+            invoke-static {v1, p2, v2, v4}, $TAB_FAB->button($function0${composer}IF)V
+            :ftl_skip$kind
+        """.trimIndent()
+    }
+
     addStaticMethod(
         TAB_FAB,
         "extras",
         listOf(TABS_TRAY_STATE, function0, composer),
         "V",
-        7,
+        8,
         """
             const v0, $FAB_GROUP_KEY_END
             invoke-interface {p2, v0}, $startGroup
+            invoke-static {p0}, $TAB_SCROLL->tray(Ljava/lang/Object;)V
             invoke-virtual {p0}, $TABS_TRAY_STATE->getSelectedPage()$TABS_PAGE
             move-result-object v0
-            sget-object v1, $TABS_PAGE->NormalTabs:$TABS_PAGE
-            if-ne v0, v1, :ftl_skip
-            invoke-static {}, $TAB_FAB->endButton()Z
-            move-result v0
-            if-eqz v0, :ftl_skip
-            invoke-static {p1}, $TAB_END_CLICK->of(Ljava/lang/Object;)$TAB_END_CLICK
-            move-result-object v0
-            invoke-static {}, $TAB_FAB->endIcon()I
-            move-result v1
-            invoke-static {}, $TAB_FAB->endPadding()F
-            move-result v2
-            invoke-static {v0, p2, v1, v2}, $TAB_FAB->button($function0${composer}IF)V
-            :ftl_skip
+            invoke-static {v0}, $TAB_FAB->plan(Ljava/lang/Object;)I
+            move-result v3
+        """.trimIndent() + "\n" + kinds + "\n" + """
             invoke-interface {p2}, $endGroup
             return-void
-        """,
+        """.trimIndent(),
     )
 
     val interfaces = mutableClassDefBy(TAB_END_CLICK).interfaces

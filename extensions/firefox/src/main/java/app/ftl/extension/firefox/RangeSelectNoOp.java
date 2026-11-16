@@ -5,10 +5,10 @@ public final class RangeSelectNoOp {
 
     public Object invoke() {
         RangeSelect.endGesture();
-        return ModLambda.unit();
+        return TabAccess.unit();
     }
 
     public Object invoke(Object a, Object b) {
-        return ModLambda.unit();
+        return TabAccess.unit();
     }
 }

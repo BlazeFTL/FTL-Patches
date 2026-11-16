@@ -1,0 +1,20 @@
+Extract over repo root (updated files only).
+
+patches/src/main/kotlin/app/ftl/patches/FireFox/
+  Accessors.kt                       NEW
+  CloseDuplicateTabsPatch.kt
+  TabNextToCurrentPatch.kt
+  TabScrollButtonPatch.kt
+  RememberTabScrollPositionPatch.kt
+  RangeSelectTabsPatch.kt
+
+extensions/firefox/src/main/java/app/ftl/extension/firefox/
+  TabAccess.java                     NEW
+  TabMenu.java  TabCloseDuplicates.java  TabOrder.java  TabEndClick.java
+  TabFab.java   TabScroll.java           TabScrollClick.java
+  ScrollMemory.java
+  RangeSelect.java  RangeSelectStart.java  RangeSelectNoOp.java
+
+Unchanged and still valid: HideFullscreenToastPatch, TabIconsPatch, IconPatch.
+Not updated: OldMenuPatch (+ Fingerprints.kt, ComposeSmali.kt, OldMenu/ModCompose/ModLambda/ExtensionPin/Pin*).
+Update COMPATIBILITY_FIREFOX_NIGHTLY (Constants.kt) to the new build's version and versionCode.

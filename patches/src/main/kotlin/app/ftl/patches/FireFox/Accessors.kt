@@ -43,6 +43,10 @@ private const val ACC_LIST = "Ljava/util/List;"
 private const val ACC_SET = "Ljava/util/Set;"
 private const val ACC_CORE = "Lorg/mozilla/fenix/components/Core;"
 private const val ACC_TOOLBAR_KT = "Lorg/mozilla/fenix/tabstray/ui/fab/TabManagerFloatingToolbarKt;"
+private const val ACC_TAB_LAYOUT_KT = "Lorg/mozilla/fenix/tabstray/ui/tabpage/TabLayoutKt;"
+private const val ACC_LIST_REORDER = "Lorg/mozilla/fenix/tabstray/browser/compose/ListReorderState;"
+private const val ACC_GRID_REORDER = "Lorg/mozilla/fenix/tabstray/browser/compose/legacy/GridReorderState;"
+private const val ACC_LIST_STATE_KT = "Lorg/mozilla/fenix/compose/ext/LazyListStateKt;"
 
 internal fun fieldString(reference: FieldReference) =
     "${reference.definingClass}->${reference.name}:${reference.type}"
@@ -154,7 +158,7 @@ internal fun BytecodePatchContext.resolveTabModel(): TabModel {
     )
 }
 
-private fun BytecodePatchContext.resolveUnit(): String {
+internal fun BytecodePatchContext.resolveUnit(): String {
     for (method in mutableClassDefBy(ACC_TOOLBAR_KT).methods) {
         val returnType = method.returnType
         if (!returnType.startsWith("L") || returnType.startsWith("Ljava/")) continue
@@ -254,5 +258,154 @@ internal fun BytecodePatchContext.installTabAccessors() {
     addStaticMethod(TAB_ACCESS, "ftlUnit", listOf(), ACC_OBJ, 1, """
         sget-object v0, $unit
         return-object v0
+    """)
+}
+
+
+private object FabSignatureFingerprint : Fingerprint(
+    definingClass = ACC_TOOLBAR_KT,
+    name = "FloatingToolbarFAB",
+)
+
+internal class ComposeTypes(val composer: String, val function0: String)
+
+// FloatingToolbarFAB(TabsTrayState, F0, F0, F0, F0, Composer, I) is a Fenix method, so its signature names
+// the obfuscated Composer (param 5) and Function0 (param 1) types.
+internal fun BytecodePatchContext.resolveComposeTypes(): ComposeTypes {
+    val parameters = FabSignatureFingerprint.method.parameterTypes.map { it.toString() }
+    if (parameters.size != 7) throw PatchException("Unexpected FloatingToolbarFAB signature: $parameters")
+    return ComposeTypes(composer = parameters[5], function0 = parameters[1])
+}
+
+private fun BytecodePatchContext.constructorParameter(owner: String, index: Int): String =
+    mutableClassDefBy(owner).methods.firstOrNull { it.name == "<init>" }
+        ?.parameterTypes?.getOrNull(index)?.toString()
+        ?: throw PatchException("Constructor parameter $index not found in $owner")
+
+private fun isObject(type: String) = type.startsWith("L") && !type.startsWith("Ljava/")
+
+private fun BytecodePatchContext.layoutGetter(state: String): Pair<String, String> {
+    val getter = mutableClassDefBy(state).methods.firstOrNull {
+        !AccessFlags.STATIC.isSet(it.accessFlags) && it.parameterTypes.isEmpty() &&
+            it.name != "<init>" && isObject(it.returnType)
+    } ?: throw PatchException("layoutInfo getter not found in $state")
+    return "$state->${getter.name}()${getter.returnType}" to getter.returnType
+}
+
+private fun BytecodePatchContext.noArg(owner: String, what: String, match: (MutableMethod) -> Boolean): String {
+    val method = mutableClassDefBy(owner).methods.firstOrNull { it.parameterTypes.isEmpty() && match(it) }
+        ?: throw PatchException("$what not found in $owner")
+    return "$owner->${method.name}()${method.returnType}"
+}
+
+private fun BytecodePatchContext.isEnum(type: String): Boolean =
+    isObject(type) && runCatching { AccessFlags.ENUM.isSet(mutableClassDefBy(type).accessFlags) }.getOrDefault(false)
+
+// Lazy list/grid state, layout info and item info are R8-renamed. They are found from Fenix classes that
+// name them: ListReorderState/GridReorderState constructors (state type), LazyListStateKt.isItemPartiallyVisible
+// (item info type), TabLayoutScrollHelper (ScrollableState type) and TabManagerFloatingToolbarKt (Composer).
+// Members are picked by shape: layoutInfo = only no-arg object getter of the state, items = List getter of the
+// layout info, orientation = enum getter, request = instance (II)V, dispatchRawDelta = (F)F of ScrollableState,
+// item size = the (I) getter that is not getIndex/getOffset, composite key = no-arg J of Composer.
+internal fun BytecodePatchContext.installScrollAccessors() {
+    val types = resolveComposeTypes()
+    val list = constructorParameter(ACC_LIST_REORDER, 0)
+    val grid = constructorParameter(ACC_GRID_REORDER, 0)
+    val item = mutableClassDefBy(ACC_LIST_STATE_KT).methods
+        .firstOrNull { it.name == "isItemPartiallyVisible" }?.parameterTypes?.getOrNull(1)?.toString()
+        ?: throw PatchException("LazyListItemInfo type not found")
+
+    val (listLayoutCall, listLayout) = layoutGetter(list)
+    val (gridLayoutCall, gridLayout) = layoutGetter(grid)
+    val listItems = noArg(listLayout, "visibleItemsInfo") { it.returnType == "Ljava/util/List;" }
+    val gridItems = noArg(gridLayout, "visibleItemsInfo") { it.returnType == "Ljava/util/List;" }
+    val orientation = noArg(listLayout, "orientation") { isEnum(it.returnType) }
+    val itemSize = noArg(item, "item size") {
+        it.returnType == "I" && it.name != "getIndex" && it.name != "getOffset"
+    }
+
+    val request = mutableClassDefBy(list).methods.firstOrNull {
+        !AccessFlags.STATIC.isSet(it.accessFlags) && it.name != "<init>" && it.returnType == "V" &&
+            it.parameterTypes.map { type -> type.toString() } == listOf("I", "I")
+    } ?: throw PatchException("requestScrollToItem(II)V not found in $list")
+
+    val helper = mutableClassDefBy(ACC_TAB_LAYOUT_KT).methods
+        .firstOrNull { it.name.startsWith("TabLayoutScrollHelper") && it.parameterTypes.size == 7 }
+        ?: throw PatchException("TabLayoutScrollHelper not found")
+    val scrollable = helper.parameterTypes.map { it.toString() }
+        .firstOrNull { isObject(it) && it != types.composer }
+        ?: throw PatchException("ScrollableState parameter not found")
+    val raw = mutableClassDefBy(scrollable).methods.firstOrNull {
+        it.returnType == "F" && it.parameterTypes.map { type -> type.toString() } == listOf("F")
+    } ?: throw PatchException("dispatchRawDelta(F)F not found in $scrollable")
+
+    val compositeKey = noArg(types.composer, "getCompositeKeyHashCode") { it.returnType == "J" }
+
+    addStaticMethod(TAB_ACCESS, "ftlScrollItems", listOf(ACC_OBJ), ACC_LIST, 2, """
+        instance-of v0, p0, $list
+        if-eqz v0, :ftl_grid
+        check-cast p0, $list
+        invoke-virtual {p0}, $listLayoutCall
+        move-result-object v0
+        invoke-interface {v0}, $listItems
+        move-result-object v0
+        return-object v0
+        :ftl_grid
+        instance-of v0, p0, $grid
+        if-eqz v0, :ftl_none
+        check-cast p0, $grid
+        invoke-virtual {p0}, $gridLayoutCall
+        move-result-object v0
+        invoke-interface {v0}, $gridItems
+        move-result-object v0
+        return-object v0
+        :ftl_none
+        const/4 v0, 0x0
+        return-object v0
+    """)
+    addStaticMethod(TAB_ACCESS, "ftlScrollOrientation", listOf(ACC_OBJ), "I", 2, """
+        instance-of v0, p0, $list
+        if-eqz v0, :ftl_none
+        check-cast p0, $list
+        invoke-virtual {p0}, $listLayoutCall
+        move-result-object v0
+        invoke-interface {v0}, $orientation
+        move-result-object v0
+        invoke-virtual {v0}, Ljava/lang/Enum;->ordinal()I
+        move-result v0
+        return v0
+        :ftl_none
+        const/4 v0, -0x1
+        return v0
+    """)
+    addStaticMethod(TAB_ACCESS, "ftlScrollRequest", listOf(ACC_OBJ, "I"), "Z", 3, """
+        instance-of v0, p0, $list
+        if-eqz v0, :ftl_no
+        check-cast p0, $list
+        const/4 v0, 0x0
+        invoke-virtual {p0, p1, v0}, $list->${request.name}(II)V
+        const/4 v0, 0x1
+        return v0
+        :ftl_no
+        const/4 v0, 0x0
+        return v0
+    """)
+    addStaticMethod(TAB_ACCESS, "ftlScrollRaw", listOf(ACC_OBJ, "F"), "F", 3, """
+        check-cast p0, $scrollable
+        invoke-interface {p0, p1}, $scrollable->${raw.name}(F)F
+        move-result v0
+        return v0
+    """)
+    addStaticMethod(TAB_ACCESS, "ftlItemSize", listOf(ACC_OBJ), "I", 2, """
+        check-cast p0, $item
+        invoke-interface {p0}, $itemSize
+        move-result v0
+        return v0
+    """)
+    addStaticMethod(TAB_ACCESS, "ftlComposerKey", listOf(ACC_OBJ), "J", 3, """
+        check-cast p0, ${types.composer}
+        invoke-interface {p0}, $compositeKey
+        move-result-wide v0
+        return-wide v0
     """)
 }
