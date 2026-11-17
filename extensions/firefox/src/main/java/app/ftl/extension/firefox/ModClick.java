@@ -15,8 +15,13 @@ public final class ModClick {
         return new ModClick(context);
     }
 
+    // Context comes from the menu dialog (activity themed), so no Compose LocalContext read is needed.
+    public static ModClick open() {
+        return new ModClick(OldMenu.context());
+    }
+
     public Object invoke() {
-        ModSettings.open(context);
-        return ModLambda.unit();
+        if (context != null) ModSettings.open(context);
+        return TabAccess.unit();
     }
 }
