@@ -32,20 +32,28 @@
  *      MenuDialogBottomSheetKt.MenuBottomSheetHandle (Fenix, named; replaced mozilla BottomSheetHandleKt, which no longer
  *      exists). Returns at index 0 when the old menu is on, before the composer group starts.
  *
- *  Not part of this version: flat row restyle, Extensions page, extension pinning.
+ *  Flat rows
+ *      restyleRows() below (rules documented there; every anchor is structural).
+ *
+ *  Not part of this version: Extensions page, dividers, library group, extension pinning.
  */
 package app.ftl.patches.firefox
 
+import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.string
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.Instruction
+import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.iface.reference.TypeReference
@@ -470,6 +478,216 @@ private fun BytecodePatchContext.installModRow() {
     }
 }
 
+private object ColorSchemeStringFingerprint : Fingerprint(
+    name = "toString",
+    returnType = "Ljava/lang/String;",
+    parameters = listOf(),
+    filters = listOf(string("ColorScheme(primary="), string("surface="), string("surfaceBright=")),
+)
+
+private fun BytecodePatchContext.colorField(match: Int): FieldReference {
+    val method = ColorSchemeStringFingerprint.method
+    val instructions = method.implementation!!.instructions.toList()
+    val start = ColorSchemeStringFingerprint.instructionMatches[match].index
+    val found = (start until instructions.size).firstOrNull { instructions[it].opcode == Opcode.IGET_WIDE }
+        ?: throw PatchException("ColorScheme field after toString literal not found")
+    return (instructions[found] as ReferenceInstruction).reference as FieldReference
+}
+
+private fun Instruction.highConst(bits: Int) =
+    opcode == Opcode.CONST_HIGH16 && (this as NarrowLiteralInstruction).narrowLiteral == bits
+
+private fun Instruction.methodRef() = (this as? ReferenceInstruction)?.reference as? MethodReference
+
+private fun surfaceTo(index: Int, field: FieldReference) = Edit(index) {
+    val instruction = getInstruction<TwoRegisterInstruction>(index)
+    val a = instruction.registerA
+    val b = instruction.registerB
+    swapAt(index, if (a == b) a + 1 else a, "iget-wide v$a, v$b, ${fieldString(field)}")
+}
+
+private fun skipWhenOld(index: Int, scratch: Int) = Edit(index) { swapAt(index, scratch, "", count = 1) }
+
+private fun navPaddingTo(index: Int) = Edit(index) {
+    val register = getInstruction<OneRegisterInstruction>(index).registerA
+    swapAt(index, register, "invoke-static {}, $OLD_MENU->navPadding()F\nmove-result v$register")
+}
+
+private fun BytecodePatchContext.methodsOf(owner: String, name: String) =
+    mutableClassDefBy(owner).methods.filter { it.name == name }.ifEmpty { throw PatchException("$owner->$name not found") }
+
+/*
+ * Flat rows. Every rule is found by structure (float literal pairs, ColorScheme toString labels, named Fenix methods).
+ * Rules (old 161 build -> same rule on the obfuscated build):
+ *  surfaceBright -> surface        iget-wide of ColorScheme.surfaceBright in MenuItemKt and MainMenuKt
+ *  row padding 16/8dp -> 12/2dp    two adjacent const/high16 (16.0f, 8.0f) in MenuItemKt
+ *  row height 56/52dp -> 40dp      const/high16 0x42600000 / 0x42500000 in MenuItemKt
+ *  group spacing 2dp -> 0          only const/high16 0x40000000 in MenuGroupKt.MenuGroup
+ *  frame spacing 12dp -> 0         first const/high16 0x41400000 followed by <init>(FZ..) in MenuScaffoldKt.MenuFrame
+ *  nav bar padding                 const/high16 12.0f + 4.0f pair in MenuNavigationKt.MenuNavigation -> OldMenu.navPadding()
+ *  nav labels hidden               MenuNavItem: the void call after the 4.0f literal (spacer) and the Text call (first param String, 20+ params)
+ *  long badges hidden              MenuItemKt.Badge(String, ...) returns early when OldMenu.hideBadge(text)
+ *  outer padding                   MainMenu: const/high16 8.0f right after sget MenuAccessPoint.Home -> 0;
+ *                                  bottom padding of the 4 float padding call that has the 84.0f literal -> OldMenu.bottomPadding
+ */
+private fun BytecodePatchContext.restyleRows() {
+    val surface = colorField(1)
+    val bright = colorField(2)
+    if (surface.definingClass != bright.definingClass || surface.type != "J" || bright.type != "J") {
+        throw PatchException("Unexpected ColorScheme fields: $surface $bright")
+    }
+
+    var recolored = 0
+    for (owner in listOf(MENU_ITEM_KT, MAIN_MENU_KT)) {
+        for (method in mutableClassDefBy(owner).methods) {
+            val list = method.instructionList()
+            val edits = list.mapIndexedNotNull { i, instruction ->
+                val reference = (instruction as? ReferenceInstruction)?.reference as? FieldReference
+                if (instruction.opcode == Opcode.IGET_WIDE && reference != null &&
+                    reference.definingClass == bright.definingClass && reference.name == bright.name
+                ) surfaceTo(i, surface) else null
+            }
+            if (edits.isNotEmpty()) {
+                method.applyEdits(*edits.toTypedArray())
+                recolored += edits.size
+            }
+        }
+    }
+    if (recolored == 0) throw PatchException("ColorScheme.surfaceBright reads not found in menu classes")
+
+    var rows = 0
+    for (method in mutableClassDefBy(MENU_ITEM_KT).methods) {
+        val list = method.instructionList()
+        val edits = ArrayList<Edit>()
+        for (i in list.indices) {
+            val instruction = list[i]
+            if (instruction.highConst(0x42600000) || instruction.highConst(0x42500000)) {
+                edits += floatTo(i, 0x42200000)
+                rows++
+            }
+            val next = list.getOrNull(i + 1) ?: continue
+            if (instruction.highConst(0x41800000) && next.highConst(0x41000000)) {
+                edits += floatTo(i, 0x41400000)
+                edits += floatTo(i + 1, 0x40000000)
+                rows++
+            } else if (instruction.highConst(0x41000000) && next.highConst(0x41800000)) {
+                edits += floatTo(i, 0x40000000)
+                edits += floatTo(i + 1, 0x41400000)
+                rows++
+            }
+        }
+        if (edits.isNotEmpty()) method.applyEdits(*edits.toTypedArray())
+    }
+    if (rows == 0) throw PatchException("Menu row size literals not found in MenuItemKt")
+
+    var groups = 0
+    for (method in methodsOf(MENU_GROUP_KT, "MenuGroup")) {
+        val list = method.instructionList()
+        val edits = list.indices.filter { list[it].highConst(0x40000000) }.map { zeroTo(it) }
+        if (edits.isNotEmpty()) {
+            method.applyEdits(*edits.toTypedArray())
+            groups += edits.size
+        }
+    }
+    if (groups == 0) throw PatchException("MenuGroup spacing literal not found")
+
+    var frames = 0
+    for (method in methodsOf(MENU_SCAFFOLD_KT, "MenuFrame")) {
+        val list = method.instructionList()
+        val at = list.indices.firstOrNull { i ->
+            list[i].highConst(0x41400000) && (i + 1..i + 3).any { j ->
+                val reference = list.getOrNull(j)?.methodRef()
+                list.getOrNull(j)?.opcode == Opcode.INVOKE_DIRECT && reference != null && reference.name == "<init>" &&
+                    reference.params().take(2) == listOf("F", "Z")
+            }
+        }
+        if (at != null) {
+            method.applyEdits(zeroTo(at))
+            frames++
+        }
+    }
+    if (frames == 0) throw PatchException("MenuFrame spacing literal not found")
+
+    for (method in methodsOf(MENU_NAVIGATION_KT, "MenuNavigation")) {
+        val list = method.instructionList()
+        val at = list.indices.firstOrNull { i ->
+            list[i].highConst(0x41400000) && list.getOrNull(i + 1)?.highConst(0x40800000) == true
+        } ?: throw PatchException("Navigation bar padding literal not found")
+        method.applyEdits(navPaddingTo(at))
+    }
+
+    for (method in methodsOf(MENU_NAVIGATION_KT, "MenuNavItem")) {
+        val list = method.instructionList()
+        val liveness = Liveness(method)
+        val literal = list.indices.firstOrNull { list[it].highConst(0x40800000) }
+            ?: throw PatchException("Navigation label spacer literal not found")
+        val spacer = (literal + 1..literal + 4).firstOrNull { j ->
+            val reference = list.getOrNull(j)?.methodRef()
+            list.getOrNull(j)?.opcode == Opcode.INVOKE_STATIC && reference != null && reference.returnType == "V" &&
+                reference.params().size == 4 && reference.params()[2] == "F"
+        } ?: throw PatchException("Navigation label spacer call not found")
+        val text = list.indices.firstOrNull { j ->
+            val reference = list[j].methodRef()
+            list[j].opcode == Opcode.INVOKE_STATIC_RANGE && reference != null &&
+                reference.params().firstOrNull() == "Ljava/lang/String;" && reference.params().size >= 20
+        } ?: throw PatchException("Navigation label text call not found")
+        method.applyEdits(
+            skipWhenOld(spacer, liveness.takeLow(1, spacer)[0]),
+            skipWhenOld(text, liveness.takeLow(1, text)[0]),
+        )
+    }
+
+    val badge = mutableClassDefBy(MENU_ITEM_KT).methods.firstOrNull {
+        it.name == "Badge" && it.params().firstOrNull() == "Ljava/lang/String;"
+    } ?: throw PatchException("MenuItemKt.Badge not found")
+    val badgeScratch = Liveness(badge).takeLow(1, 0)[0]
+    badge.applyEdits(
+        insert(
+            0,
+            """
+                invoke-static/range {p0 .. p0}, $OLD_MENU->hideBadge(Ljava/lang/String;)Z
+                move-result v$badgeScratch
+                if-eqz v$badgeScratch, :ftl_show
+                return-void
+            """,
+            mapOf("ftl_show" to { 0 }),
+        ),
+    )
+
+    val mainMenu = methodsOf(MAIN_MENU_KT, "MainMenu").single()
+    val list = mainMenu.instructionList()
+    val edits = ArrayList<Edit>()
+    val home = list.indices.firstOrNull { i ->
+        val reference = (list[i] as? ReferenceInstruction)?.reference as? FieldReference
+        list[i].opcode == Opcode.SGET_OBJECT && reference != null && reference.name == "Home" &&
+            reference.definingClass == "${MENU_PACKAGE}MenuAccessPoint;" && list.getOrNull(i + 1)?.highConst(0x41000000) == true
+    } ?: throw PatchException("MainMenu outer padding literal not found")
+    edits += zeroTo(home + 1)
+
+    val padding = list.indices.firstOrNull { i ->
+        val reference = list[i].methodRef()
+        list[i].opcode == Opcode.INVOKE_STATIC && reference != null && reference.params().size == 5 &&
+            reference.params().drop(1).all { it == "F" } && reference.returnType != "V" &&
+            (maxOf(0, i - 25) until i).any { list[it].highConst(0x42a80000) }
+    } ?: throw PatchException("MainMenu bottom padding call not found")
+    val bottom = (list[padding] as FiveRegisterInstruction).registerG
+    if (bottom > 15) throw PatchException("MainMenu bottom padding register v$bottom is out of reach")
+    val paddingScratch = Liveness(mainMenu).takeLow(1, padding)[0]
+    edits += insert(
+        padding,
+        """
+            invoke-static {}, $MOD_SETTINGS->oldMenu()Z
+            move-result v$paddingScratch
+            if-eqz v$paddingScratch, :ftl_keep
+            const/4 v$paddingScratch, 0x0
+            invoke-static {v$bottom, v$paddingScratch}, $OLD_MENU->bottomPadding(FZ)F
+            move-result v$bottom
+        """,
+        mapOf("ftl_keep" to { padding }),
+    )
+    mainMenu.applyEdits(*edits.toTypedArray())
+}
+
 @Suppress("unused")
 val oldMenuPatch = bytecodePatch(
     name = "Old style 3 dot menu And Extension Pinning",
@@ -487,6 +705,7 @@ val oldMenuPatch = bytecodePatch(
         installTabAccessors()
         installWindowHooks()
         hideSheetHandle()
+        restyleRows()
         installSheetAccessors()
         routeToLegacyMenu()
         installModRow()
