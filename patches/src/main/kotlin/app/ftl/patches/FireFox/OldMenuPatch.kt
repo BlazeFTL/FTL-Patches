@@ -28,6 +28,10 @@
  *      signatures (Fenix, named), rememberComposableLambda (static call (I, X, Composer) returning the MenuGroup content type)
  *      and painterResource (static call (I, I, Composer) returning the MenuItem painter type, found in MainMenuKt).
  *
+ *  Sheet handle
+ *      MenuDialogBottomSheetKt.MenuBottomSheetHandle (Fenix, named; replaced mozilla BottomSheetHandleKt, which no longer
+ *      exists). Returns at index 0 when the old menu is on, before the composer group starts.
+ *
  *  Not part of this version: flat row restyle, Extensions page, extension pinning.
  */
 package app.ftl.patches.firefox
@@ -191,6 +195,13 @@ private fun BytecodePatchContext.hookFragment(owner: String, widthDp: Int, viewC
 private fun BytecodePatchContext.installWindowHooks() {
     hookFragment(OM_DIALOG_FRAGMENT, 240, viewCreated = true)
     hookFragment(OM_MENU_FRAGMENT, 300, viewCreated = false)
+}
+
+private fun BytecodePatchContext.hideSheetHandle() {
+    val handle = mutableClassDefBy("${COMPOSE_PACKAGE}MenuDialogBottomSheetKt;").methods.firstOrNull {
+        it.name == "MenuBottomSheetHandle" && it.returnType == "V"
+    } ?: throw PatchException("MenuDialogBottomSheetKt.MenuBottomSheetHandle not found")
+    handle.applyEdits(returnWhenOld(0, 0, "return-void"))
 }
 
 private val LEGACY_ROUTING_CLASSES = listOf(
@@ -475,6 +486,7 @@ val oldMenuPatch = bytecodePatch(
     execute {
         installTabAccessors()
         installWindowHooks()
+        hideSheetHandle()
         installSheetAccessors()
         routeToLegacyMenu()
         installModRow()
