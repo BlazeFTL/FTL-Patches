@@ -18,6 +18,10 @@ public final class ModCompose {
         throw new IllegalStateException("Patch not applied");
     }
 
+    public static void libraryItem(Object composer, int text, int icon, Object onClick) {
+        throw new IllegalStateException("Patch not applied");
+    }
+
     public static void libraryList(Object history, Object bookmarks, Object downloads, Object passwords, Object composer) {
         throw new IllegalStateException("Patch not applied");
     }
