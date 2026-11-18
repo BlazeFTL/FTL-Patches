@@ -35,7 +35,13 @@
  *  Flat rows
  *      restyleRows() below (rules documented there; every anchor is structural).
  *
- *  Not part of this version: Extensions page, dividers, library group, extension pinning.
+ *  Dividers and flat library list
+ *      installModRow(): HorizontalDivider is found in MenuScaffoldKt (mask 7 = all defaults). Dividers go after every
+ *      MenuGroup / ToolsAndActionsMenuGroup / LibraryMenuGroup call in the QuitMenuGroup method. LibraryMenuGroup
+ *      returns early into ModCompose.libraryGroupFlagged (MenuItem rows). Params: p2 bookmarks, p3 history,
+ *      p4 downloads, p5 passwords, p6 show passwords, p7 downloads flag.
+ *
+ *  Not part of this version: Extensions page, extension pinning.
  */
 package app.ftl.patches.firefox
 
@@ -53,6 +59,7 @@ import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
@@ -368,6 +375,7 @@ private fun BytecodePatchContext.installModRow() {
     val mainMenu = mutableClassDefBy(MAIN_MENU_KT)
     var remember: MethodReference? = null
     var painter: MethodReference? = null
+    var string: MethodReference? = null
     var quitMethod: MutableMethod? = null
     var quitIndex = -1
     var groupAt = -1
@@ -383,6 +391,9 @@ private fun BytecodePatchContext.installModRow() {
             ) remember = reference
             if (painter == null && parameters == listOf("I", "I", composer) && reference.returnType == painterType) {
                 painter = reference
+            }
+            if (string == null && parameters == listOf("I", composer) && reference.returnType == "Ljava/lang/String;") {
+                string = reference
             }
         }
         val quit = instructions.indexOfFirst {
@@ -404,6 +415,7 @@ private fun BytecodePatchContext.installModRow() {
     }
     val rememberCall = remember ?: throw PatchException("rememberComposableLambda not found")
     val painterCall = painter ?: throw PatchException("painterResource not found")
+    val stringCall = string ?: throw PatchException("stringResource not found")
     val target = quitMethod ?: throw PatchException("QuitMenuGroup call site not found")
 
     val instructions = target.instructionList()
@@ -416,6 +428,41 @@ private fun BytecodePatchContext.installModRow() {
     val rememberSmali = rememberCall.smali()
     val groupSmali = menuGroup.smali()
     val painterSmali = painterCall.smali()
+    val stringSmali = stringCall.smali()
+
+    val modifierType = itemParams[2]
+    val divider = mutableClassDefBy(MENU_SCAFFOLD_KT).methods.firstNotNullOfOrNull { method ->
+        method.implementation?.instructions?.firstNotNullOfOrNull { instruction ->
+            val reference = (instruction as? ReferenceInstruction)?.reference as? MethodReference
+            if ((instruction.opcode == Opcode.INVOKE_STATIC || instruction.opcode == Opcode.INVOKE_STATIC_RANGE) &&
+                reference != null && reference.returnType == "V" &&
+                reference.params() == listOf(modifierType, "F", "J", composer, "I", "I")
+            ) reference else null
+        }
+    } ?: throw PatchException("HorizontalDivider call not found in MenuScaffoldKt")
+    val dividerSmali = divider.smali()
+
+    val libraryMenuGroup = methodsOf(MAIN_MENU_KT, "LibraryMenuGroup").single()
+    val libraryParams = libraryMenuGroup.params()
+    val clickType = types.function0
+    if (libraryParams != listOf("I", composer, clickType, clickType, clickType, clickType, "Z", "Z")) {
+        throw PatchException("Unexpected LibraryMenuGroup signature: ${libraryMenuGroup.smali()}")
+    }
+    val libraryFields = HashMap<String, FieldReference>()
+    libraryMenuGroup.instructionList().forEach { instruction ->
+        val reference = (instruction as? ReferenceInstruction)?.reference as? FieldReference
+        if (instruction.opcode == Opcode.SGET && reference != null) libraryFields[reference.name] = reference
+    }
+    fun libraryField(name: String) = libraryFields[name]?.let { fieldString(it) }
+        ?: throw PatchException("LibraryMenuGroup resource $name not found")
+    val historyText = libraryField("library_history")
+    val bookmarksText = libraryField("library_bookmarks")
+    val downloadsText = libraryField("library_downloads")
+    val passwordsText = libraryField("browser_menu_passwords")
+    val historyIcon = libraryField("mozac_ic_history_24")
+    val bookmarksIcon = libraryField("mozac_ic_bookmark_tray_fill_24")
+    val downloadsIcon = libraryField("mozac_ic_download_24")
+    val passwordsIcon = libraryField("mozac_ic_login_24")
 
     addStaticMethod(MOD_COMPOSE, "modRow", listOf(OM_OBJECT), "V", 3, """
         check-cast p0, $composer
@@ -464,10 +511,160 @@ private fun BytecodePatchContext.installModRow() {
         return-void
     """)
 
-    target.applyEdits(
+    addStaticMethod(MOD_COMPOSE, "divider", listOf(OM_OBJECT), "V", 8, """
+        check-cast p0, $composer
+        const/4 v0, 0x0
+        const/4 v1, 0x0
+        const-wide/16 v2, 0x0
+        const/4 v5, 0x0
+        const/4 v6, 0x7
+        move-object v4, p0
+        invoke-static/range {v0 .. v6}, $dividerSmali
+        return-void
+    """)
+    addStaticMethod(MOD_COMPOSE, "libraryItem", listOf(OM_OBJECT, "I", "I", OM_OBJECT), "V", 27, """
+        move-object/from16 v17, p0
+        check-cast v17, $composer
+        move-object/from16 v0, v17
+        move/from16 v1, p1
+        move/from16 v2, p2
+        move-object/from16 v10, p3
+        check-cast v10, ${types.function0}
+        invoke-static {v1, v0}, $stringSmali
+        move-result-object v21
+        const/4 v5, 0x0
+        invoke-static {v2, v5, v0}, $painterSmali
+        move-result-object v22
+        move-object/from16 v0, v21
+        move-object/from16 v1, v22
+        const/4 v2, 0x0
+        const/4 v3, 0x0
+        const/4 v4, 0x0
+        const/4 v5, 0x0
+        const/4 v6, 0x0
+        const/4 v7, 0x0
+        const/4 v8, 0x0
+        const/4 v9, 0x0
+        const/4 v11, 0x0
+        const/4 v12, 0x0
+        const/4 v13, 0x0
+        const/4 v14, 0x0
+        const/4 v15, 0x0
+        const/16 v16, 0x0
+        const/16 v18, 0x40
+        const/16 v19, 0x0
+        const v20, 0x3f7fc
+        invoke-static/range {v0 .. v20}, $itemSmali
+        return-void
+    """)
+    addStaticMethod(MOD_COMPOSE, "libraryList", listOf(OM_OBJECT, OM_OBJECT, OM_OBJECT, OM_OBJECT, OM_OBJECT), "V", 12, """
+        move-object v0, p4
+        move-object v1, p0
+        move-object v2, p1
+        move-object v3, p2
+        move-object v4, p3
+        sget v5, $historyText
+        sget v6, $historyIcon
+        invoke-static {v0, v5, v6, v1}, $MOD_COMPOSE->libraryItem(Ljava/lang/Object;IILjava/lang/Object;)V
+        sget v5, $bookmarksText
+        sget v6, $bookmarksIcon
+        invoke-static {v0, v5, v6, v2}, $MOD_COMPOSE->libraryItem(Ljava/lang/Object;IILjava/lang/Object;)V
+        sget v5, $downloadsText
+        sget v6, $downloadsIcon
+        invoke-static {v0, v5, v6, v3}, $MOD_COMPOSE->libraryItem(Ljava/lang/Object;IILjava/lang/Object;)V
+        if-eqz v4, :ftl_no_passwords
+        sget v5, $passwordsText
+        sget v6, $passwordsIcon
+        invoke-static {v0, v5, v6, v4}, $MOD_COMPOSE->libraryItem(Ljava/lang/Object;IILjava/lang/Object;)V
+        :ftl_no_passwords
+        return-void
+    """)
+    addStaticMethod(MOD_COMPOSE, "libraryGroup", listOf(OM_OBJECT, OM_OBJECT, OM_OBJECT, OM_OBJECT, OM_OBJECT), "V", 9, """
+        check-cast p4, $composer
+        invoke-static {p1, p0, p2, p3}, $MOD_LAMBDA->libraryList(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)$MOD_LAMBDA
+        move-result-object v0
+        const v1, 0x41d486a7
+        invoke-static {v1, v0, p4}, $rememberSmali
+        move-result-object v0
+        const/4 v1, 0x6
+        invoke-static {v1, v0, p4}, $groupSmali
+        return-void
+    """)
+    addStaticMethod(MOD_COMPOSE, "libraryGroupFlagged", listOf("Z", "Z", OM_OBJECT, OM_OBJECT, OM_OBJECT, OM_OBJECT, OM_OBJECT), "V", 7, """
+        if-nez p0, :ftl_passwords
+        const/4 p5, 0x0
+        :ftl_passwords
+        invoke-static {p2, p3, p4, p5, p6}, $MOD_COMPOSE->libraryGroup(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)V
+        return-void
+    """)
+
+    val liveness = Liveness(target)
+    val edits = ArrayList<Edit>()
+    val dividerScratch = liveness.takeLow(1, groupIndex + 1)[0]
+    edits += insert(
+        groupIndex + 1,
+        """
+            invoke-static {}, $MOD_SETTINGS->oldMenu()Z
+            move-result v$dividerScratch
+            if-eqz v$dividerScratch, :ftl_no_divider
+            invoke-static/range {v$composerRegister .. v$composerRegister}, $MOD_COMPOSE->divider(Ljava/lang/Object;)V
+            :ftl_no_divider
+            invoke-static {v$composerRegister}, $MOD_COMPOSE->modRow(Ljava/lang/Object;)V
+        """,
+    )
+    instructions.forEachIndexed { i, instruction ->
+        if (i == groupIndex || instruction.opcode != Opcode.INVOKE_STATIC && instruction.opcode != Opcode.INVOKE_STATIC_RANGE) {
+            return@forEachIndexed
+        }
+        val reference = instruction.methodRef() ?: return@forEachIndexed
+        val isGroup = (reference.definingClass == MENU_GROUP_KT && reference.name == "MenuGroup") ||
+            (reference.definingClass == MAIN_MENU_KT &&
+                (reference.name == "ToolsAndActionsMenuGroup" || reference.name == "LibraryMenuGroup"))
+        if (!isGroup) return@forEachIndexed
+        val parameters = reference.params()
+        val composerIndex = parameters.indexOf(composer)
+        if (composerIndex < 0) return@forEachIndexed
+        val register = when (instruction) {
+            is RegisterRangeInstruction -> instruction.startRegister + composerIndex
+            is FiveRegisterInstruction -> listOf(
+                instruction.registerC, instruction.registerD, instruction.registerE,
+                instruction.registerF, instruction.registerG,
+            )[composerIndex]
+            else -> return@forEachIndexed
+        }
+        val scratch = liveness.takeLow(1, i + 1)[0]
+        edits += insert(
+            i + 1,
+            """
+                invoke-static {}, $MOD_SETTINGS->oldMenu()Z
+                move-result v$scratch
+                if-eqz v$scratch, :ftl_no_divider
+                invoke-static/range {v$register .. v$register}, $MOD_COMPOSE->divider(Ljava/lang/Object;)V
+            """,
+            mapOf("ftl_no_divider" to { i + 1 }),
+        )
+    }
+    target.applyEdits(*edits.toTypedArray())
+
+    val libraryScratch = Liveness(libraryMenuGroup).takeLow(1, 0)[0]
+    libraryMenuGroup.applyEdits(
         insert(
-            groupIndex + 1,
-            "invoke-static {v$composerRegister}, $MOD_COMPOSE->modRow(Ljava/lang/Object;)V",
+            0,
+            """
+                invoke-static {}, $MOD_SETTINGS->oldMenu()Z
+                move-result v$libraryScratch
+                if-eqz v$libraryScratch, :ftl_library_stock
+                move/from16 v1, p6
+                move/from16 v2, p7
+                move-object/from16 v3, p2
+                move-object/from16 v4, p3
+                move-object/from16 v5, p4
+                move-object/from16 v6, p5
+                move-object/from16 v7, p1
+                invoke-static/range {v1 .. v7}, $MOD_COMPOSE->libraryGroupFlagged(ZZLjava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)V
+                return-void
+            """,
+            mapOf("ftl_library_stock" to { 0 }),
         ),
     )
 
@@ -482,7 +679,7 @@ private object ColorSchemeStringFingerprint : Fingerprint(
     name = "toString",
     returnType = "Ljava/lang/String;",
     parameters = listOf(),
-    filters = listOf(string("ColorScheme(primary="), string("surface="), string("surfaceBright=")),
+    filters = listOf(string("ColorScheme(primary="), string("surface="), string("surfaceBright="), string("surfaceContainerHigh=")),
 )
 
 private fun BytecodePatchContext.colorField(match: Int): FieldReference {
@@ -516,6 +713,51 @@ private fun navPaddingTo(index: Int) = Edit(index) {
 private fun BytecodePatchContext.methodsOf(owner: String, name: String) =
     mutableClassDefBy(owner).methods.filter { it.name == name }.ifEmpty { throw PatchException("$owner->$name not found") }
 
+private fun BytecodePatchContext.recolor(owner: String, from: FieldReference, to: FieldReference): Int {
+    var count = 0
+    for (method in mutableClassDefBy(owner).methods) {
+        val list = method.instructionList()
+        val edits = list.mapIndexedNotNull { i, instruction ->
+            val reference = (instruction as? ReferenceInstruction)?.reference as? FieldReference
+            if (instruction.opcode == Opcode.IGET_WIDE && reference != null &&
+                reference.definingClass == from.definingClass && reference.name == from.name
+            ) surfaceTo(i, to) else null
+        }
+        if (edits.isNotEmpty()) {
+            method.applyEdits(*edits.toTypedArray())
+            count += edits.size
+        }
+    }
+    return count
+}
+
+private fun BytecodePatchContext.hideAccountSubtitle() {
+    for (method in mutableClassDefBy(ACCOUNT_KT).methods) {
+        val list = method.instructionList()
+        val calls = list.indices.filter { j ->
+            val reference = list[j].methodRef()
+            list[j].opcode == Opcode.INVOKE_STATIC_RANGE && reference != null &&
+                reference.params().firstOrNull() == "Ljava/lang/String;" && reference.params().size >= 20
+        }
+        if (calls.size < 2) continue
+        val at = calls.last()
+        val start = (list[at] as RegisterRangeInstruction).startRegister
+        method.applyEdits(
+            insert(
+                at,
+                """
+                    invoke-static/range {v$start .. v$start}, $OLD_MENU->accountSubtitle(Ljava/lang/String;)Ljava/lang/String;
+                    move-result-object v$start
+                    if-eqz v$start, :ftl_no_subtitle
+                """,
+                mapOf("ftl_no_subtitle" to { at + 1 }),
+            ),
+        )
+        return
+    }
+    throw PatchException("Account subtitle Text call not found")
+}
+
 /*
  * Flat rows. Every rule is found by structure (float literal pairs, ColorScheme toString labels, named Fenix methods).
  * Rules (old 161 build -> same rule on the obfuscated build):
@@ -533,26 +775,16 @@ private fun BytecodePatchContext.methodsOf(owner: String, name: String) =
 private fun BytecodePatchContext.restyleRows() {
     val surface = colorField(1)
     val bright = colorField(2)
+    val high = colorField(3)
     if (surface.definingClass != bright.definingClass || surface.type != "J" || bright.type != "J") {
         throw PatchException("Unexpected ColorScheme fields: $surface $bright")
     }
 
     var recolored = 0
-    for (owner in listOf(MENU_ITEM_KT, MAIN_MENU_KT)) {
-        for (method in mutableClassDefBy(owner).methods) {
-            val list = method.instructionList()
-            val edits = list.mapIndexedNotNull { i, instruction ->
-                val reference = (instruction as? ReferenceInstruction)?.reference as? FieldReference
-                if (instruction.opcode == Opcode.IGET_WIDE && reference != null &&
-                    reference.definingClass == bright.definingClass && reference.name == bright.name
-                ) surfaceTo(i, surface) else null
-            }
-            if (edits.isNotEmpty()) {
-                method.applyEdits(*edits.toTypedArray())
-                recolored += edits.size
-            }
-        }
+    for (owner in listOf(MENU_ITEM_KT, MAIN_MENU_KT, IP_PROTECTION_KT)) {
+        recolored += recolor(owner, bright, surface)
     }
+    recolor(MENU_NAVIGATION_KT, high, surface)
     if (recolored == 0) throw PatchException("ColorScheme.surfaceBright reads not found in menu classes")
 
     var rows = 0
@@ -636,6 +868,27 @@ private fun BytecodePatchContext.restyleRows() {
             skipWhenOld(text, liveness.takeLow(1, text)[0]),
         )
     }
+
+    for (method in mutableClassDefBy(IP_PROTECTION_KT).methods) {
+        val list = method.instructionList()
+        val edits = list.indices.filter { list[it].highConst(0x42500000) }.map { floatTo(it, 0x42400000) }
+        if (edits.isNotEmpty()) method.applyEdits(*edits.toTypedArray())
+    }
+
+    for (method in mutableClassDefBy(MAIN_MENU_KT).methods) {
+        val list = method.instructionList()
+        val at = list.indices.firstOrNull { i ->
+            list[i].highConst(0x40000000) && (i + 1..i + 2).any { j ->
+                val reference = list.getOrNull(j)?.methodRef()
+                list.getOrNull(j)?.opcode == Opcode.INVOKE_DIRECT && reference != null && reference.name == "<init>" &&
+                    reference.params().take(2) == listOf("F", "Z")
+            }
+        } ?: continue
+        method.applyEdits(zeroTo(at))
+        break
+    }
+
+    hideAccountSubtitle()
 
     val badge = mutableClassDefBy(MENU_ITEM_KT).methods.firstOrNull {
         it.name == "Badge" && it.params().firstOrNull() == "Ljava/lang/String;"
