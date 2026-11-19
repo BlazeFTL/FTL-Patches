@@ -677,16 +677,19 @@ private fun BytecodePatchContext.installModRow() {
         (27..30).any { targetParams.getOrNull(it) != types.function0 }
     ) throw PatchException("Unexpected main menu column signature: ${target.smali()}")
 
-    fun dividerEdit(index: Int, register: Int) = insert(
-        index,
+    fun dividerEdit(index: Int, register: Int): Edit {
+        val scratch = liveness.takeAny(1, index)[0]
+        return insert(
+            index,
         """
             invoke-static {}, $MOD_SETTINGS->oldMenu()Z
-            move-result v${liveness.takeLow(1, index)[0]}
-            if-eqz v${liveness.takeLow(1, index)[0]}, :ftl_no_divider
+            move-result v${scratch}
+            if-eqz v${scratch}, :ftl_no_divider
             invoke-static/range {v$register .. v$register}, $MOD_COMPOSE->divider(Ljava/lang/Object;)V
         """,
         mapOf("ftl_no_divider" to { index }),
-    )
+        )
+    }
 
     val composerCall = instructions.indexOfFirst {
         val reference = it.methodRef()
@@ -810,7 +813,7 @@ private fun BytecodePatchContext.installModRow() {
             }
             "LibraryMenuGroup" -> {
                 val register = (instruction as RegisterRangeInstruction).startRegister + reference.params().indexOf(composer)
-                edits += skipWhenOld(i, liveness.takeLow(1, i)[0])
+                edits += skipWhenOld(i, liveness.takeAny(1, i)[0])
                 edits += dividerEdit(i + 1, register)
             }
             "QuitMenuGroup" -> edits += dividerEdit(i, composerReg)
@@ -867,6 +870,12 @@ private fun Instruction.highConst(bits: Int) =
     opcode == Opcode.CONST_HIGH16 && (this as NarrowLiteralInstruction).narrowLiteral == bits
 
 private fun Instruction.methodRef() = (this as? ReferenceInstruction)?.reference as? MethodReference
+
+private fun Liveness.takeAny(count: Int, index: Int): List<Int> {
+    val picked = free(index).filter { it < 256 }.take(count)
+    if (picked.size < count) throw PatchException("not enough free registers at $index")
+    return picked
+}
 
 private fun surfaceTo(index: Int, field: FieldReference) = Edit(index) {
     val instruction = getInstruction<TwoRegisterInstruction>(index)
