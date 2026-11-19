@@ -43,10 +43,10 @@
  *
  *  Extensions page
  *      Main menu column method (the one with the QuitMenuGroup call). When old menu is on, the access point is
- *      Browser and p10 (extensions expanded) is true, the column is replaced by ModCompose.extensionsPage(p23 list,
- *      p19 toggle): the list, a divider and a back row. OldMenu.setExtensionsActive(p1, p10) runs at index 0 for
- *      the wider popup. Params checked against ToolsAndActionsMenuGroup: p23 is its extension list lambda,
- *      p19 its extensions click.
+ *      Browser and p10 (extensions expanded) is true, the column is replaced by ModCompose.extensionsPage(p24 list,
+ *      p15 toggle): the list, a divider and a back row. OldMenu.setExtensionsActive(p1, p10) runs at index 0 for
+ *      the wider popup. Params checked against ToolsAndActionsMenuGroup: p24 is its extension list lambda (p3),
+ *      p15 its extensions click (p5). p23/p20 are the More list and click.
  *  Library order
  *      An extra libraryGroupFlagged block runs at the join after the VPN group (library first, like the old
  *      build). The original LibraryMenuGroup call is left untouched in the column method (no edit next to the
@@ -675,7 +675,7 @@ private fun BytecodePatchContext.installModRow() {
     val toolsGroup = methodsOf(MAIN_MENU_KT, "ToolsAndActionsMenuGroup").single()
     val extensionContentType = toolsGroup.params().getOrNull(2)
     if (targetParams.getOrNull(1) != accessPointType || targetParams.getOrNull(10) != "Z" ||
-        targetParams.getOrNull(19) != types.function0 || targetParams.getOrNull(23) != extensionContentType ||
+        targetParams.getOrNull(15) != types.function0 || targetParams.getOrNull(24) != extensionContentType ||
         targetParams.getOrNull(43) != composer || targetParams.getOrNull(25) != "Z" || targetParams.getOrNull(26) != "Z" ||
         (27..30).any { targetParams.getOrNull(it) != types.function0 }
     ) throw PatchException("Unexpected main menu column signature: ${target.smali()}")
@@ -741,8 +741,8 @@ private fun BytecodePatchContext.installModRow() {
             move-object/from16 v${page[3]}, p43
             const v${page[0]}, 0x7a1c3e55
             invoke-interface {v${page[3]}, v${page[0]}}, $startGroup
-            move-object/from16 v${page[1]}, p23
-            move-object/from16 v${page[2]}, p19
+            move-object/from16 v${page[1]}, p24
+            move-object/from16 v${page[2]}, p15
             invoke-static {v${page[1]}, v${page[2]}}, $MOD_LAMBDA->extensionsPage(Ljava/lang/Object;Ljava/lang/Object;)$MOD_LAMBDA
             move-result-object v${page[1]}
             const v${page[0]}, 0x41d486a8
