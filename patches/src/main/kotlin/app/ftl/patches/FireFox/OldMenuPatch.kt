@@ -49,7 +49,10 @@
  *      p19 its extensions click.
  *  Library order
  *      An extra libraryGroupFlagged block runs at the join after the VPN group (library first, like the old
- *      build); the original LibraryMenuGroup call is skipped when old menu is on and a divider follows it.
+ *      build). The original LibraryMenuGroup call is left untouched in the column method (no edit next to the
+ *      new-instance/invoke-direct that follows it, that is what caused the VerifyError "Expected initialization on
+ *      uninitialized reference" in the column method). Instead LibraryMenuGroup itself, when old menu is on,
+ *      only draws the divider and returns.
  *  Extensions row
  *      NumberedChevronBadge count forced to 0 (chevron only) and the MenuItem description (param 5) set to null.
  *
@@ -811,11 +814,6 @@ private fun BytecodePatchContext.installModRow() {
                 val register = (instruction as RegisterRangeInstruction).startRegister + reference.params().indexOf(composer)
                 edits += dividerEdit(i, register)
             }
-            "LibraryMenuGroup" -> {
-                val register = (instruction as RegisterRangeInstruction).startRegister + reference.params().indexOf(composer)
-                edits += skipWhenOld(i, liveness.takeAny(1, i)[0])
-                edits += dividerEdit(i + 1, register)
-            }
             "QuitMenuGroup" -> edits += dividerEdit(i, composerReg)
         }
     }
@@ -829,14 +827,7 @@ private fun BytecodePatchContext.installModRow() {
                 invoke-static {}, $MOD_SETTINGS->oldMenu()Z
                 move-result v$libraryScratch
                 if-eqz v$libraryScratch, :ftl_library_stock
-                move/from16 v1, p6
-                move/from16 v2, p7
-                move-object/from16 v3, p2
-                move-object/from16 v4, p3
-                move-object/from16 v5, p4
-                move-object/from16 v6, p5
-                move-object/from16 v7, p1
-                invoke-static/range {v1 .. v7}, $MOD_COMPOSE->libraryGroupFlagged(ZZLjava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)V
+                invoke-static/range {p1 .. p1}, $MOD_COMPOSE->divider(Ljava/lang/Object;)V
                 return-void
             """,
             mapOf("ftl_library_stock" to { 0 }),
