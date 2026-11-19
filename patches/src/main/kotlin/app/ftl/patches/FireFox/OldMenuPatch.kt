@@ -41,7 +41,19 @@
  *      returns early into ModCompose.libraryGroupFlagged (MenuItem rows). Params: p2 bookmarks, p3 history,
  *      p4 downloads, p5 passwords, p6 show passwords, p7 downloads flag.
  *
- *  Not part of this version: Extensions page, extension pinning.
+ *  Extensions page
+ *      Main menu column method (the one with the QuitMenuGroup call). When old menu is on, the access point is
+ *      Browser and p10 (extensions expanded) is true, the column is replaced by ModCompose.extensionsPage(p23 list,
+ *      p19 toggle): the list, a divider and a back row. OldMenu.setExtensionsActive(p1, p10) runs at index 0 for
+ *      the wider popup. Params checked against ToolsAndActionsMenuGroup: p23 is its extension list lambda,
+ *      p19 its extensions click.
+ *  Library order
+ *      An extra libraryGroupFlagged block runs at the join after the VPN group (library first, like the old
+ *      build); the original LibraryMenuGroup call is skipped when old menu is on and a divider follows it.
+ *  Extensions row
+ *      NumberedChevronBadge count forced to 0 (chevron only) and the MenuItem description (param 5) set to null.
+ *
+ *  Not part of this version: extension pinning.
  */
 package app.ftl.patches.firefox
 
@@ -590,6 +602,61 @@ private fun BytecodePatchContext.installModRow() {
         invoke-static {v1, v0, p4}, $groupSmali
         return-void
     """)
+    val expandableSmali = mutableClassDefBy(MENU_ITEM_KT).methods.first { it.name == OM_EXPANDABLE_ANIMATION }.smali()
+    fun fieldIn(owner: String, name: String): String {
+        for (method in mutableClassDefBy(owner).methods) {
+            for (instruction in method.implementation?.instructions ?: continue) {
+                val reference = (instruction as? ReferenceInstruction)?.reference as? FieldReference
+                if (instruction.opcode == Opcode.SGET && reference != null && reference.name == name) {
+                    return fieldString(reference)
+                }
+            }
+        }
+        throw PatchException("$owner resource $name not found")
+    }
+    val extensionsText = fieldIn(EXTENSIONS_MENU_ITEM_KT, "browser_menu_extensions")
+    val backIcon = fieldIn(MENU_NAVIGATION_KT, "mozac_ic_back_24")
+    addStaticMethod(MOD_COMPOSE, "extensionsPage", listOf(OM_OBJECT, OM_OBJECT, OM_OBJECT), "V", 27, """
+        move-object/from16 v17, p2
+        check-cast v17, $composer
+        move-object/from16 v4, v17
+        move-object/from16 v1, p0
+        check-cast v1, $function2
+        const/4 v2, 0x1
+        const/4 v3, 0x6
+        invoke-static {v2, v1, v4, v3}, $expandableSmali
+        invoke-static {v4}, $MOD_COMPOSE->divider(Ljava/lang/Object;)V
+        sget v1, $extensionsText
+        invoke-static {v1, v4}, $stringSmali
+        move-result-object v21
+        sget v1, $backIcon
+        const/4 v5, 0x0
+        invoke-static {v1, v5, v4}, $painterSmali
+        move-result-object v22
+        move-object/from16 v10, p1
+        check-cast v10, ${types.function0}
+        move-object/from16 v0, v21
+        move-object/from16 v1, v22
+        const/4 v2, 0x0
+        const/4 v3, 0x0
+        const/4 v4, 0x0
+        const/4 v5, 0x0
+        const/4 v6, 0x0
+        const/4 v7, 0x0
+        const/4 v8, 0x0
+        const/4 v9, 0x0
+        const/4 v11, 0x0
+        const/4 v12, 0x0
+        const/4 v13, 0x0
+        const/4 v14, 0x0
+        const/4 v15, 0x0
+        const/16 v16, 0x0
+        const/16 v18, 0x40
+        const/16 v19, 0x0
+        const v20, 0x3f7fc
+        invoke-static/range {v0 .. v20}, $itemSmali
+        return-void
+    """)
     addStaticMethod(MOD_COMPOSE, "libraryGroupFlagged", listOf("Z", "Z", OM_OBJECT, OM_OBJECT, OM_OBJECT, OM_OBJECT, OM_OBJECT), "V", 7, """
         if-nez p0, :ftl_passwords
         const/4 p5, 0x0
@@ -600,6 +667,123 @@ private fun BytecodePatchContext.installModRow() {
 
     val liveness = Liveness(target)
     val edits = ArrayList<Edit>()
+    val targetParams = target.params()
+    val accessPointType = "${MENU_PACKAGE}MenuAccessPoint;"
+    val toolsGroup = methodsOf(MAIN_MENU_KT, "ToolsAndActionsMenuGroup").single()
+    val extensionContentType = toolsGroup.params().getOrNull(2)
+    if (targetParams.getOrNull(1) != accessPointType || targetParams.getOrNull(10) != "Z" ||
+        targetParams.getOrNull(19) != types.function0 || targetParams.getOrNull(23) != extensionContentType ||
+        targetParams.getOrNull(43) != composer || targetParams.getOrNull(25) != "Z" || targetParams.getOrNull(26) != "Z" ||
+        (27..30).any { targetParams.getOrNull(it) != types.function0 }
+    ) throw PatchException("Unexpected main menu column signature: ${target.smali()}")
+
+    fun dividerEdit(index: Int, register: Int) = insert(
+        index,
+        """
+            invoke-static {}, $MOD_SETTINGS->oldMenu()Z
+            move-result v${liveness.takeLow(1, index)[0]}
+            if-eqz v${liveness.takeLow(1, index)[0]}, :ftl_no_divider
+            invoke-static/range {v$register .. v$register}, $MOD_COMPOSE->divider(Ljava/lang/Object;)V
+        """,
+        mapOf("ftl_no_divider" to { index }),
+    )
+
+    val composerCall = instructions.indexOfFirst {
+        val reference = it.methodRef()
+        it.opcode == Opcode.INVOKE_INTERFACE && reference != null && reference.definingClass == composer &&
+            reference.name == "q" && reference.params() == listOf("I", "Z")
+    }
+    if (composerCall < 0) throw PatchException("Composer.startRestartGroup check not found")
+    val composerReg = (instructions[composerCall] as FiveRegisterInstruction).registerC
+    val startGroup = instructions.firstNotNullOfOrNull {
+        val reference = it.methodRef()
+        if (it.opcode == Opcode.INVOKE_INTERFACE && reference != null && reference.definingClass == composer &&
+            reference.params() == listOf("I") && reference.returnType == "V"
+        ) reference else null
+    }?.smali() ?: throw PatchException("Composer.startReplaceGroup not found")
+    val endGroup = instructions.firstNotNullOfOrNull {
+        val reference = it.methodRef()
+        if (it.opcode == Opcode.INVOKE_INTERFACE && reference != null && reference.definingClass == composer &&
+            reference.params().isEmpty() && reference.returnType == "V"
+        ) reference else null
+    }?.smali() ?: throw PatchException("Composer.endReplaceGroup not found")
+
+    val widthScratch = liveness.takeLow(2, 0)
+    edits += insert(
+        0,
+        """
+            move-object/from16 v${widthScratch[0]}, p1
+            move/from16 v${widthScratch[1]}, p10
+            invoke-static {v${widthScratch[0]}, v${widthScratch[1]}}, $OLD_MENU->setExtensionsActive(Ljava/lang/Object;Z)V
+        """,
+    )
+
+    val pageIndex = (composerCall + 1 until instructions.size).first { instructions[it].opcode == Opcode.IF_EQZ } + 1
+    val page = liveness.takeLow(4, pageIndex)
+    val pageEnd = instructions.indexOfLast { it.opcode == Opcode.RETURN_OBJECT } - 1
+    edits += insert(
+        pageIndex,
+        """
+            invoke-static {}, $MOD_SETTINGS->oldMenu()Z
+            move-result v${page[0]}
+            if-eqz v${page[0]}, :ftl_page_stock
+            move/from16 v${page[0]}, p10
+            if-eqz v${page[0]}, :ftl_page_stock
+            move-object/from16 v${page[1]}, p1
+            sget-object v${page[2]}, ${accessPointType}->Browser:$accessPointType
+            if-ne v${page[1]}, v${page[2]}, :ftl_page_stock
+            move-object/from16 v${page[3]}, p43
+            const v${page[0]}, 0x7a1c3e55
+            invoke-interface {v${page[3]}, v${page[0]}}, $startGroup
+            move-object/from16 v${page[1]}, p23
+            move-object/from16 v${page[2]}, p19
+            invoke-static {v${page[1]}, v${page[2]}}, $MOD_LAMBDA->extensionsPage(Ljava/lang/Object;Ljava/lang/Object;)$MOD_LAMBDA
+            move-result-object v${page[1]}
+            const v${page[0]}, 0x41d486a8
+            invoke-static {v${page[0]}, v${page[1]}, v${page[3]}}, $rememberSmali
+            move-result-object v${page[1]}
+            const/4 v${page[0]}, 0x6
+            invoke-static {v${page[0]}, v${page[1]}, v${page[3]}}, $groupSmali
+            invoke-interface {v${page[3]}}, $endGroup
+            goto/16 :ftl_page_done
+        """,
+        mapOf("ftl_page_stock" to { pageIndex }, "ftl_page_done" to { pageEnd }),
+    )
+
+    val ipState = "${MENU_PACKAGE}store/IPProtectionMenuState;"
+    val ipIndex = instructions.indexOfFirst { it.methodRef()?.params()?.contains(ipState) == true && it.opcode == Opcode.INVOKE_DIRECT }
+    if (ipIndex < 0) throw PatchException("IPProtectionMenuState group constructor not found")
+    val vpnGroup = (ipIndex until instructions.size).first { i ->
+        val reference = instructions[i].methodRef()
+        instructions[i].opcode == Opcode.INVOKE_STATIC && reference != null &&
+            reference.definingClass == MENU_GROUP_KT && reference.name == "MenuGroup"
+    }
+    val ends = (vpnGroup + 1 until instructions.size).filter { i ->
+        val reference = instructions[i].methodRef()
+        instructions[i].opcode == Opcode.INVOKE_INTERFACE && reference != null && reference.definingClass == composer &&
+            reference.params().isEmpty() && reference.returnType == "V"
+    }
+    val join = (ends.getOrNull(1) ?: throw PatchException("VPN group end not found")) + 1
+    val run = liveness.takeRun(7, join)
+    edits += insert(
+        join,
+        """
+            invoke-static {}, $MOD_SETTINGS->oldMenu()Z
+            move-result v$run
+            if-eqz v$run, :ftl_no_library
+            move-object/from16 v${run + 6}, v$composerReg
+            invoke-static/range {v${run + 6} .. v${run + 6}}, $MOD_COMPOSE->divider(Ljava/lang/Object;)V
+            move/from16 v$run, p25
+            move/from16 v${run + 1}, p26
+            move-object/from16 v${run + 2}, p27
+            move-object/from16 v${run + 3}, p28
+            move-object/from16 v${run + 4}, p29
+            move-object/from16 v${run + 5}, p30
+            invoke-static/range {v$run .. v${run + 6}}, $MOD_COMPOSE->libraryGroupFlagged(ZZLjava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)V
+        """,
+        mapOf("ftl_no_library" to { join }),
+    )
+
     val dividerScratch = liveness.takeLow(1, groupIndex + 1)[0]
     edits += insert(
         groupIndex + 1,
@@ -612,37 +796,25 @@ private fun BytecodePatchContext.installModRow() {
             invoke-static {v$composerRegister}, $MOD_COMPOSE->modRow(Ljava/lang/Object;)V
         """,
     )
+
     instructions.forEachIndexed { i, instruction ->
-        if (i == groupIndex || instruction.opcode != Opcode.INVOKE_STATIC && instruction.opcode != Opcode.INVOKE_STATIC_RANGE) {
+        if (instruction.opcode != Opcode.INVOKE_STATIC && instruction.opcode != Opcode.INVOKE_STATIC_RANGE) {
             return@forEachIndexed
         }
         val reference = instruction.methodRef() ?: return@forEachIndexed
-        val isGroup = (reference.definingClass == MENU_GROUP_KT && reference.name == "MenuGroup") ||
-            (reference.definingClass == MAIN_MENU_KT &&
-                (reference.name == "ToolsAndActionsMenuGroup" || reference.name == "LibraryMenuGroup"))
-        if (!isGroup) return@forEachIndexed
-        val parameters = reference.params()
-        val composerIndex = parameters.indexOf(composer)
-        if (composerIndex < 0) return@forEachIndexed
-        val register = when (instruction) {
-            is RegisterRangeInstruction -> instruction.startRegister + composerIndex
-            is FiveRegisterInstruction -> listOf(
-                instruction.registerC, instruction.registerD, instruction.registerE,
-                instruction.registerF, instruction.registerG,
-            )[composerIndex]
-            else -> return@forEachIndexed
+        if (reference.definingClass != MAIN_MENU_KT) return@forEachIndexed
+        when (reference.name) {
+            "ToolsAndActionsMenuGroup" -> {
+                val register = (instruction as RegisterRangeInstruction).startRegister + reference.params().indexOf(composer)
+                edits += dividerEdit(i, register)
+            }
+            "LibraryMenuGroup" -> {
+                val register = (instruction as RegisterRangeInstruction).startRegister + reference.params().indexOf(composer)
+                edits += skipWhenOld(i, liveness.takeLow(1, i)[0])
+                edits += dividerEdit(i + 1, register)
+            }
+            "QuitMenuGroup" -> edits += dividerEdit(i, composerReg)
         }
-        val scratch = liveness.takeLow(1, i + 1)[0]
-        edits += insert(
-            i + 1,
-            """
-                invoke-static {}, $MOD_SETTINGS->oldMenu()Z
-                move-result v$scratch
-                if-eqz v$scratch, :ftl_no_divider
-                invoke-static/range {v$register .. v$register}, $MOD_COMPOSE->divider(Ljava/lang/Object;)V
-            """,
-            mapOf("ftl_no_divider" to { i + 1 }),
-        )
     }
     target.applyEdits(*edits.toTypedArray())
 
@@ -758,6 +930,49 @@ private fun BytecodePatchContext.hideAccountSubtitle() {
     throw PatchException("Account subtitle Text call not found")
 }
 
+private fun BytecodePatchContext.hideExtensionExtras() {
+    val badge = methodsOf(EXTENSIONS_MENU_ITEM_KT, "NumberedChevronBadge").single()
+    if (badge.params().firstOrNull() != "I") throw PatchException("Unexpected NumberedChevronBadge signature")
+    val badgeScratch = Liveness(badge).takeLow(1, 0)[0]
+    badge.applyEdits(
+        insert(
+            0,
+            """
+                invoke-static {}, $MOD_SETTINGS->oldMenu()Z
+                move-result v$badgeScratch
+                if-eqz v$badgeScratch, :ftl_count
+                const/16 p0, 0x0
+            """,
+            mapOf("ftl_count" to { 0 }),
+        ),
+    )
+
+    for (method in mutableClassDefBy(EXTENSIONS_MENU_ITEM_KT).methods) {
+        val list = method.instructionList()
+        val at = list.indices.firstOrNull { i ->
+            val reference = list[i].methodRef()
+            list[i].opcode == Opcode.INVOKE_STATIC_RANGE && reference != null &&
+                reference.definingClass == MENU_ITEM_KT && reference.name == "MenuItem"
+        } ?: continue
+        val description = (list[at] as RegisterRangeInstruction).startRegister + 5
+        val scratch = Liveness(method).takeLow(1, at)[0]
+        method.applyEdits(
+            insert(
+                at,
+                """
+                    invoke-static {}, $MOD_SETTINGS->oldMenu()Z
+                    move-result v$scratch
+                    if-eqz v$scratch, :ftl_description
+                    const/16 v$description, 0x0
+                """,
+                mapOf("ftl_description" to { at }),
+            ),
+        )
+        return
+    }
+    throw PatchException("ExtensionsMenuItem MenuItem call not found")
+}
+
 /*
  * Flat rows. Every rule is found by structure (float literal pairs, ColorScheme toString labels, named Fenix methods).
  * Rules (old 161 build -> same rule on the obfuscated build):
@@ -781,7 +996,7 @@ private fun BytecodePatchContext.restyleRows() {
     }
 
     var recolored = 0
-    for (owner in listOf(MENU_ITEM_KT, MAIN_MENU_KT, IP_PROTECTION_KT)) {
+    for (owner in listOf(MENU_ITEM_KT, MAIN_MENU_KT, IP_PROTECTION_KT, ACCOUNT_KT, "${COMPOSE_PACKAGE}AddonMenuItemKt;")) {
         recolored += recolor(owner, bright, surface)
     }
     recolor(MENU_NAVIGATION_KT, high, surface)
@@ -889,6 +1104,7 @@ private fun BytecodePatchContext.restyleRows() {
     }
 
     hideAccountSubtitle()
+    hideExtensionExtras()
 
     val badge = mutableClassDefBy(MENU_ITEM_KT).methods.firstOrNull {
         it.name == "Badge" && it.params().firstOrNull() == "Ljava/lang/String;"
