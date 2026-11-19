@@ -726,7 +726,7 @@ private fun BytecodePatchContext.installModRow() {
 
     val pageIndex = (composerCall + 1 until instructions.size).first { instructions[it].opcode == Opcode.IF_EQZ } + 1
     val page = liveness.takeLow(4, pageIndex)
-    val pageEnd = instructions.indexOfLast { it.opcode == Opcode.RETURN_OBJECT } - 1
+    val pageEndInstruction = instructions[instructions.indexOfLast { it.opcode == Opcode.RETURN_OBJECT } - 1]
     edits += insert(
         pageIndex,
         """
@@ -753,7 +753,10 @@ private fun BytecodePatchContext.installModRow() {
             invoke-interface {v${page[3]}}, $endGroup
             goto/16 :ftl_page_done
         """,
-        mapOf("ftl_page_stock" to { pageIndex }, "ftl_page_done" to { pageEnd }),
+        mapOf(
+            "ftl_page_stock" to { pageIndex },
+            "ftl_page_done" to { target.implementation!!.instructions.indexOfFirst { it === pageEndInstruction } },
+        ),
     )
 
     val ipState = "${MENU_PACKAGE}store/IPProtectionMenuState;"
