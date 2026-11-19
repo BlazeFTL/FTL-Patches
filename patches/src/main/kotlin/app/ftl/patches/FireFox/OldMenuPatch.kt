@@ -41,20 +41,28 @@
  *      returns early into ModCompose.libraryGroupFlagged (MenuItem rows). Params: p2 bookmarks, p3 history,
  *      p4 downloads, p5 passwords, p6 show passwords, p7 downloads flag.
  *
- *  Extensions page
- *      Main menu column method (the one with the QuitMenuGroup call). When old menu is on, the access point is
- *      Browser and p10 (extensions expanded) is true, the column is replaced by ModCompose.extensionsPage(p24 list,
- *      p15 toggle): the list, a divider and a back row. OldMenu.setExtensionsActive(p1, p10) runs at index 0 for
- *      the wider popup. Params checked against ToolsAndActionsMenuGroup: p24 is its extension list lambda (p3),
- *      p15 its extensions click (p5). p23/p20 are the More list and click.
- *  Library order
- *      An extra libraryGroupFlagged block runs at the join after the VPN group (library first, like the old
- *      build). The original LibraryMenuGroup call is left untouched in the column method (no edit next to the
- *      new-instance/invoke-direct that follows it, that is what caused the VerifyError "Expected initialization on
- *      uninitialized reference" in the column method). Instead LibraryMenuGroup itself, when old menu is on,
- *      only draws the divider and returns.
- *  Extensions row
- *      NumberedChevronBadge count forced to 0 (chevron only) and the MenuItem description (param 5) set to null.
+ *  Library rows order
+ *      The early library call is inserted in the QuitMenuGroup method right before the Browser access point check that
+ *      guards ToolsAndActionsMenuGroup, so History/Bookmarks/Downloads/Passwords follow the VPN group. LibraryMenuGroup
+ *      itself returns at index 0 when the old menu is on. Its arguments are traced back to parameters of the QuitMenuGroup
+ *      method (traceToParam).
+ *
+ *  Extensions page (old menu look: Extensions row opens its own page)
+ *      expanded flag / content / toggle: ExtensionsMenuItem (Fenix, named) is called by one MainMenuKt method (the Tools
+ *      group content lambda, same signature as ToolsAndActionsMenuGroup). Its args 2 (Z), 7 (Function0) and 8 (content)
+ *      are traced to parameters of that method, then through the ToolsAndActionsMenuGroup call to parameters of the
+ *      QuitMenuGroup method, then through the constructor call of the lambda class (params = that method's params minus
+ *      the last 3) to parameters of MainMenu.
+ *      Page mode = OldMenu.extensionsActive, set in MainMenu right before the first lambda instance that wraps
+ *      MenuNavigationKt.MenuNavigation. The QuitMenuGroup method shows only ModCompose.extensionsGroup in that mode.
+ *      Navigation lambdas (class instantiated in MainMenu whose invoke calls MenuNavigation) return Unit in that mode.
+ *      MainMenuKt.Addons: managerRow at the start of the column (first MenuAccessPoint.Home read), and the final
+ *      manage / discover extensions rows (preceded by the R.string.browser_menu_manage_extensions read) are skipped.
+ *      Extension rows: the lambda created in MenuItemKt.WebExtensionMenuItem* with constructor (String, Function0) draws
+ *      divider + gear when the Function0 is not null. OldMenu.trailingIcon nulls it.
+ *      Extensions row: MenuItem arg 5 (description) is nulled in ExtensionsMenuItem and NumberedChevronBadge count (param 0,
+ *      drawn only when > 0) is zeroed.
+ *      Icons: R.drawable names mozac_ic_extension_24 (read in ExtensionsMenuItem) and mozac_ic_back_24 (MenuNavigation).
  *
  *  Not part of this version: extension pinning.
  */
@@ -106,6 +114,55 @@ private fun MutableMethod.lastReturnObject() =
 
 private fun MutableMethod.lastReturnVoid() =
     instructionList().indexOfLast { it.opcode == Opcode.RETURN_VOID }
+
+private val NON_DEFINING_PREFIXES = listOf(
+    "if-", "iput", "aput", "sput", "return", "check-cast", "throw", "monitor", "packed-switch", "sparse-switch",
+    "fill-array", "invoke", "goto", "nop",
+)
+
+private fun Instruction.defines(register: Int): Boolean {
+    val name = opcode.name
+    if (name.endsWith("-payload") || NON_DEFINING_PREFIXES.any { name.startsWith(it) }) return false
+    return (this as? OneRegisterInstruction)?.registerA == register
+}
+
+// Follows move chains backwards from `register` at `at` and returns the index of the parameter it holds.
+private fun MutableMethod.traceToParam(list: List<Instruction>, at: Int, start: Int): Int {
+    var register = start
+    for (i in at - 1 downTo 0) {
+        val instruction = list[i]
+        if (!instruction.defines(register)) continue
+        val name = instruction.opcode.name
+        if (!name.startsWith("move") || name.startsWith("move-result") || name == "move-exception" ||
+            name.contains("wide")
+        ) {
+            throw PatchException("v$start at $at is not a parameter copy in ${smali()} ($name at $i)")
+        }
+        register = (instruction as TwoRegisterInstruction).registerB
+    }
+    for (index in parameterTypes.indices) {
+        if (parameterRegister(this, index) == register) return index
+    }
+    throw PatchException("v$start at $at does not resolve to a parameter in ${smali()}")
+}
+
+private fun Instruction.callTo(owner: String, name: String): Boolean {
+    val reference = methodRef() ?: return false
+    return (opcode == Opcode.INVOKE_STATIC || opcode == Opcode.INVOKE_STATIC_RANGE) &&
+        reference.definingClass == owner && reference.name == name
+}
+
+private fun BytecodePatchContext.resourceField(owners: List<String>, name: String): String {
+    for (owner in owners) {
+        for (method in mutableClassDefBy(owner).methods) {
+            for (instruction in method.implementation?.instructions ?: continue) {
+                val reference = (instruction as? ReferenceInstruction)?.reference as? FieldReference ?: continue
+                if (instruction.opcode == Opcode.SGET && reference.name == name) return fieldString(reference)
+            }
+        }
+    }
+    throw PatchException("Resource field $name not found in $owners")
+}
 
 private fun BytecodePatchContext.classOrNull(type: String) =
     runCatching { mutableClassDefBy(type) }.getOrNull()
@@ -605,39 +662,137 @@ private fun BytecodePatchContext.installModRow() {
         invoke-static {v1, v0, p4}, $groupSmali
         return-void
     """)
-    val expandableSmali = mutableClassDefBy(MENU_ITEM_KT).methods.first { it.name == OM_EXPANDABLE_ANIMATION }.smali()
-    fun fieldIn(owner: String, name: String): String {
-        for (method in mutableClassDefBy(owner).methods) {
-            for (instruction in method.implementation?.instructions ?: continue) {
-                val reference = (instruction as? ReferenceInstruction)?.reference as? FieldReference
-                if (instruction.opcode == Opcode.SGET && reference != null && reference.name == name) {
-                    return fieldString(reference)
-                }
-            }
+    addStaticMethod(MOD_COMPOSE, "libraryGroupFlagged", listOf("Z", "Z", OM_OBJECT, OM_OBJECT, OM_OBJECT, OM_OBJECT, OM_OBJECT), "V", 7, """
+        if-nez p0, :ftl_passwords
+        const/4 p5, 0x0
+        :ftl_passwords
+        invoke-static {p2, p3, p4, p5, p6}, $MOD_COMPOSE->libraryGroup(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)V
+        return-void
+    """)
+
+    val liveness = Liveness(target)
+    val edits = ArrayList<Edit>()
+    val dividerScratch = liveness.takeLow(1, groupIndex + 1)[0]
+    edits += insert(
+        groupIndex + 1,
+        """
+            invoke-static {}, $MOD_SETTINGS->oldMenu()Z
+            move-result v$dividerScratch
+            if-eqz v$dividerScratch, :ftl_no_divider
+            invoke-static/range {v$composerRegister .. v$composerRegister}, $MOD_COMPOSE->divider(Ljava/lang/Object;)V
+            :ftl_no_divider
+            invoke-static {v$composerRegister}, $MOD_COMPOSE->modRow(Ljava/lang/Object;)V
+        """,
+    )
+    instructions.forEachIndexed { i, instruction ->
+        if (i == groupIndex || instruction.opcode != Opcode.INVOKE_STATIC && instruction.opcode != Opcode.INVOKE_STATIC_RANGE) {
+            return@forEachIndexed
         }
-        throw PatchException("$owner resource $name not found")
+        val reference = instruction.methodRef() ?: return@forEachIndexed
+        val isGroup = (reference.definingClass == MENU_GROUP_KT && reference.name == "MenuGroup") ||
+            (reference.definingClass == MAIN_MENU_KT && reference.name == "ToolsAndActionsMenuGroup")
+        if (!isGroup) return@forEachIndexed
+        val parameters = reference.params()
+        val composerIndex = parameters.indexOf(composer)
+        if (composerIndex < 0) return@forEachIndexed
+        val register = when (instruction) {
+            is RegisterRangeInstruction -> instruction.startRegister + composerIndex
+            is FiveRegisterInstruction -> listOf(
+                instruction.registerC, instruction.registerD, instruction.registerE,
+                instruction.registerF, instruction.registerG,
+            )[composerIndex]
+            else -> return@forEachIndexed
+        }
+        val scratch = liveness.takeLow(1, i + 1)[0]
+        edits += insert(
+            i + 1,
+            """
+                invoke-static {}, $MOD_SETTINGS->oldMenu()Z
+                move-result v$scratch
+                if-eqz v$scratch, :ftl_no_divider
+                invoke-static/range {v$register .. v$register}, $MOD_COMPOSE->divider(Ljava/lang/Object;)V
+            """,
+            mapOf("ftl_no_divider" to { i + 1 }),
+        )
     }
-    val extensionsText = fieldIn(EXTENSIONS_MENU_ITEM_KT, "browser_menu_extensions")
-    val backIcon = fieldIn(MENU_NAVIGATION_KT, "mozac_ic_back_24")
-    addStaticMethod(MOD_COMPOSE, "extensionsPage", listOf(OM_OBJECT, OM_OBJECT, OM_OBJECT), "V", 27, """
-        move-object/from16 v17, p2
+    edits += installExtensionsPage(
+        types, function2, target, instructions, liveness, composerRegister,
+        PageSmali(rememberSmali, groupSmali, itemSmali, painterSmali, stringSmali),
+    )
+    target.applyEdits(*edits.toTypedArray())
+
+    // Rendered earlier (right after the VPN group) by the call installExtensionsPage() inserts.
+    val libraryScratch = Liveness(libraryMenuGroup).takeLow(1, 0)[0]
+    libraryMenuGroup.applyEdits(
+        insert(
+            0,
+            """
+                invoke-static {}, $MOD_SETTINGS->oldMenu()Z
+                move-result v$libraryScratch
+                if-eqz v$libraryScratch, :ftl_library_stock
+                return-void
+            """,
+            mapOf("ftl_library_stock" to { 0 }),
+        ),
+    )
+
+    val interfaces = mapOf(MOD_LAMBDA to function2, MOD_CLICK to types.function0)
+    interfaces.forEach { (type, function) ->
+        val list = mutableClassDefBy(type).interfaces
+        if (function !in list) list.add(function)
+    }
+}
+
+private class PageSmali(
+    val remember: String,
+    val group: String,
+    val item: String,
+    val painter: String,
+    val string: String,
+)
+
+private const val OM_ACCESS_POINT = "${MENU_PACKAGE}MenuAccessPoint;"
+private const val OM_UNIT_CALL = "$TAB_ACCESS->ftlUnit()Ljava/lang/Object;"
+private const val OM_ACTIVE = "$OLD_MENU->extensionsActive:Z"
+
+private fun MutableMethod.checkNotRedefined(list: List<Instruction>, register: Int, until: Int, what: String) {
+    if (Liveness(this).redefinedBetween(register, 0, until)) {
+        throw PatchException("$what register v$register is redefined before $until in ${smali()}")
+    }
+}
+
+// Old menu look: Extensions row opens its own page, library rows follow the VPN group, extension rows lose gear +
+// divider, Extensions row loses subtitle and count. Edits for the QuitMenuGroup method (indices of `instructions`) are
+// returned so installModRow applies them together with its own. Everything else is applied here.
+private fun BytecodePatchContext.installExtensionsPage(
+    types: ComposeTypes,
+    function2: String,
+    target: MutableMethod,
+    instructions: List<Instruction>,
+    liveness: Liveness,
+    composerRegister: Int,
+    smali: PageSmali,
+): List<Edit> {
+    val composer = types.composer
+    val function0 = types.function0
+    val edits = ArrayList<Edit>()
+
+    val extensionsText = resourceField(listOf(EXTENSIONS_MENU_ITEM_KT), "browser_menu_extensions")
+    val extensionIcon = resourceField(listOf(EXTENSIONS_MENU_ITEM_KT), "mozac_ic_extension_24")
+    val backIcon = resourceField(listOf(MENU_NAVIGATION_KT), "mozac_ic_back_24")
+    val expand = methodNamed(MENU_ITEM_KT, OM_EXPANDABLE_ANIMATION).smali()
+
+    addStaticMethod(MOD_COMPOSE, "managerRow", listOf(OM_OBJECT, OM_OBJECT), "V", 28, """
+        move-object/from16 v17, p0
         check-cast v17, $composer
-        move-object/from16 v4, v17
-        move-object/from16 v1, p0
-        check-cast v1, $function2
-        const/4 v2, 0x1
-        const/4 v3, 0x6
-        invoke-static {v2, v1, v4, v3}, $expandableSmali
-        invoke-static {v4}, $MOD_COMPOSE->divider(Ljava/lang/Object;)V
-        sget v1, $extensionsText
-        invoke-static {v1, v4}, $stringSmali
-        move-result-object v21
-        sget v1, $backIcon
+        sget v1, $extensionIcon
         const/4 v5, 0x0
-        invoke-static {v1, v5, v4}, $painterSmali
+        move-object/from16 v4, v17
+        invoke-static {v1, v5, v4}, ${smali.painter}
         move-result-object v22
         move-object/from16 v10, p1
-        check-cast v10, ${types.function0}
+        check-cast v10, $function0
+        const-string v21, "Extensions Manager"
         move-object/from16 v0, v21
         move-object/from16 v1, v22
         const/4 v2, 0x0
@@ -657,191 +812,299 @@ private fun BytecodePatchContext.installModRow() {
         const/16 v18, 0x40
         const/16 v19, 0x0
         const v20, 0x3f7fc
-        invoke-static/range {v0 .. v20}, $itemSmali
+        invoke-static/range {v0 .. v20}, ${smali.item}
+        move-object/from16 v0, v17
+        invoke-static {v0}, $MOD_COMPOSE->divider(Ljava/lang/Object;)V
         return-void
     """)
-    addStaticMethod(MOD_COMPOSE, "libraryGroupFlagged", listOf("Z", "Z", OM_OBJECT, OM_OBJECT, OM_OBJECT, OM_OBJECT, OM_OBJECT), "V", 7, """
-        if-nez p0, :ftl_passwords
-        const/4 p5, 0x0
-        :ftl_passwords
-        invoke-static {p2, p3, p4, p5, p6}, $MOD_COMPOSE->libraryGroup(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)V
+    addStaticMethod(MOD_COMPOSE, "extensionsPage", listOf(OM_OBJECT, OM_OBJECT, OM_OBJECT), "V", 5, """
+        check-cast p2, $composer
+        check-cast p0, $function2
+        const/4 v0, 0x1
+        const/4 v1, 0x6
+        invoke-static {v0, p0, p2, v1}, $expand
+        invoke-static {p2}, $MOD_COMPOSE->divider(Ljava/lang/Object;)V
+        sget v0, $extensionsText
+        sget v1, $backIcon
+        invoke-static {p2, v0, v1, p1}, $MOD_COMPOSE->libraryItem(Ljava/lang/Object;IILjava/lang/Object;)V
+        return-void
+    """)
+    addStaticMethod(MOD_COMPOSE, "extensionsGroup", listOf(OM_OBJECT, OM_OBJECT, OM_OBJECT), "V", 5, """
+        check-cast p2, $composer
+        invoke-static {p0, p1}, $MOD_LAMBDA->extensionsPage(Ljava/lang/Object;Ljava/lang/Object;)$MOD_LAMBDA
+        move-result-object v0
+        const v1, 0x7a11b0b1
+        invoke-static {v1, v0, p2}, ${smali.remember}
+        move-result-object v0
+        const/4 v1, 0x6
+        invoke-static {v1, v0, p2}, ${smali.group}
         return-void
     """)
 
-    val liveness = Liveness(target)
-    val edits = ArrayList<Edit>()
-    val targetParams = target.params()
-    val accessPointType = "${MENU_PACKAGE}MenuAccessPoint;"
-    val toolsGroup = methodsOf(MAIN_MENU_KT, "ToolsAndActionsMenuGroup").single()
-    val extensionContentType = toolsGroup.params().getOrNull(2)
-    if (targetParams.getOrNull(1) != accessPointType || targetParams.getOrNull(10) != "Z" ||
-        targetParams.getOrNull(15) != types.function0 || targetParams.getOrNull(24) != extensionContentType ||
-        targetParams.getOrNull(43) != composer || targetParams.getOrNull(25) != "Z" || targetParams.getOrNull(26) != "Z" ||
-        (27..30).any { targetParams.getOrNull(it) != types.function0 }
-    ) throw PatchException("Unexpected main menu column signature: ${target.smali()}")
+    // ---- parameter plumbing: ExtensionsMenuItem args -> Tools content lambda -> QuitMenuGroup method -> MainMenu
+    val extensionsItem = methodNamed(EXTENSIONS_MENU_ITEM_KT, "ExtensionsMenuItem")
+    val extensionsParams = extensionsItem.params()
+    if (extensionsParams.size != 12 || extensionsParams[2] != "Z" || extensionsParams[7] != function0 ||
+        extensionsParams[8] != function2 || extensionsParams[9] != composer
+    ) throw PatchException("Unexpected ExtensionsMenuItem signature: ${extensionsItem.smali()}")
 
-    fun dividerEdit(index: Int, register: Int): Edit {
-        val scratch = liveness.takeAny(1, index)[0]
-        return insert(
-            index,
+    val toolsContent = mutableClassDefBy(MAIN_MENU_KT).methods.filter { method ->
+        method.implementation?.instructions?.any { it.callTo(EXTENSIONS_MENU_ITEM_KT, "ExtensionsMenuItem") } == true
+    }.singleOrNull() ?: throw PatchException("Tools group content lambda (ExtensionsMenuItem caller) not found")
+    val toolsList = toolsContent.instructionList()
+    val extensionsCall = toolsList.indexOfFirst { it.callTo(EXTENSIONS_MENU_ITEM_KT, "ExtensionsMenuItem") }
+    val extensionsStart = (toolsList[extensionsCall] as? RegisterRangeInstruction)?.startRegister
+        ?: throw PatchException("ExtensionsMenuItem call is not a range invoke")
+    val contentExpanded = toolsContent.traceToParam(toolsList, extensionsCall, extensionsStart + 2)
+    val contentClick = toolsContent.traceToParam(toolsList, extensionsCall, extensionsStart + 7)
+    val contentPage = toolsContent.traceToParam(toolsList, extensionsCall, extensionsStart + 8)
+
+    val toolsAt = instructions.indexOfFirst { it.callTo(MAIN_MENU_KT, "ToolsAndActionsMenuGroup") }
+    val toolsCall = instructions.getOrNull(toolsAt) as? RegisterRangeInstruction
+        ?: throw PatchException("ToolsAndActionsMenuGroup call not found or not a range invoke")
+    if (instructions[toolsAt].methodRef()!!.params() != toolsContent.params()) {
+        throw PatchException("Tools content lambda signature differs from ToolsAndActionsMenuGroup")
+    }
+    val pageExpanded = target.traceToParam(instructions, toolsAt, toolsCall.startRegister + contentExpanded)
+    val pageClick = target.traceToParam(instructions, toolsAt, toolsCall.startRegister + contentClick)
+    val pageContent = target.traceToParam(instructions, toolsAt, toolsCall.startRegister + contentPage)
+    val accessPointParam = target.params().indexOf(OM_ACCESS_POINT)
+    if (accessPointParam < 0 || target.params()[pageExpanded] != "Z") throw PatchException("Unexpected parameters in ${target.smali()}")
+
+    // ---- library rows right after the VPN group
+    val libraryAt = instructions.indexOfFirst { it.callTo(MAIN_MENU_KT, "LibraryMenuGroup") }
+    val libraryCall = instructions.getOrNull(libraryAt) as? RegisterRangeInstruction
+        ?: throw PatchException("LibraryMenuGroup call not found or not a range invoke")
+    val libraryArgs = (2..7).map { target.traceToParam(instructions, libraryAt, libraryCall.startRegister + it) }
+    val flagFirst = target.traceToParam(instructions, libraryAt, libraryCall.startRegister + 6)
+    val flagSecond = target.traceToParam(instructions, libraryAt, libraryCall.startRegister + 7)
+    val browserRead = (toolsAt downTo 0).firstOrNull { i ->
+        val field = (instructions[i] as? ReferenceInstruction)?.reference as? FieldReference
+        instructions[i].opcode == Opcode.SGET_OBJECT && field != null &&
+            field.definingClass == OM_ACCESS_POINT && field.name == "Browser"
+    } ?: throw PatchException("MenuAccessPoint.Browser read before ToolsAndActionsMenuGroup not found")
+    fun targetRegister(parameter: Int) = parameterRegister(target, parameter)
+    (libraryArgs + flagFirst + flagSecond).forEach {
+        target.checkNotRedefined(instructions, targetRegister(it), browserRead, "Library argument")
+    }
+    val libraryScratch = liveness.takeLow(1, browserRead)[0]
+    val libraryRun = liveness.takeRun(7, browserRead, exclude = setOf(libraryScratch))
+    edits += insert(
+        browserRead,
         """
             invoke-static {}, $MOD_SETTINGS->oldMenu()Z
-            move-result v${scratch}
-            if-eqz v${scratch}, :ftl_no_divider
-            invoke-static/range {v$register .. v$register}, $MOD_COMPOSE->divider(Ljava/lang/Object;)V
+            move-result v$libraryScratch
+            if-eqz v$libraryScratch, :ftl_stock
+            move/from16 v${libraryRun}, v${targetRegister(flagFirst)}
+            move/from16 v${libraryRun + 1}, v${targetRegister(flagSecond)}
+            move-object/from16 v${libraryRun + 2}, v${targetRegister(libraryArgs[0])}
+            move-object/from16 v${libraryRun + 3}, v${targetRegister(libraryArgs[1])}
+            move-object/from16 v${libraryRun + 4}, v${targetRegister(libraryArgs[2])}
+            move-object/from16 v${libraryRun + 5}, v${targetRegister(libraryArgs[3])}
+            move-object/from16 v${libraryRun + 6}, v$composerRegister
+            invoke-static/range {v${libraryRun} .. v${libraryRun + 6}}, $MOD_COMPOSE->libraryGroupFlagged(ZZLjava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)V
+            invoke-static/range {v$composerRegister .. v$composerRegister}, $MOD_COMPOSE->divider(Ljava/lang/Object;)V
         """,
-        mapOf("ftl_no_divider" to { index }),
-        )
-    }
-
-    val composerCall = instructions.indexOfFirst {
-        val reference = it.methodRef()
-        it.opcode == Opcode.INVOKE_INTERFACE && reference != null && reference.definingClass == composer &&
-            reference.name == "q" && reference.params() == listOf("I", "Z")
-    }
-    if (composerCall < 0) throw PatchException("Composer.startRestartGroup check not found")
-    val composerReg = (instructions[composerCall] as FiveRegisterInstruction).registerC
-    val startGroup = instructions.firstNotNullOfOrNull {
-        val reference = it.methodRef()
-        if (it.opcode == Opcode.INVOKE_INTERFACE && reference != null && reference.definingClass == composer &&
-            reference.params() == listOf("I") && reference.returnType == "V"
-        ) reference else null
-    }?.smali() ?: throw PatchException("Composer.startReplaceGroup not found")
-    val endGroup = instructions.firstNotNullOfOrNull {
-        val reference = it.methodRef()
-        if (it.opcode == Opcode.INVOKE_INTERFACE && reference != null && reference.definingClass == composer &&
-            reference.params().isEmpty() && reference.returnType == "V"
-        ) reference else null
-    }?.smali() ?: throw PatchException("Composer.endReplaceGroup not found")
-
-    val widthScratch = liveness.takeLow(2, 0)
-    edits += insert(
-        0,
-        """
-            move-object/from16 v${widthScratch[0]}, p1
-            move/from16 v${widthScratch[1]}, p10
-            invoke-static {v${widthScratch[0]}, v${widthScratch[1]}}, $OLD_MENU->setExtensionsActive(Ljava/lang/Object;Z)V
-        """,
+        mapOf("ftl_stock" to { browserRead }),
     )
 
-    val pageIndex = (composerCall + 1 until instructions.size).first { instructions[it].opcode == Opcode.IF_EQZ } + 1
-    val page = liveness.takeLow(4, pageIndex)
-    val pageEndInstruction = instructions[instructions.indexOfLast { it.opcode == Opcode.RETURN_OBJECT } - 1]
+    // ---- page mode: only the extensions page is shown
+    val pageAt = instructions.indices.firstOrNull { i ->
+        instructions[i].opcode == Opcode.IF_EQZ && target.jumpTarget(i) >= instructions.size - 12
+    }?.plus(1) ?: throw PatchException("shouldExecute branch not found in ${target.smali()}")
+    target.checkNotRedefined(instructions, targetRegister(pageContent), pageAt, "Extensions content")
+    target.checkNotRedefined(instructions, targetRegister(pageClick), pageAt, "Extensions toggle")
+    val pageScratch = liveness.takeLow(1, pageAt)[0]
+    val pageRun = liveness.takeRun(3, pageAt, exclude = setOf(pageScratch))
     edits += insert(
-        pageIndex,
+        pageAt,
         """
-            invoke-static {}, $MOD_SETTINGS->oldMenu()Z
-            move-result v${page[0]}
-            if-eqz v${page[0]}, :ftl_page_stock
-            move/from16 v${page[0]}, p10
-            if-eqz v${page[0]}, :ftl_page_stock
-            move-object/from16 v${page[1]}, p1
-            sget-object v${page[2]}, ${accessPointType}->Browser:$accessPointType
-            if-ne v${page[1]}, v${page[2]}, :ftl_page_stock
-            move-object/from16 v${page[3]}, p43
-            const v${page[0]}, 0x7a1c3e55
-            invoke-interface {v${page[3]}, v${page[0]}}, $startGroup
-            move-object/from16 v${page[1]}, p24
-            move-object/from16 v${page[2]}, p15
-            invoke-static {v${page[1]}, v${page[2]}}, $MOD_LAMBDA->extensionsPage(Ljava/lang/Object;Ljava/lang/Object;)$MOD_LAMBDA
-            move-result-object v${page[1]}
-            const v${page[0]}, 0x41d486a8
-            invoke-static {v${page[0]}, v${page[1]}, v${page[3]}}, $rememberSmali
-            move-result-object v${page[1]}
-            const/4 v${page[0]}, 0x6
-            invoke-static {v${page[0]}, v${page[1]}, v${page[3]}}, $groupSmali
-            invoke-interface {v${page[3]}}, $endGroup
-            goto/16 :ftl_page_done
+            sget-boolean v$pageScratch, $OM_ACTIVE
+            if-eqz v$pageScratch, :ftl_stock
+            move-object/from16 v${pageRun}, v${targetRegister(pageContent)}
+            move-object/from16 v${pageRun + 1}, v${targetRegister(pageClick)}
+            move-object/from16 v${pageRun + 2}, v$composerRegister
+            invoke-static/range {v${pageRun} .. v${pageRun + 2}}, $MOD_COMPOSE->extensionsGroup(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)V
+            goto :ftl_end
         """,
-        mapOf(
-            "ftl_page_stock" to { pageIndex },
-            "ftl_page_done" to { target.implementation!!.instructions.indexOfFirst { it === pageEndInstruction } },
+        mapOf<String, Target>(
+            "ftl_stock" to { pageAt },
+            // Last two instructions are the Unit sget and return-object. Evaluated after every other edit.
+            "ftl_end" to { implementation!!.instructions.size - 2 },
         ),
     )
 
-    val ipState = "${MENU_PACKAGE}store/IPProtectionMenuState;"
-    val ipIndex = instructions.indexOfFirst { it.methodRef()?.params()?.contains(ipState) == true && it.opcode == Opcode.INVOKE_DIRECT }
-    if (ipIndex < 0) throw PatchException("IPProtectionMenuState group constructor not found")
-    val vpnGroup = (ipIndex until instructions.size).first { i ->
-        val reference = instructions[i].methodRef()
-        instructions[i].opcode == Opcode.INVOKE_STATIC && reference != null &&
-            reference.definingClass == MENU_GROUP_KT && reference.name == "MenuGroup"
+    // ---- MainMenu: page flag + navigation lambdas
+    val mainMenu = methodsOf(MAIN_MENU_KT, "MainMenu").single()
+    val mainList = mainMenu.instructionList()
+    val contentParams = target.params().dropLast(3)
+    val contentCtor = mainList.indexOfFirst { instruction ->
+        instruction.opcode == Opcode.INVOKE_DIRECT_RANGE &&
+            instruction.methodRef()?.let { it.name == "<init>" && it.params() == contentParams } == true
     }
-    val ends = (vpnGroup + 1 until instructions.size).filter { i ->
-        val reference = instructions[i].methodRef()
-        instructions[i].opcode == Opcode.INVOKE_INTERFACE && reference != null && reference.definingClass == composer &&
-            reference.params().isEmpty() && reference.returnType == "V"
+    val contentStart = (mainList.getOrNull(contentCtor) as? RegisterRangeInstruction)?.startRegister
+        ?: throw PatchException("Content lambda constructor call not found in MainMenu")
+    val mainExpanded = mainMenu.traceToParam(mainList, contentCtor, contentStart + 1 + pageExpanded)
+    val mainAccessPoint = mainMenu.traceToParam(mainList, contentCtor, contentStart + 1 + accessPointParam)
+    if (mainMenu.params()[mainExpanded] != "Z" || mainMenu.params()[mainAccessPoint] != OM_ACCESS_POINT) {
+        throw PatchException("Unexpected MainMenu parameters $mainExpanded / $mainAccessPoint")
     }
-    val join = (ends.getOrNull(1) ?: throw PatchException("VPN group end not found")) + 1
-    val run = liveness.takeRun(7, join)
-    edits += insert(
-        join,
-        """
-            invoke-static {}, $MOD_SETTINGS->oldMenu()Z
-            move-result v$run
-            if-eqz v$run, :ftl_no_library
-            move-object/from16 v${run + 6}, v$composerReg
-            invoke-static/range {v${run + 6} .. v${run + 6}}, $MOD_COMPOSE->divider(Ljava/lang/Object;)V
-            move/from16 v$run, p25
-            move/from16 v${run + 1}, p26
-            move-object/from16 v${run + 2}, p27
-            move-object/from16 v${run + 3}, p28
-            move-object/from16 v${run + 4}, p29
-            move-object/from16 v${run + 5}, p30
-            invoke-static/range {v$run .. v${run + 6}}, $MOD_COMPOSE->libraryGroupFlagged(ZZLjava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)V
-        """,
-        mapOf("ftl_no_library" to { join }),
+
+    val navigationLambdas = LinkedHashMap<String, MutableMethod>()
+    var firstNavigation = -1
+    mainList.forEachIndexed { i, instruction ->
+        if (instruction.opcode != Opcode.NEW_INSTANCE) return@forEachIndexed
+        val type = ((instruction as ReferenceInstruction).reference as TypeReference).type
+        val invoke = classOrNull(type)?.methods?.firstOrNull { method ->
+            method.name == "invoke" &&
+                method.implementation?.instructions?.any { it.callTo(MENU_NAVIGATION_KT, "MenuNavigation") } == true
+        } ?: return@forEachIndexed
+        if (firstNavigation < 0) firstNavigation = i
+        navigationLambdas[type] = invoke
+    }
+    if (firstNavigation < 0) throw PatchException("MenuNavigation lambdas not created in MainMenu")
+    mainMenu.checkNotRedefined(mainList, parameterRegister(mainMenu, mainAccessPoint), firstNavigation, "MainMenu access point")
+    mainMenu.checkNotRedefined(mainList, parameterRegister(mainMenu, mainExpanded), firstNavigation, "MainMenu expanded flag")
+    val mainLiveness = Liveness(mainMenu)
+    val mainScratch = mainLiveness.takeLow(1, firstNavigation)[0]
+    val mainRun = mainLiveness.takeRun(2, firstNavigation, exclude = setOf(mainScratch))
+    mainMenu.applyEdits(
+        insert(
+            firstNavigation,
+            """
+                invoke-static {}, $MOD_SETTINGS->oldMenu()Z
+                move-result v$mainScratch
+                if-eqz v$mainScratch, :ftl_stock
+                move-object/from16 v${mainRun}, v${parameterRegister(mainMenu, mainAccessPoint)}
+                move/from16 v${mainRun + 1}, v${parameterRegister(mainMenu, mainExpanded)}
+                invoke-static/range {v${mainRun} .. v${mainRun + 1}}, $OLD_MENU->setExtensionsActive(Ljava/lang/Object;Z)V
+            """,
+            mapOf("ftl_stock" to { firstNavigation }),
+        ),
+    )
+    navigationLambdas.values.forEach { invoke ->
+        val scratch = Liveness(invoke).takeLow(1, 0)[0]
+        invoke.applyEdits(
+            insert(
+                0,
+                """
+                    sget-boolean v$scratch, $OM_ACTIVE
+                    if-eqz v$scratch, :ftl_stock
+                    invoke-static {}, $OM_UNIT_CALL
+                    move-result-object v$scratch
+                    return-object v$scratch
+                """,
+                mapOf("ftl_stock" to { 0 }),
+            ),
+        )
+    }
+
+    // ---- Addons: manager row on top, no manage / discover rows at the bottom
+    val addons = methodsOf(MAIN_MENU_KT, "Addons").single()
+    val addonsList = addons.instructionList()
+    val homeRead = addonsList.indexOfFirst {
+        val field = (it as? ReferenceInstruction)?.reference as? FieldReference
+        it.opcode == Opcode.SGET_OBJECT && field != null && field.definingClass == OM_ACCESS_POINT && field.name == "Home"
+    }
+    val manageRead = addonsList.indexOfFirst {
+        val field = (it as? ReferenceInstruction)?.reference as? FieldReference
+        it.opcode == Opcode.SGET && field != null && field.name == "browser_menu_manage_extensions"
+    }
+    if (homeRead < 0 || manageRead < homeRead) throw PatchException("Addons anchors not found")
+    val manageCall = (manageRead until addonsList.size).first { addonsList[it].callTo(MAIN_MENU_KT, "MoreExtensionsMenuItem") }
+    val lastMore = addonsList.indexOfLast { it.callTo(MAIN_MENU_KT, "MoreExtensionsMenuItem") }
+    val blockStart = (manageRead downTo 0).firstOrNull { addonsList[it].methodRef()?.name == "isEmpty" }
+        ?: throw PatchException("Manage / discover block start not found in Addons")
+    val manageRegister = (addonsList[manageCall] as? FiveRegisterInstruction)?.registerE
+        ?: throw PatchException("MoreExtensionsMenuItem call is not a 4 register invoke")
+    val manageParam = addons.traceToParam(addonsList, manageCall, manageRegister)
+    val composerParam = addons.params().indexOf(composer)
+    if (composerParam < 0 || addons.params()[manageParam] != function0) throw PatchException("Unexpected Addons parameters")
+    addons.checkNotRedefined(addonsList, parameterRegister(addons, composerParam), homeRead, "Addons composer")
+    addons.checkNotRedefined(addonsList, parameterRegister(addons, manageParam), homeRead, "Addons manage click")
+    val addonsLiveness = Liveness(addons)
+    val managerRegisters = addonsLiveness.takeLow(3, homeRead)
+    val skipScratch = addonsLiveness.takeLow(1, blockStart)[0]
+    addons.applyEdits(
+        insert(
+            homeRead,
+            """
+                sget-boolean v${managerRegisters[0]}, $OM_ACTIVE
+                if-eqz v${managerRegisters[0]}, :ftl_stock
+                move-object/from16 v${managerRegisters[1]}, v${parameterRegister(addons, composerParam)}
+                move-object/from16 v${managerRegisters[2]}, v${parameterRegister(addons, manageParam)}
+                invoke-static {v${managerRegisters[1]}, v${managerRegisters[2]}}, $MOD_COMPOSE->managerRow(Ljava/lang/Object;Ljava/lang/Object;)V
+            """,
+            mapOf("ftl_stock" to { homeRead }),
+        ),
+        insert(
+            blockStart,
+            """
+                sget-boolean v$skipScratch, $OM_ACTIVE
+                if-eqz v$skipScratch, :ftl_stock
+                goto :ftl_skip
+            """,
+            // The U(Z) after the discover row closes its group, the next instruction closes the column.
+            mapOf("ftl_stock" to { blockStart }, "ftl_skip" to { lastMore + 2 }),
+        ),
     )
 
-    val dividerScratch = liveness.takeLow(1, groupIndex + 1)[0]
-    edits += insert(
-        groupIndex + 1,
-        """
-            invoke-static {}, $MOD_SETTINGS->oldMenu()Z
-            move-result v$dividerScratch
-            if-eqz v$dividerScratch, :ftl_no_divider
-            invoke-static/range {v$composerRegister .. v$composerRegister}, $MOD_COMPOSE->divider(Ljava/lang/Object;)V
-            :ftl_no_divider
-            invoke-static {v$composerRegister}, $MOD_COMPOSE->modRow(Ljava/lang/Object;)V
-        """,
+    // ---- Extensions row: no subtitle, no count
+    val itemCall = extensionsItem.instructionList().indexOfFirst { it.callTo(MENU_ITEM_KT, "MenuItem") }
+    val itemRange = extensionsItem.instructionList().getOrNull(itemCall) as? RegisterRangeInstruction
+        ?: throw PatchException("MenuItem call not found in ExtensionsMenuItem")
+    val descriptionRegister = itemRange.startRegister + 5
+    val descriptionScratch = Liveness(extensionsItem).takeLow(1, itemCall)[0]
+    extensionsItem.applyEdits(
+        insert(
+            itemCall,
+            """
+                invoke-static {}, $MOD_SETTINGS->oldMenu()Z
+                move-result v$descriptionScratch
+                if-eqz v$descriptionScratch, :ftl_stock
+                const/16 v$descriptionRegister, 0x0
+            """,
+            mapOf("ftl_stock" to { itemCall }),
+        ),
     )
-
-    instructions.forEachIndexed { i, instruction ->
-        if (instruction.opcode != Opcode.INVOKE_STATIC && instruction.opcode != Opcode.INVOKE_STATIC_RANGE) {
-            return@forEachIndexed
-        }
-        val reference = instruction.methodRef() ?: return@forEachIndexed
-        if (reference.definingClass != MAIN_MENU_KT) return@forEachIndexed
-        when (reference.name) {
-            "ToolsAndActionsMenuGroup" -> {
-                val register = (instruction as RegisterRangeInstruction).startRegister + reference.params().indexOf(composer)
-                edits += dividerEdit(i, register)
-            }
-            "QuitMenuGroup" -> edits += dividerEdit(i, composerReg)
-        }
-    }
-    target.applyEdits(*edits.toTypedArray())
-
-    val libraryScratch = Liveness(libraryMenuGroup).takeLow(1, 0)[0]
-    libraryMenuGroup.applyEdits(
+    val badge = methodNamed(EXTENSIONS_MENU_ITEM_KT, "NumberedChevronBadge")
+    if (badge.params().firstOrNull() != "I") throw PatchException("Unexpected NumberedChevronBadge: ${badge.smali()}")
+    val badgeScratch = Liveness(badge).takeLow(1, 0)[0]
+    badge.applyEdits(
         insert(
             0,
             """
                 invoke-static {}, $MOD_SETTINGS->oldMenu()Z
-                move-result v$libraryScratch
-                if-eqz v$libraryScratch, :ftl_library_stock
-                invoke-static/range {p1 .. p1}, $MOD_COMPOSE->divider(Ljava/lang/Object;)V
-                return-void
+                move-result v$badgeScratch
+                if-eqz v$badgeScratch, :ftl_stock
+                const/16 p0, 0x0
             """,
-            mapOf("ftl_library_stock" to { 0 }),
+            mapOf("ftl_stock" to { 0 }),
         ),
     )
 
-    val interfaces = mapOf(MOD_LAMBDA to function2, MOD_CLICK to types.function0)
-    interfaces.forEach { (type, function) ->
-        val list = mutableClassDefBy(type).interfaces
-        if (function !in list) list.add(function)
+    // ---- extension rows: no divider + gear
+    val webItem = mutableClassDefBy(MENU_ITEM_KT).methods.singleOrNull { it.name.startsWith("WebExtensionMenuItem") }
+        ?: throw PatchException("MenuItemKt.WebExtensionMenuItem not found")
+    val webList = webItem.instructionList()
+    val gearAt = webList.indexOfFirst { instruction ->
+        instruction.opcode == Opcode.INVOKE_DIRECT &&
+            instruction.methodRef()?.let { it.name == "<init>" && it.params() == listOf("Ljava/lang/String;", function0) } == true
     }
+    val gearRegister = (webList.getOrNull(gearAt) as? FiveRegisterInstruction)?.registerE
+        ?: throw PatchException("Gear content lambda not created in ${webItem.smali()}")
+    webItem.applyEdits(
+        insert(
+            gearAt,
+            """
+                invoke-static/range {v$gearRegister .. v$gearRegister}, $OLD_MENU->trailingIcon(Ljava/lang/Object;)Ljava/lang/Object;
+                move-result-object v$gearRegister
+                check-cast v$gearRegister, $function0
+            """,
+        ),
+    )
+
+    return edits
 }
 
 private object ColorSchemeStringFingerprint : Fingerprint(
@@ -864,12 +1127,6 @@ private fun Instruction.highConst(bits: Int) =
     opcode == Opcode.CONST_HIGH16 && (this as NarrowLiteralInstruction).narrowLiteral == bits
 
 private fun Instruction.methodRef() = (this as? ReferenceInstruction)?.reference as? MethodReference
-
-private fun Liveness.takeAny(count: Int, index: Int): List<Int> {
-    val picked = free(index).filter { it < 256 }.take(count)
-    if (picked.size < count) throw PatchException("not enough free registers at $index")
-    return picked
-}
 
 private fun surfaceTo(index: Int, field: FieldReference) = Edit(index) {
     val instruction = getInstruction<TwoRegisterInstruction>(index)
@@ -933,49 +1190,6 @@ private fun BytecodePatchContext.hideAccountSubtitle() {
     throw PatchException("Account subtitle Text call not found")
 }
 
-private fun BytecodePatchContext.hideExtensionExtras() {
-    val badge = methodsOf(EXTENSIONS_MENU_ITEM_KT, "NumberedChevronBadge").single()
-    if (badge.params().firstOrNull() != "I") throw PatchException("Unexpected NumberedChevronBadge signature")
-    val badgeScratch = Liveness(badge).takeLow(1, 0)[0]
-    badge.applyEdits(
-        insert(
-            0,
-            """
-                invoke-static {}, $MOD_SETTINGS->oldMenu()Z
-                move-result v$badgeScratch
-                if-eqz v$badgeScratch, :ftl_count
-                const/16 p0, 0x0
-            """,
-            mapOf("ftl_count" to { 0 }),
-        ),
-    )
-
-    for (method in mutableClassDefBy(EXTENSIONS_MENU_ITEM_KT).methods) {
-        val list = method.instructionList()
-        val at = list.indices.firstOrNull { i ->
-            val reference = list[i].methodRef()
-            list[i].opcode == Opcode.INVOKE_STATIC_RANGE && reference != null &&
-                reference.definingClass == MENU_ITEM_KT && reference.name == "MenuItem"
-        } ?: continue
-        val description = (list[at] as RegisterRangeInstruction).startRegister + 5
-        val scratch = Liveness(method).takeLow(1, at)[0]
-        method.applyEdits(
-            insert(
-                at,
-                """
-                    invoke-static {}, $MOD_SETTINGS->oldMenu()Z
-                    move-result v$scratch
-                    if-eqz v$scratch, :ftl_description
-                    const/16 v$description, 0x0
-                """,
-                mapOf("ftl_description" to { at }),
-            ),
-        )
-        return
-    }
-    throw PatchException("ExtensionsMenuItem MenuItem call not found")
-}
-
 /*
  * Flat rows. Every rule is found by structure (float literal pairs, ColorScheme toString labels, named Fenix methods).
  * Rules (old 161 build -> same rule on the obfuscated build):
@@ -999,7 +1213,7 @@ private fun BytecodePatchContext.restyleRows() {
     }
 
     var recolored = 0
-    for (owner in listOf(MENU_ITEM_KT, MAIN_MENU_KT, IP_PROTECTION_KT, ACCOUNT_KT, "${COMPOSE_PACKAGE}AddonMenuItemKt;")) {
+    for (owner in listOf(MENU_ITEM_KT, MAIN_MENU_KT, IP_PROTECTION_KT)) {
         recolored += recolor(owner, bright, surface)
     }
     recolor(MENU_NAVIGATION_KT, high, surface)
@@ -1107,7 +1321,6 @@ private fun BytecodePatchContext.restyleRows() {
     }
 
     hideAccountSubtitle()
-    hideExtensionExtras()
 
     val badge = mutableClassDefBy(MENU_ITEM_KT).methods.firstOrNull {
         it.name == "Badge" && it.params().firstOrNull() == "Ljava/lang/String;"
