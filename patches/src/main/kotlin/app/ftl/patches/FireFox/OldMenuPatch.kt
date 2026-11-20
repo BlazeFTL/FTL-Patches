@@ -773,6 +773,7 @@ private class PageSmali(
 )
 
 private const val OM_ACCESS_POINT = "${MENU_PACKAGE}MenuAccessPoint;"
+private const val LIST_ITEM_KT = "Lorg/mozilla/fenix/compose/list/ListItemKt;"
 private const val OM_UNIT_CALL = "$TAB_ACCESS->ftlUnit()Ljava/lang/Object;"
 private const val OM_ACTIVE = "$OLD_MENU->extensionsActive:Z"
 
@@ -1154,6 +1155,19 @@ private fun BytecodePatchContext.installExtensionsPage(
     }
     val gearRegister = (webList.getOrNull(gearAt) as? FiveRegisterInstruction)?.registerE
         ?: throw PatchException("Gear content lambda not created in ${webItem.smali()}")
+    // IconListItem(minHeight: Dp = 56dp default): pass 40dp (param 8, default mask bit 0x100) like the other rows.
+    val iconCall = webList.indexOfFirst { instruction ->
+        instruction.opcode == Opcode.INVOKE_STATIC_RANGE && instruction.methodRef()?.let {
+            it.definingClass == LIST_ITEM_KT && it.name.startsWith("IconListItem")
+        } == true
+    }
+    val iconReference = webList.getOrNull(iconCall)?.methodRef()
+        ?: throw PatchException("IconListItem call not found in ${webItem.smali()}")
+    if (iconReference.params().size != 28 || iconReference.params()[8] != "F" || iconReference.params().last() != "I") {
+        throw PatchException("Unexpected IconListItem signature: ${iconReference.params()}")
+    }
+    val iconStart = (webList[iconCall] as RegisterRangeInstruction).startRegister
+    val iconScratch = Liveness(webItem).takeRun(1, iconCall)
     webItem.applyEdits(
         insert(
             gearAt,
@@ -1162,6 +1176,18 @@ private fun BytecodePatchContext.installExtensionsPage(
                 move-result-object v$gearRegister
                 check-cast v$gearRegister, $function0
             """,
+        ),
+        insert(
+            iconCall,
+            """
+                invoke-static {}, $MOD_SETTINGS->oldMenu()Z
+                move-result v$iconScratch
+                if-eqz v$iconScratch, :ftl_stock
+                const/high16 v${iconStart + 8}, 0x42200000
+                const/16 v$iconScratch, -0x101
+                and-int v${iconStart + 27}, v${iconStart + 27}, v$iconScratch
+            """,
+            mapOf("ftl_stock" to { iconCall }),
         ),
     )
 
@@ -1256,7 +1282,8 @@ private fun BytecodePatchContext.hideAccountSubtitle() {
  * Rules (old 161 build -> same rule on the obfuscated build):
  *  surfaceBright -> surface        iget-wide of ColorScheme.surfaceBright in MenuItemKt and MainMenuKt
  *  row padding 16/8dp -> 12/2dp    two adjacent const/high16 (16.0f, 8.0f) in MenuItemKt
- *  row height 56/52dp -> 40dp      const/high16 0x42600000 / 0x42500000 in MenuItemKt
+ *  row height 56/52dp -> 40dp      const/high16 0x42600000 / 0x42500000 in MenuItemKt, 0x42600000 in MozillaAccountMenuItem
+ *                                  (also surfaceBright -> surface there, the Sign in row had a white card)
  *  group spacing 2dp -> 0          only const/high16 0x40000000 in MenuGroupKt.MenuGroup
  *  frame spacing 12dp -> 0         first const/high16 0x41400000 followed by <init>(FZ..) in MenuScaffoldKt.MenuFrame
  *  nav bar padding                 const/high16 12.0f + 4.0f pair in MenuNavigationKt.MenuNavigation -> OldMenu.navPadding()
@@ -1274,7 +1301,7 @@ private fun BytecodePatchContext.restyleRows() {
     }
 
     var recolored = 0
-    for (owner in listOf(MENU_ITEM_KT, MAIN_MENU_KT, IP_PROTECTION_KT)) {
+    for (owner in listOf(MENU_ITEM_KT, MAIN_MENU_KT, IP_PROTECTION_KT, ACCOUNT_KT)) {
         recolored += recolor(owner, bright, surface)
     }
     recolor(MENU_NAVIGATION_KT, high, surface)
@@ -1304,6 +1331,13 @@ private fun BytecodePatchContext.restyleRows() {
         if (edits.isNotEmpty()) method.applyEdits(*edits.toTypedArray())
     }
     if (rows == 0) throw PatchException("Menu row size literals not found in MenuItemKt")
+
+    // Sign in row (MozillaAccountMenuItem): min height 56dp -> 40dp like the other rows
+    for (method in mutableClassDefBy(ACCOUNT_KT).methods) {
+        val list = method.instructionList()
+        val edits = list.indices.filter { list[it].highConst(0x42600000) }.map { floatTo(it, 0x42200000) }
+        if (edits.isNotEmpty()) method.applyEdits(*edits.toTypedArray())
+    }
 
     var groups = 0
     for (method in methodsOf(MENU_GROUP_KT, "MenuGroup")) {
