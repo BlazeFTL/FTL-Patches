@@ -1163,10 +1163,14 @@ private fun BytecodePatchContext.installExtensionsPage(
     }
     val iconReference = webList.getOrNull(iconCall)?.methodRef()
         ?: throw PatchException("IconListItem call not found in ${webItem.smali()}")
-    if (iconReference.params().size != 28 || iconReference.params()[8] != "F" || iconReference.params().last() != "I") {
-        throw PatchException("Unexpected IconListItem signature: ${iconReference.params()}")
+    val iconParams = iconReference.params()
+    if (iconParams.size != 26 || iconParams[8] != "F" || iconParams.last() != "I") {
+        throw PatchException("Unexpected IconListItem signature: $iconParams")
     }
+    fun registerWidth(type: String): Int = if (type == "J" || type == "D") 2 else 1
     val iconStart = (webList[iconCall] as RegisterRangeInstruction).startRegister
+    val heightRegister = iconStart + iconParams.take(8).sumOf { registerWidth(it) }
+    val maskRegister = iconStart + iconParams.sumOf { registerWidth(it) } - 1
     val iconScratch = Liveness(webItem).takeRun(1, iconCall)
     webItem.applyEdits(
         insert(
@@ -1183,9 +1187,9 @@ private fun BytecodePatchContext.installExtensionsPage(
                 invoke-static {}, $MOD_SETTINGS->oldMenu()Z
                 move-result v$iconScratch
                 if-eqz v$iconScratch, :ftl_stock
-                const/high16 v${iconStart + 8}, 0x42200000
+                const/high16 v$heightRegister, 0x42200000
                 const/16 v$iconScratch, -0x101
-                and-int v${iconStart + 27}, v${iconStart + 27}, v$iconScratch
+                and-int v$maskRegister, v$maskRegister, v$iconScratch
             """,
             mapOf("ftl_stock" to { iconCall }),
         ),
