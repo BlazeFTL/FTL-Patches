@@ -75,6 +75,7 @@ import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.string
+import app.morphe.patcher.util.proxy.mutableTypes.MutableClass
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
@@ -144,6 +145,26 @@ private fun MutableMethod.traceToParam(list: List<Instruction>, at: Int, start: 
         if (parameterRegister(this, index) == register) return index
     }
     throw PatchException("v$start at $at does not resolve to a parameter in ${smali()}")
+}
+
+// Same walk as traceToParam but ends at an instance field read (iget) and returns the field name.
+private fun MutableMethod.traceToField(list: List<Instruction>, at: Int, start: Int): String {
+    var register = start
+    for (i in at - 1 downTo 0) {
+        val instruction = list[i]
+        if (!instruction.defines(register)) continue
+        val name = instruction.opcode.name
+        if (name.startsWith("iget")) {
+            return ((instruction as ReferenceInstruction).reference as FieldReference).name
+        }
+        if (!name.startsWith("move") || name.startsWith("move-result") || name == "move-exception" ||
+            name.contains("wide")
+        ) {
+            throw PatchException("v$start at $at is not a field copy in ${smali()} ($name at $i)")
+        }
+        register = (instruction as TwoRegisterInstruction).registerB
+    }
+    throw PatchException("v$start at $at does not resolve to a field in ${smali()}")
 }
 
 private fun Instruction.callTo(owner: String, name: String): Boolean {
@@ -862,12 +883,52 @@ private fun BytecodePatchContext.installExtensionsPage(
     val toolsAt = instructions.indexOfFirst { it.callTo(MAIN_MENU_KT, "ToolsAndActionsMenuGroup") }
     val toolsCall = instructions.getOrNull(toolsAt) as? RegisterRangeInstruction
         ?: throw PatchException("ToolsAndActionsMenuGroup call not found or not a range invoke")
-    if (instructions[toolsAt].methodRef()!!.params() != toolsContent.params()) {
-        throw PatchException("Tools content lambda signature differs from ToolsAndActionsMenuGroup")
+    // The Tools content lambda is not called with ToolsAndActionsMenuGroup's parameters in the same order: a lambda class
+    // created in ToolsAndActionsMenuGroup captures them (ctor order) and its invoke passes its fields to the content
+    // lambda (field order). Walk content lambda param -> field -> ctor param -> ToolsAndActionsMenuGroup param.
+    val tools = methodNamed(MAIN_MENU_KT, "ToolsAndActionsMenuGroup")
+    val toolsBody = tools.instructionList()
+    val bridge = toolsBody.firstNotNullOfOrNull { instruction ->
+        if (instruction.opcode != Opcode.NEW_INSTANCE) return@firstNotNullOfOrNull null
+        val type = ((instruction as ReferenceInstruction).reference as TypeReference).type
+        val definition = classOrNull(type) ?: return@firstNotNullOfOrNull null
+        val invoke = definition.methods.firstOrNull { method ->
+            method.name == "invoke" && method.implementation?.instructions?.any {
+                it.callTo(MAIN_MENU_KT, toolsContent.name)
+            } == true
+        } ?: return@firstNotNullOfOrNull null
+        Triple(type, definition, invoke)
+    } ?: throw PatchException("Lambda class bridging ToolsAndActionsMenuGroup and the content lambda not found")
+    val bridgeType: String = bridge.first
+    val bridgeClass: MutableClass = bridge.second
+    val bridgeInvoke: MutableMethod = bridge.third
+    val bridgeList = bridgeInvoke.instructionList()
+    val bridgeCall = bridgeList.indexOfFirst { it.callTo(MAIN_MENU_KT, toolsContent.name) }
+    val bridgeStart = (bridgeList[bridgeCall] as RegisterRangeInstruction).startRegister
+    val bridgeCtor = bridgeClass.methods.single { it.name == "<init>" }
+    val bridgeCtorList = bridgeCtor.instructionList()
+    val toolsCtorCall = toolsBody.indexOfFirst {
+        it.opcode == Opcode.INVOKE_DIRECT_RANGE &&
+            it.methodRef()?.let { reference -> reference.definingClass == bridgeType && reference.name == "<init>" } == true
     }
-    val pageExpanded = target.traceToParam(instructions, toolsAt, toolsCall.startRegister + contentExpanded)
-    val pageClick = target.traceToParam(instructions, toolsAt, toolsCall.startRegister + contentClick)
-    val pageContent = target.traceToParam(instructions, toolsAt, toolsCall.startRegister + contentPage)
+    val toolsCtorStart = (toolsBody.getOrNull(toolsCtorCall) as? RegisterRangeInstruction)?.startRegister
+        ?: throw PatchException("Bridge lambda constructor call not found in ToolsAndActionsMenuGroup")
+    fun toolsParamOf(contentParam: Int): Int {
+        val field = bridgeInvoke.traceToField(bridgeList, bridgeCall, bridgeStart + contentParam)
+        val put = bridgeCtorList.indexOfFirst { instruction ->
+            instruction.opcode.name.startsWith("iput") &&
+                ((instruction as? ReferenceInstruction)?.reference as? FieldReference)?.name == field
+        }
+        if (put < 0) throw PatchException("Field $field is not assigned in the bridge lambda constructor")
+        val ctorParam = bridgeCtor.traceToParam(bridgeCtorList, put, (bridgeCtorList[put] as OneRegisterInstruction).registerA)
+        return tools.traceToParam(toolsBody, toolsCtorCall, toolsCtorStart + 1 + ctorParam)
+    }
+    val toolsExpanded = toolsParamOf(contentExpanded)
+    val toolsClick = toolsParamOf(contentClick)
+    val toolsPage = toolsParamOf(contentPage)
+    val pageExpanded = target.traceToParam(instructions, toolsAt, toolsCall.startRegister + toolsExpanded)
+    val pageClick = target.traceToParam(instructions, toolsAt, toolsCall.startRegister + toolsClick)
+    val pageContent = target.traceToParam(instructions, toolsAt, toolsCall.startRegister + toolsPage)
     val accessPointParam = target.params().indexOf(OM_ACCESS_POINT)
     if (accessPointParam < 0 || target.params()[pageExpanded] != "Z") throw PatchException("Unexpected parameters in ${target.smali()}")
 
