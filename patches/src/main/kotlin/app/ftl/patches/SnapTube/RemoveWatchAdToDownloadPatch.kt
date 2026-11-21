@@ -5,6 +5,7 @@ import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.opcode
+import app.morphe.patcher.string
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.bytecodePatch
@@ -44,9 +45,17 @@ internal object ChooseFormatAdRewardMgCheckFingerprint : Fingerprint(
 )
 
 internal object ChooseFormatAdRewardNeedStatusFingerprint : Fingerprint(
-    definingClass = "Lcom/snaptube/plugin/extension/nonlifecycle/ad/ChooseFormatAdRewardViewBinder\$observeNeedRewardStatus\$1\$1\$1\$a;",
+    returnType = "Ljava/lang/Object;",
+    parameters = listOf("Z", "Lkotlin/coroutines/Continuation;"),
+    custom = { _, classDef ->
+        classDef.type.startsWith(
+            "Lcom/snaptube/plugin/extension/nonlifecycle/ad/ChooseFormatAdRewardViewBinder\$observeNeedRewardStatus"
+        )
+    },
     filters = listOf(
-        opcode(Opcode.IF_EQZ),
+        string("updateDownloadBtn "),
+        methodCall(definingClass = "Lcom/snaptube/util/ProductionEnv;", name = "d"),
+        opcode(Opcode.IF_EQZ, location = MatchAfterImmediately()),
     ),
 )
 
@@ -66,7 +75,7 @@ val removeSnaptubeWatchAdToDownloadPatch = bytecodePatch(
         }
 
         ChooseFormatAdRewardNeedStatusFingerprint.let {
-            val ifEqz = it.instructionMatches[0]
+            val ifEqz = it.instructionMatches[2]
             val register = ifEqz.getInstruction<OneRegisterInstruction>().registerA
             it.method.addInstructions(ifEqz.index, "const/4 v$register, 0x0")
         }

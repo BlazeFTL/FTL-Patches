@@ -19,7 +19,6 @@ public final class RangeSelect {
     private static final long ARMED = Long.MAX_VALUE;
     private static final long GRACE_MS = 300L;
     private static final String ADD_SELECT = "org.mozilla.fenix.tabstray.redux.action.TabsTrayAction$AddSelectTab";
-    private static final String LIST_STATE = "androidx.compose.foundation.lazy.LazyListState";
     private static final Map<String, Field> FIELDS = new ConcurrentHashMap<>();
     private static final Map<String, Method> METHODS = new ConcurrentHashMap<>();
     private static final RangeSelectNoOp NOOP = new RangeSelectNoOp();
@@ -30,11 +29,11 @@ public final class RangeSelect {
     private RangeSelect() {
     }
 
-    public static boolean longPress(Object lambda, Object item) {
+    public static boolean longPress(Object fragment, Object item) {
         if (!ModSettings.rangeSelect()) return false;
         boolean selecting = false;
         try {
-            Object store = store(lambda);
+            Object store = store(fragment);
             Object state = call(store, "getState");
             Set selected = (Set) call(read(state, "mode"), "getSelectedTabs");
             if (selected == null || selected.isEmpty()) return false;
@@ -66,6 +65,10 @@ public final class RangeSelect {
         return NOOP;
     }
 
+    // gesture = the detectListPressAndDrag lambda. Its fields hold the list state (the only field whose
+    // class answers to the generated scroll accessor) and the reorder/interactable state. Fenix reorder state
+    // keeps its field names; the android-components interactable state is renamed, so the long press callback
+    // is found by shape (the only Function1 field) and haptics are optional.
     public static Object start(Object gesture) {
         Object listState = null;
         Object state = null;
@@ -74,7 +77,9 @@ public final class RangeSelect {
                 if (field.getType().isPrimitive()) continue;
                 field.setAccessible(true);
                 Object value = field.get(gesture);
-                if (LIST_STATE.equals(field.getType().getName())) listState = value;
+                if (value == null) continue;
+                List items = TabAccess.scrollItems(value);
+                if (items != null && TabAccess.scrollOrientation(value) >= 0) listState = value;
                 else state = value;
             }
         } catch (Throwable t) {
@@ -143,16 +148,10 @@ public final class RangeSelect {
         throw new NoSuchMethodException("Store.dispatch");
     }
 
-    private static Object store(Object lambda) throws Exception {
-        for (Field field : lambda.getClass().getDeclaredFields()) {
-            if (field.getType().isPrimitive()) continue;
-            field.setAccessible(true);
-            Object owner = field.get(lambda);
-            if (owner == null) continue;
-            Method method = find(owner.getClass(), "getTabsTrayStore$app");
-            if (method != null) return method.invoke(owner);
-        }
-        throw new NoSuchFieldException("TabManagementFragment");
+    private static Object store(Object fragment) throws Exception {
+        Method method = find(fragment.getClass(), "getTabsTrayStore$app");
+        if (method == null) throw new NoSuchMethodException("getTabsTrayStore$app");
+        return method.invoke(fragment);
     }
 
     static Object call(Object target, String name) throws Exception {

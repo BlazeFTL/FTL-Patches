@@ -1,3 +1,9 @@
+## [1.43.7.5-dev.1](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.7.4...v1.43.7.5-dev.1) (2026-11-12)
+
+### 🐛 Bug Fixes
+
+* Update SnapTube Patches For V7.69.1.76903901 ([5ad2209](https://github.com/BlazeFTL/FTL-Patches/commit/5ad2209ec74ef690548493e05ea0bc0154c4b7c6))
+
 ## [1.43.7.4](https://github.com/BlazeFTL/FTL-Patches/compare/v1.43.7.3...v1.43.7.4) (2026-11-07)
 
 ### 🐛 Bug Fixes

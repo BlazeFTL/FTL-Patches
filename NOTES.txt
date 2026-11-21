@@ -1,0 +1,13 @@
+Extract over repo root (updated files only).
+
+patches/src/main/kotlin/app/ftl/patches/FireFox/
+  OldMenuPatch.kt                    rewritten (window hooks, legacy routing, Mod Settings row)
+  Accessors.kt, CloseDuplicateTabsPatch.kt, TabNextToCurrentPatch.kt, TabScrollButtonPatch.kt,
+  RememberTabScrollPositionPatch.kt, RangeSelectTabsPatch.kt   (unchanged from previous zip)
+
+extensions/firefox/src/main/java/app/ftl/extension/firefox/
+  OldMenu.java  ModClick.java  ModLambda.java   changed
+  (tab classes from previous zip unchanged)
+
+Delete (no longer used): patches/.../FireFox/Fingerprints.kt and ComposeSmali.kt
+Extensions page, extension pinning, flat row restyle are not part of this version.

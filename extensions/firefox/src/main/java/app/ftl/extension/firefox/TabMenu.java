@@ -4,6 +4,7 @@ import android.util.Log;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,6 +15,7 @@ public final class TabMenu {
     private static final String CLOSE_ALL_TAG = "tabstray.banner.threeDotButton.closeAllTabs";
     private static final String DUPLICATE_TAG = "tabstray.banner.threeDotButton.closeDuplicateTabs";
     private static final String DUPLICATE_LABEL = "Close duplicate tabs";
+    private static final int ITEM_DEFAULTS = 0x34;
 
     private static volatile Object trayState;
 
@@ -39,10 +41,12 @@ public final class TabMenu {
         }
     }
 
+    // TabsTrayState.getSelectedPage() is a Fenix member, so it keeps its name.
     private static boolean isPrivatePage() throws Exception {
         Object state = trayState;
         if (state == null) return false;
-        Object page = read(state, "selectedPage");
+        Method getter = state.getClass().getMethod("getSelectedPage");
+        Object page = getter.invoke(state);
         return page instanceof Enum && "PrivateTabs".equals(((Enum) page).name());
     }
 
@@ -67,35 +71,39 @@ public final class TabMenu {
         return false;
     }
 
+    // Menu IconItem ctor (Text, int icon, String testTag, Text.String description, Function0 onClick, int defaults).
+    // Found by shape, not by name: types are R8-renamed. Text.String is the 4th parameter type.
+    // The icon id is read from the close all item, which is also the delete icon.
     private static Object newItem(Object like, boolean isPrivate) throws Exception {
-        ClassLoader loader = like.getClass().getClassLoader();
-        Class<?> textType = Class.forName("mozilla.components.compose.base.text.Text$String", true, loader);
-        Object text = textType.getConstructor(String.class).newInstance(DUPLICATE_LABEL);
-        int icon = Class.forName("mozilla.components.ui.icons.R$drawable", true, loader)
-            .getField("mozac_ic_delete_24").getInt(null);
-        Object action = TabCloseDuplicates.of(isPrivate);
+        Constructor<?> target = null;
         for (Constructor<?> constructor : like.getClass().getDeclaredConstructors()) {
             Class<?>[] p = constructor.getParameterTypes();
-            if (p.length == 6 && p[1] == int.class && p[2] == String.class
-                && p[3] == textType && p[5] == int.class) {
-                constructor.setAccessible(true);
-                return constructor.newInstance(text, icon, DUPLICATE_TAG, null, action, 0x34);
+            if (p.length == 6 && p[1] == int.class && p[2] == String.class && p[5] == int.class
+                && !p[0].isPrimitive() && !p[3].isPrimitive() && !p[4].isPrimitive()) {
+                target = constructor;
+                break;
             }
         }
-        throw new NoSuchMethodException("IconItem constructor");
+        if (target == null) throw new NoSuchMethodException("IconItem constructor");
+
+        Class<?> textType = target.getParameterTypes()[3];
+        Object text = textType.getConstructor(String.class).newInstance(DUPLICATE_LABEL);
+        int icon = iconOf(like);
+        Object action = TabCloseDuplicates.of(isPrivate);
+        target.setAccessible(true);
+        return target.newInstance(text, icon, DUPLICATE_TAG, null, action, ITEM_DEFAULTS);
     }
 
-    private static Object read(Object target, String name) throws Exception {
-        Class<?> type = target.getClass();
-        while (type != null) {
-            try {
-                Field field = type.getDeclaredField(name);
+    private static int iconOf(Object item) throws Exception {
+        Class<?> type = item.getClass();
+        while (type != null && type != Object.class) {
+            for (Field field : type.getDeclaredFields()) {
+                if (field.getType() != int.class) continue;
                 field.setAccessible(true);
-                return field.get(target);
-            } catch (NoSuchFieldException e) {
-                type = type.getSuperclass();
+                return field.getInt(item);
             }
+            type = type.getSuperclass();
         }
-        throw new NoSuchFieldException(name);
+        throw new NoSuchFieldException("icon");
     }
 }

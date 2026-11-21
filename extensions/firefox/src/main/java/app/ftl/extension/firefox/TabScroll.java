@@ -4,12 +4,11 @@ import android.app.Application;
 import android.util.Log;
 
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 @SuppressWarnings({"unchecked", "rawtypes", "unused"})
 public final class TabScroll {
@@ -22,6 +21,7 @@ public final class TabScroll {
     private static volatile Object tray;
     private static int upIcon;
     private static int downIcon;
+    private static Boolean installed;
 
     private TabScroll() {
     }
@@ -41,8 +41,23 @@ public final class TabScroll {
         tray = state;
     }
 
+    // ftlInstalled is generated into this class only when the Tab scroll button patch is applied.
+    private static boolean installed() {
+        Boolean cached = installed;
+        if (cached == null) {
+            try {
+                TabScroll.class.getMethod("ftlInstalled");
+                cached = Boolean.TRUE;
+            } catch (Throwable t) {
+                cached = Boolean.FALSE;
+            }
+            installed = cached;
+        }
+        return cached;
+    }
+
     public static boolean enabled() {
-        return ModSettings.tabScroll();
+        return installed() && ModSettings.tabScroll();
     }
 
     public static TabScrollClick up() {
@@ -63,66 +78,56 @@ public final class TabScroll {
 
     static void go(boolean down) {
         try {
-            Object state = current();
+            Set<String> ids = expectedIds();
+            Object state = current(ids);
             if (state == null) return;
-            scrollTo(state, down ? Math.max(0, total(state) - 1) : 0);
+            scrollTo(state, down, Math.max(0, ids.size() - 1));
         } catch (Throwable t) {
             Log.e(TAG, "tab scroll failed", t);
         }
     }
 
-    private static synchronized Object current() {
-        int expected = expectedCount();
-        Object best = null;
-        int bestScore = Integer.MAX_VALUE;
+    // Visible list/grid items are keyed by tab id. The state whose visible keys belong to the selected page
+    // is the one on screen. Falls back to the newest state that shows anything.
+    private static synchronized Object current(Set<String> ids) {
+        Object fallback = null;
         for (int i = STATES.size() - 1; i >= 0; i--) {
             Object state = STATES.get(i).get();
             if (state == null) continue;
-            int total;
+            List items = TabAccess.scrollItems(state);
+            if (items == null || items.isEmpty()) continue;
+            if (fallback == null) fallback = state;
             try {
-                total = total(state);
-            } catch (Throwable t) {
-                continue;
-            }
-            if (total <= 0) continue;
-            int score = expected >= 0 ? Math.abs(total - expected) : 0;
-            if (best == null || score < bestScore) {
-                best = state;
-                bestScore = score;
+                Object key = TabAccess.get(items.get(0), "getKey");
+                if (key != null && ids.contains(String.valueOf(key))) return state;
+            } catch (Throwable ignored) {
             }
         }
-        return best;
+        return fallback;
     }
 
-    private static int expectedCount() {
+    private static Set<String> expectedIds() {
+        Set<String> ids = new HashSet<>();
         try {
             Object state = tray;
-            if (state == null) return -1;
-            Object page = read(state, "selectedPage");
+            if (state == null) return ids;
+            Object page = TabAccess.get(state, "getSelectedPage");
             boolean isPrivate = page instanceof Enum && "PrivateTabs".equals(((Enum) page).name());
-            Object tabs = read(state, isPrivate ? "privateTabs" : "normalTabs");
-            return tabs instanceof Collection ? ((Collection) tabs).size() : -1;
+            Object tabs = isPrivate
+                ? TabAccess.get(TabAccess.get(state, "getPrivateBrowsing"), "getTabs")
+                : TabAccess.get(TabAccess.get(state, "getNormalTabsState"), "getItems");
+            if (tabs instanceof Iterable) {
+                for (Object tab : (Iterable) tabs) ids.add((String) TabAccess.get(tab, "getId"));
+            }
         } catch (Throwable t) {
-            return -1;
+            Log.e(TAG, "tab ids failed", t);
         }
+        return ids;
     }
 
-    private static int total(Object state) throws Exception {
-        Object info = call(state, "getLayoutInfo");
-        return ((Number) call(info, "getTotalItemsCount")).intValue();
-    }
-
-    private static void scrollTo(Object state, int index) throws Exception {
-        try {
-            Method request = state.getClass().getMethod("requestScrollToItem", int.class, int.class);
-            request.setAccessible(true);
-            request.invoke(state, index, 0);
-            return;
-        } catch (NoSuchMethodException ignored) {
-        }
-        Method raw = Class.forName("androidx.compose.foundation.gestures.ScrollableState", false,
-            state.getClass().getClassLoader()).getMethod("dispatchRawDelta", float.class);
-        raw.invoke(state, index <= 0 ? -FAR : FAR);
+    private static void scrollTo(Object state, boolean down, int last) throws Exception {
+        if (TabAccess.scrollRequest(state, down ? last : 0)) return;
+        TabAccess.scrollRaw(state, down ? FAR : -FAR);
     }
 
     private static int resolveIcon(boolean up) {
@@ -141,25 +146,5 @@ public final class TabScroll {
             Log.e(TAG, "scroll icon failed", t);
             return 0;
         }
-    }
-
-    private static Object call(Object target, String name) throws Exception {
-        Method method = target.getClass().getMethod(name);
-        method.setAccessible(true);
-        return method.invoke(target);
-    }
-
-    private static Object read(Object target, String name) throws Exception {
-        Class<?> type = target.getClass();
-        while (type != null) {
-            try {
-                Field field = type.getDeclaredField(name);
-                field.setAccessible(true);
-                return field.get(target);
-            } catch (NoSuchFieldException e) {
-                type = type.getSuperclass();
-            }
-        }
-        throw new NoSuchFieldException(name);
     }
 }
