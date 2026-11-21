@@ -14,6 +14,6 @@ public final class TabScrollClick {
 
     public Object invoke() {
         TabScroll.go(down);
-        return ModLambda.unit();
+        return TabAccess.unit();
     }
 }

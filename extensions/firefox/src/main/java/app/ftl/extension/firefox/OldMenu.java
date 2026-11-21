@@ -22,7 +22,6 @@ import android.view.animation.AnimationSet;
 import android.view.animation.ScaleAnimation;
 
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 @SuppressWarnings("unused")
@@ -79,6 +78,7 @@ public final class OldMenu {
             extensionsActive = false;
             bottomToolbar = isBottom(dialog.getContext());
             appContext = dialog.getContext().getApplicationContext();
+            dialogContext = new WeakReference<>(dialog.getContext());
             if (!ModSettings.oldMenu()) return;
             Window window = dialog.getWindow();
             if (window == null) return;
@@ -156,6 +156,16 @@ public final class OldMenu {
     }
 
     private static int modIcon;
+    private static WeakReference<Context> dialogContext = new WeakReference<>(null);
+
+    public static Context context() {
+        return dialogContext.get();
+    }
+
+    public static int modIcon() {
+        Context context = dialogContext.get();
+        return context == null ? 0 : modIcon(context);
+    }
 
     public static int modIcon(Context context) {
         if (modIcon != 0) return modIcon;
@@ -215,8 +225,8 @@ public final class OldMenu {
             Object behavior = behaviorOf(sheet);
             behaviorRef = new WeakReference<>(behavior);
             if (behavior != null) {
-                setHideable(behavior, false);
-                setBoolean(behavior, "draggable", false);
+                accessor("ftlSheetHideable", new Class<?>[]{Object.class, boolean.class}, behavior, false);
+                accessor("ftlSheetDraggable", new Class<?>[]{Object.class, boolean.class}, behavior, false);
                 if (applyWidth(extensionsActive ? 314 : 240)) moved = true;
             }
 
@@ -226,11 +236,11 @@ public final class OldMenu {
             sheet.setElevation(8 * density);
 
             ViewGroup.LayoutParams lp = sheet.getLayoutParams();
-            if (lp != null && lp.getClass().getName().equals("androidx.coordinatorlayout.widget.CoordinatorLayout$LayoutParams")) {
-                Field gravity = lp.getClass().getField("gravity");
+            Object current = lp == null ? null : accessor("ftlGravity", new Class<?>[]{Object.class}, lp);
+            if (current instanceof Integer && (Integer) current >= 0) {
                 int margin = (int) (8 * density);
-                if (gravity.getInt(lp) != 0x800035 || ((ViewGroup.MarginLayoutParams) lp).getMarginEnd() != margin) {
-                    gravity.setInt(lp, 0x800035);
+                if ((Integer) current != 0x800035 || ((ViewGroup.MarginLayoutParams) lp).getMarginEnd() != margin) {
+                    accessor("ftlSetGravity", new Class<?>[]{Object.class, int.class}, lp, 0x800035);
                     ((ViewGroup.MarginLayoutParams) lp).setMarginEnd(margin);
                     sheet.setLayoutParams(lp);
                     moved = true;
@@ -274,10 +284,9 @@ public final class OldMenu {
             if (sheet == null || behavior == null) return false;
             Resources res = sheet.getContext().getResources();
             int width = Math.min(menuWidth(res, dp), res.getDisplayMetrics().widthPixels);
-            Field f = behavior.getClass().getDeclaredField("maxWidth");
-            f.setAccessible(true);
-            if (f.getInt(behavior) != width) {
-                f.setInt(behavior, width);
+            Object current = accessor("ftlSheetMaxWidth", new Class<?>[]{Object.class}, behavior);
+            if (current instanceof Integer && (Integer) current != width) {
+                accessor("ftlSheetSetMaxWidth", new Class<?>[]{Object.class, int.class}, behavior, width);
                 sheet.requestLayout();
                 return true;
             }
@@ -293,30 +302,20 @@ public final class OldMenu {
         return id == 0 ? null : dialog.findViewById(id);
     }
 
-    private static Object behaviorOf(View sheet) {
+    // The ftl* methods do not exist in this source. The patch generates them into this class (BottomSheetBehavior
+    // members are R8-renamed), so they are called by reflection and R8 cannot inline or rename them.
+    private static Object accessor(String name, Class<?>[] types, Object... args) {
         try {
-            Method from = Class.forName(BEHAVIOR).getMethod("from", View.class);
-            return from.invoke(null, sheet);
+            Method method = OldMenu.class.getMethod(name, types);
+            return method.invoke(null, args);
         } catch (Throwable t) {
+            Log.e(TAG, name + " failed", t);
             return null;
         }
     }
 
-    private static void setHideable(Object behavior, boolean value) {
-        try {
-            behavior.getClass().getMethod("setHideable", boolean.class).invoke(behavior, value);
-        } catch (Throwable ignored) {
-        }
-        setBoolean(behavior, "hideable", value);
-    }
-
-    private static void setBoolean(Object target, String field, boolean value) {
-        try {
-            Field f = Class.forName(BEHAVIOR).getDeclaredField(field);
-            f.setAccessible(true);
-            f.setBoolean(target, value);
-        } catch (Throwable ignored) {
-        }
+    private static Object behaviorOf(View sheet) {
+        return accessor("ftlSheetBehavior", new Class<?>[]{View.class}, sheet);
     }
 
     private static void playEnter(View sheet) {
