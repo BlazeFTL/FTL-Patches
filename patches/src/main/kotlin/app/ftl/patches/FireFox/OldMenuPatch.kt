@@ -64,7 +64,7 @@
  *      drawn only when > 0) is zeroed.
  *      Icons: R.drawable names mozac_ic_extension_24 (read in ExtensionsMenuItem) and mozac_ic_back_24 (MenuNavigation).
  *
- *  Not part of this version: extension pinning.
+ *  Extension pinning: see ExtensionPinPatch.kt (installExtensionPin, called last below).
  */
 package app.ftl.patches.firefox
 
@@ -1493,5 +1493,6 @@ val oldMenuPatch = bytecodePatch(
         installSheetAccessors()
         routeToLegacyMenu()
         installModRow()
+        installExtensionPin()
     }
 }

@@ -20,11 +20,9 @@ import android.widget.Toast;
 
 import java.io.ByteArrayOutputStream;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,13 +33,7 @@ public final class ExtensionPin {
     private static final String TAG = "MorpheFirefox";
     private static final String PREFS = "ftl_pinned_ext";
 
-    private static final String BROWSER_STATE = "mozilla.components.browser.state.state.BrowserState";
-    private static final String SELECTORS = "mozilla.components.browser.state.selector.SelectorsKt";
-    private static final String ACTION_BUTTON = "mozilla.components.compose.browser.toolbar.concept.Action$ActionButton";
-    private static final String BUTTON_STATE = ACTION_BUTTON + "$State";
-    private static final String INTERACTION = "mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction";
-    private static final String ENDS_UPDATED =
-        "mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction$BrowserActionsEndUpdated";
+    private static final int POLL_MS = 1500;
 
     private static Context appCtx;
     private static WeakReference<Object> bstore;
@@ -53,6 +45,8 @@ public final class ExtensionPin {
     private static String raw;
     private static boolean started;
     private static Object sub;
+    private static boolean polling;
+    private static volatile List lastEnds;
 
     private ExtensionPin() {
     }
@@ -64,7 +58,7 @@ public final class ExtensionPin {
 
     static void toggle(Context context, Object item) {
         try {
-            String id = (String) field(item, "id");
+            String id = (String) prop(item, "id");
             if (isPinned(context, id)) {
                 unpin(context, id);
                 refresh();
@@ -117,17 +111,19 @@ public final class ExtensionPin {
 
     private static Object action(Object extensionState) throws Exception {
         if (extensionState == null) return null;
-        Object action = field(extensionState, "browserAction");
-        return action != null ? action : field(extensionState, "pageAction");
+        Object[] info = PinAccess.extInfo(extensionState);
+        return info[PinAccess.E_BROWSER] != null ? info[PinAccess.E_BROWSER] : info[PinAccess.E_PAGE];
     }
 
-    private static Object value(Object action, String name) throws Exception {
-        return action == null ? null : field(action, name);
+    private static Object[] actionInfo(Object extensionState) throws Exception {
+        Object action = action(extensionState);
+        return action != null ? PinAccess.actionInfo(action) : null;
     }
 
-    private static Object pick(Object tabAction, Object globalAction, String name) throws Exception {
-        Object value = value(tabAction, name);
-        return value != null ? value : value(globalAction, name);
+    private static Object pick(Object[] tabAction, Object[] globalAction, int index) {
+        Object value = tabAction != null ? tabAction[index] : null;
+        if (value != null) return value;
+        return globalAction != null ? globalAction[index] : null;
     }
 
     public static void start(Object middleware) {
@@ -140,15 +136,50 @@ public final class ExtensionPin {
             Object browserStore = field(middleware, "browserStore");
             bstore = new WeakReference<>(browserStore);
             handler = new Handler(Looper.getMainLooper());
-            Class<?> function1 = Class.forName("kotlin.jvm.functions.Function1");
-            Method observe = browserStore.getClass().getMethod("observeManually", function1);
-            Object subscription = observe.invoke(browserStore, new PinObserver());
-            subscription.getClass().getMethod("resume").invoke(subscription);
-            sub = subscription;
+            try {
+                Method observe = null;
+                for (Method m : browserStore.getClass().getMethods()) {
+                    if (m.getName().equals("observeManually") && m.getParameterTypes().length == 1) {
+                        observe = m;
+                        break;
+                    }
+                }
+                if (observe == null) throw new NoSuchMethodException("observeManually");
+                Object subscription = observe.invoke(browserStore, new PinObserver());
+                sub = subscription;
+                Method resume = null;
+                for (Method m : subscription.getClass().getMethods()) {
+                    if (m.getName().equals("resume") && m.getParameterTypes().length == 0) {
+                        resume = m;
+                        break;
+                    }
+                }
+                if (resume == null) throw new NoSuchMethodException("resume");
+                resume.setAccessible(true);
+                resume.invoke(subscription);
+            } catch (Throwable t) {
+                Log.e(TAG, "observe failed, polling", t);
+                poll();
+            }
             kick();
         } catch (Throwable t) {
             Log.e(TAG, "start failed", t);
         }
+    }
+
+    static void poll() {
+        if (handler == null || polling) return;
+        polling = true;
+        handler.postDelayed(new PinPoll(), POLL_MS);
+    }
+
+    static void tick() {
+        try {
+            Object browserStore = bstore != null ? bstore.get() : null;
+            if (browserStore != null) onState(TabAccess.state(browserStore));
+        } catch (Throwable ignored) {
+        }
+        if (handler != null) handler.postDelayed(new PinPoll(), POLL_MS);
     }
 
     public static void remember(Object toolbarStore, Object middleware) {
@@ -164,7 +195,7 @@ public final class ExtensionPin {
 
     static void onState(Object browserState) throws Exception {
         if (raw == null || raw.isEmpty() || appCtx == null) return;
-        Map extensions = (Map) field(browserState, "extensions");
+        Map extensions = PinAccess.extensions(browserState);
         Map tabExtensions = tabExtensionState(browserState);
         String[] ids = ids(appCtx);
         int hash = 17;
@@ -179,10 +210,14 @@ public final class ExtensionPin {
     }
 
     private static Map tabExtensionState(Object browserState) throws Exception {
-        Class<?> state = Class.forName(BROWSER_STATE);
-        Object tab = Class.forName(SELECTORS).getMethod("getSelectedTab", state).invoke(null, browserState);
-        if (tab == null) return null;
-        return (Map) tab.getClass().getMethod("getExtensionState").invoke(tab);
+        String selected = TabAccess.selected(browserState);
+        if (selected == null) return null;
+        List tabs = TabAccess.tabs(browserState);
+        for (int i = 0; i < tabs.size(); i++) {
+            Object tab = tabs.get(i);
+            if (selected.equals(TabAccess.id(tab))) return PinAccess.tabExtensions(tab);
+        }
+        return null;
     }
 
     static void sync() {
@@ -191,8 +226,8 @@ public final class ExtensionPin {
             if (context == null || bstore == null) return;
             Object browserStore = bstore.get();
             if (browserStore == null) return;
-            Object browserState = browserStore.getClass().getMethod("getState").invoke(browserStore);
-            Map extensions = (Map) field(browserState, "extensions");
+            Object browserState = TabAccess.state(browserStore);
+            Map extensions = PinAccess.extensions(browserState);
             Map tabExtensions = tabExtensionState(browserState);
             for (String id : ids(context)) syncOne(context, id, extensions, tabExtensions);
             refresh();
@@ -209,32 +244,29 @@ public final class ExtensionPin {
                 if (!extensions.isEmpty()) st.hidden = true;
                 return;
             }
-            if (!(Boolean) field(extension, "enabled")) {
+            Object[] info = PinAccess.extInfo(extension);
+            if (!Boolean.TRUE.equals(info[PinAccess.E_ENABLED])) {
                 st.hidden = true;
                 return;
             }
             st.hidden = false;
 
-            Object tabAction = tabExtensions != null ? action(tabExtensions.get(id)) : null;
-            Object globalAction = action(extension);
+            Object[] tabAction = tabExtensions != null ? actionInfo(tabExtensions.get(id)) : null;
+            Object[] globalAction = actionInfo(extension);
 
-            String title = (String) pick(tabAction, globalAction, "title");
-            if (title == null) title = (String) field(extension, "name");
+            String title = (String) pick(tabAction, globalAction, PinAccess.A_TITLE);
+            if (title == null) title = prefs(context).getString("l:" + id, id);
             st.title = title;
-            st.enabled = (Boolean) pick(tabAction, globalAction, "enabled");
-            st.text = (String) pick(tabAction, globalAction, "badgeText");
-            st.bg = (Integer) pick(tabAction, globalAction, "badgeBackgroundColor");
-            st.fg = (Integer) pick(tabAction, globalAction, "badgeTextColor");
+            st.enabled = (Boolean) pick(tabAction, globalAction, PinAccess.A_ENABLED);
+            st.text = (String) pick(tabAction, globalAction, PinAccess.A_BADGE);
+            st.bg = (Integer) pick(tabAction, globalAction, PinAccess.A_BG);
+            st.fg = (Integer) pick(tabAction, globalAction, PinAccess.A_FG);
 
-            Object loader = pick(tabAction, globalAction, "loadIcon");
+            Object loader = pick(tabAction, globalAction, PinAccess.A_ICON);
             if (loader != null && loader != st.loader) {
                 st.loader = loader;
-                Class<?> function2 = Class.forName("kotlin.jvm.functions.Function2");
-                Object result = function2.getMethod("invoke", Object.class, Object.class)
-                    .invoke(loader, px(context), new PinCont(st));
-                Object suspended = Class.forName("kotlin.coroutines.intrinsics.CoroutineSingletons")
-                    .getField("COROUTINE_SUSPENDED").get(null);
-                if (result != suspended && result instanceof Bitmap) st.bitmap = (Bitmap) result;
+                Object result = PinAccess.invoke2(loader, px(context), new PinCont(st));
+                if (result instanceof Bitmap) st.bitmap = (Bitmap) result;
             }
         } catch (Throwable t) {
             Log.e(TAG, "syncOne failed", t);
@@ -310,14 +342,7 @@ public final class ExtensionPin {
         if (title == null) title = prefs(context).getString("l:" + id, id);
 
         Drawable drawable = new NoTintDrawable(context.getResources(), render(context, bitmap, text, bg, fg, enabled));
-        Class<?> button = Class.forName(ACTION_BUTTON);
-        Class<?> buttonState = Class.forName(BUTTON_STATE);
-        Class<?> interaction = Class.forName(INTERACTION);
-        Constructor<?> constructor = button.getDeclaredConstructor(
-            Drawable.class, boolean.class, String.class, buttonState, boolean.class, interaction, interaction, String.class);
-        constructor.setAccessible(true);
-        return constructor.newInstance(drawable, false, title, buttonState.getField("DEFAULT").get(null), false,
-            event(id, false), event(id, true), null);
+        return PinAccess.button(drawable, title, event(id, false));
     }
 
     public static void addPinned(ArrayList list, Object middleware) {
@@ -341,13 +366,13 @@ public final class ExtensionPin {
 
     static void click(Object middleware, String id) throws Exception {
         Object browserStore = field(middleware, "browserStore");
-        Object browserState = browserStore.getClass().getMethod("getState").invoke(browserStore);
-        Map extensions = (Map) field(browserState, "extensions");
+        Object browserState = TabAccess.state(browserStore);
+        Map extensions = PinAccess.extensions(browserState);
         Object action = action(extensions.get(id));
         Map tabExtensions = tabExtensionState(browserState);
         Object tabAction = tabExtensions != null ? action(tabExtensions.get(id)) : null;
         if (tabAction != null) action = tabAction;
-        if (action != null) invokeFunction0(field(action, "onClick"));
+        if (action != null) invokeFunction0(PinAccess.actionInfo(action)[PinAccess.A_CLICK]);
     }
 
     static SharedPreferences prefs(Context context) {
@@ -360,7 +385,7 @@ public final class ExtensionPin {
     }
 
     static void pin(Context context, Object item) throws Exception {
-        String id = (String) field(item, "id");
+        String id = (String) prop(item, "id");
         if (isPinned(context, id)) return;
         SharedPreferences prefs = prefs(context);
         String current = prefs.getString("ids", "");
@@ -368,8 +393,8 @@ public final class ExtensionPin {
         raw = updated;
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString("ids", updated);
-        editor.putString("l:" + id, (String) field(item, "label"));
-        Bitmap icon = (Bitmap) field(item, "icon");
+        editor.putString("l:" + id, (String) prop(item, "label"));
+        Bitmap icon = (Bitmap) prop(item, "icon");
         if (icon != null) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             icon.compress(Bitmap.CompressFormat.PNG, 100, out);
@@ -403,29 +428,26 @@ public final class ExtensionPin {
         return function instanceof PinClick ? ((PinClick) function).onLong : null;
     }
 
+    // Called with the list the toolbar middleware is about to dispatch as BrowserActionsEndUpdated.
+    public static void capture(List list) {
+        lastEnds = list;
+    }
+
     static void refresh() {
         try {
-            if (store == null || mw == null) return;
-            Object toolbarStore = store.get();
-            Object middleware = mw.get();
-            if (toolbarStore == null || middleware == null) return;
+            Object toolbarStore = store != null ? store.get() : null;
+            Object middleware = mw != null ? mw.get() : null;
+            List base = lastEnds;
+            if (toolbarStore == null || middleware == null || base == null) return;
 
             ArrayList actions = new ArrayList();
             addPinned(actions, middleware);
-
-            Object state = toolbarStore.getClass().getMethod("getState").invoke(toolbarStore);
-            Object display = field(state, "displayState");
-            List current = (List) field(display, "browserActionsEnd");
-            Class<?> buttonClass = Class.forName(ACTION_BUTTON);
-            for (Iterator it = current.iterator(); it.hasNext(); ) {
-                Object entry = it.next();
-                if (buttonClass.isInstance(entry) && field(entry, "onClick") instanceof PinEvent) continue;
+            for (Object entry : new ArrayList(base)) {
+                if (PinAccess.buttonClick(entry) instanceof PinEvent) continue;
                 actions.add(entry);
             }
-
-            Object update = Class.forName(ENDS_UPDATED).getConstructor(List.class).newInstance(actions);
-            Class<?> action = Class.forName("mozilla.components.lib.state.Action");
-            toolbarStore.getClass().getMethod("dispatch", action).invoke(toolbarStore, update);
+            lastEnds = actions;
+            PinAccess.dispatch(toolbarStore, PinAccess.ends(actions));
         } catch (Throwable t) {
             Log.e(TAG, "refresh failed", t);
         }
@@ -525,10 +547,10 @@ public final class ExtensionPin {
                 toggle(context, item);
                 return;
             }
-            String id = (String) field(item, "id");
+            String id = (String) prop(item, "id");
             boolean pinned = isPinned(activity, id);
             new AlertDialog.Builder(activity)
-                .setTitle((String) field(item, "label"))
+                .setTitle((String) prop(item, "label"))
                 .setItems(new CharSequence[]{pinned ? "Unpin from top bar" : "Pin to top bar"},
                     new DialogInterface.OnClickListener() {
                         @Override
@@ -545,10 +567,20 @@ public final class ExtensionPin {
     static Object invokeFunction0(Object function) {
         try {
             if (function == null) return null;
-            return Class.forName("kotlin.jvm.functions.Function0").getMethod("invoke").invoke(function);
+            return PinAccess.invoke0(function);
         } catch (Throwable t) {
             Log.e(TAG, "invoke failed", t);
             return null;
+        }
+    }
+
+    // Fenix WebExtensionMenuItem keeps its getters. Falls back to the field.
+    private static Object prop(Object target, String name) throws Exception {
+        String getter = "get" + Character.toUpperCase(name.charAt(0)) + name.substring(1);
+        try {
+            return target.getClass().getMethod(getter).invoke(target);
+        } catch (NoSuchMethodException e) {
+            return field(target, name);
         }
     }
 
