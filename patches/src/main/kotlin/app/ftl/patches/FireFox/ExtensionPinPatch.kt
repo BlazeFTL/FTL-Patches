@@ -18,8 +18,11 @@
  *      LongClick) [zb2, zb2$c]. The synthetic default constructor (Drawable, Z, String, Event, I) gives the
  *      Event interface [zb2$a] (marker interface, no methods) and the default State (first sget-object of the
  *      State type). PinEvent implements Event. onClick field = the only field typed Interaction.
- *      Long click needs a CombinedEventAndMenu [zb2$c] (event + menu [zb2$b]). It is passed as null, so a long
- *      press on a pinned toolbar button does nothing. Unpin from the 3 dot menu (long press on the extension).
+ *      Long click = CombinedEventAndMenu [zb2$c] (event, menu [zb2$b]). Event = PinEvent(id, long), which shows
+ *      the unpin dialog. Menu = PinMenu, which implements the menu interface (one abstract method, no args,
+ *      returns List of menu items [pc2]) and returns an empty list. Found from zb2$c's 2 argument constructor.
+ *  Store subscription: Store.observeManually(Function1) returns the Subscription class [heh$a]. resume = its only
+ *      no-arg void method that calls getState() [a()]. The other one [b()] is unsubscribe.
  *
  *  State model (all through generated accessors in PinAccess)
  *      WebExtensionState [j6k]      toString literal "WebExtensionState(id=". R8 hoists its const-strings, so
@@ -78,6 +81,7 @@ private const val PIN_CLICK = "Lapp/ftl/extension/firefox/PinClick;"
 private const val PIN_LONG = "Lapp/ftl/extension/firefox/PinLong;"
 private const val PIN_OBSERVER = "Lapp/ftl/extension/firefox/PinObserver;"
 private const val PIN_CONT = "Lapp/ftl/extension/firefox/PinCont;"
+private const val PIN_MENU = "Lapp/ftl/extension/firefox/PinMenu;"
 
 private const val PIN_MIDDLEWARE = "Lorg/mozilla/fenix/components/toolbar/BrowserToolbarMiddleware;"
 private const val PIN_LIST_ITEM_KT = "Lorg/mozilla/fenix/compose/list/ListItemKt;"
@@ -247,7 +251,13 @@ private fun BytecodePatchContext.resolvePinModel(): PinModel {
     )
 }
 
-private class PinStore(val base: String, val dispatchParameter: String, val function1: String)
+private class PinStore(
+    val base: String,
+    val dispatchParameter: String,
+    val function1: String,
+    val subscription: String,
+    val resume: String?,
+)
 
 private fun BytecodePatchContext.resolvePinStore(): PinStore {
     val coreStore = classDefBy(PIN_CORE).methods
@@ -261,7 +271,18 @@ private fun BytecodePatchContext.resolvePinStore(): PinStore {
         }
         val observe = definition.methods.firstOrNull { it.name == "observeManually" && it.parameterTypes.size == 1 }
         if (dispatch != null && observe != null) {
-            return PinStore(type, dispatch.parameterTypes[0].toString(), observe.parameterTypes[0].toString())
+            val subscription = observe.returnType
+            val resume = classDefByOrNull(subscription)?.methods?.singleOrNull { method ->
+                method.parameterTypes.isEmpty() && method.returnType == "V" &&
+                    method.implementation?.instructions?.any { it.pinMethod()?.name == "getState" } == true
+            }?.name
+            return PinStore(
+                type,
+                dispatch.parameterTypes[0].toString(),
+                observe.parameterTypes[0].toString(),
+                subscription,
+                resume,
+            )
         }
         type = definition.superclass
     }
@@ -276,6 +297,8 @@ private class PinButton(
     val longClick: String,
     val event: String,
     val clickField: FieldReference,
+    val menu: String,
+    val menuMethod: String,
 )
 
 private fun BytecodePatchContext.resolvePinButton(): PinButton {
@@ -299,6 +322,14 @@ private fun BytecodePatchContext.resolvePinButton(): PinButton {
     } ?: throw PatchException("ActionButton default State not found in $type")
     val clickFields = definition.instanceFields.filter { it.type == parameters[4] }
     if (clickFields.size != 1) throw PatchException("ActionButton onClick field not unique in $type")
+    val longConstructor = classDefBy(parameters[5]).methods.firstOrNull {
+        val p = it.pinParams()
+        it.name == "<init>" && p.size == 2 && p[0] == event
+    } ?: throw PatchException("${parameters[5]}(event, menu) constructor not found")
+    val menu = longConstructor.pinParams()[1]
+    val menuMethod = classDefBy(menu).methods.singleOrNull {
+        AccessFlags.ABSTRACT.isSet(it.accessFlags) && it.parameterTypes.isEmpty() && it.returnType == PIN_LIST
+    } ?: throw PatchException("$menu has no single abstract no-arg List method")
     return PinButton(
         type = type,
         state = parameters[3],
@@ -307,6 +338,8 @@ private fun BytecodePatchContext.resolvePinButton(): PinButton {
         longClick = parameters[5],
         event = event,
         clickField = clickFields[0],
+        menu = menu,
+        menuMethod = menuMethod.name,
     )
 }
 
@@ -596,18 +629,29 @@ private fun BytecodePatchContext.installPinAccessors(
     """)
     val buttonConstructor =
         "${button.type}-><init>(${PIN_DRAWABLE}Z$PIN_STRING${button.state}${button.interaction}${button.longClick})V"
-    addStaticMethod(PIN_ACCESS, "ftlButton", listOf(PIN_DRAWABLE, PIN_STRING, PIN_OBJECT), PIN_OBJECT, 10, """
-        new-instance v0, ${button.type}
-        move-object v1, p0
-        const/4 v2, 0x0
-        move-object v3, p1
-        sget-object v4, ${fieldString(button.stateDefault)}
-        check-cast p2, ${button.interaction}
-        move-object v5, p2
-        const/4 v6, 0x0
-        invoke-direct/range {v0 .. v6}, $buttonConstructor
-        return-object v0
-    """)
+    val longConstructor = "${button.longClick}-><init>(${button.event}${button.menu})V"
+    addStaticMethod(
+        PIN_ACCESS,
+        "ftlButton",
+        listOf(PIN_DRAWABLE, PIN_STRING, PIN_OBJECT, PIN_OBJECT, PIN_OBJECT),
+        PIN_OBJECT,
+        12,
+        """
+            new-instance v6, ${button.longClick}
+            check-cast p3, ${button.event}
+            check-cast p4, ${button.menu}
+            invoke-direct {v6, p3, p4}, $longConstructor
+            new-instance v0, ${button.type}
+            move-object v1, p0
+            const/4 v2, 0x0
+            move-object v3, p1
+            sget-object v4, ${fieldString(button.stateDefault)}
+            check-cast p2, ${button.interaction}
+            move-object v5, p2
+            invoke-direct/range {v0 .. v6}, $buttonConstructor
+            return-object v0
+        """,
+    )
     addStaticMethod(PIN_ACCESS, "ftlButtonClick", listOf(PIN_OBJECT), PIN_OBJECT, 2, """
         instance-of v0, p0, ${button.type}
         if-eqz v0, :ftl_none
@@ -621,6 +665,15 @@ private fun BytecodePatchContext.installPinAccessors(
     addStaticMethod(PIN_ACCESS, "ftlEnds", listOf(PIN_LIST), PIN_OBJECT, 2, """
         new-instance v0, $ends
         invoke-direct {v0, p0}, $ends-><init>(Ljava/util/List;)V
+        return-object v0
+    """)
+    val resume = store.resume?.let { "invoke-virtual {v0}, ${store.subscription}->$it()V" } ?: ""
+    addStaticMethod(PIN_ACCESS, "ftlObserve", listOf(PIN_OBJECT, PIN_OBJECT), PIN_OBJECT, 3, """
+        check-cast p0, ${store.base}
+        check-cast p1, ${store.function1}
+        invoke-virtual {p0, p1}, ${store.base}->observeManually(${store.function1})${store.subscription}
+        move-result-object v0
+        $resume
         return-object v0
     """)
     addStaticMethod(PIN_ACCESS, "ftlDispatch", listOf(PIN_OBJECT, PIN_OBJECT), "V", 2, """
@@ -650,6 +703,12 @@ internal fun BytecodePatchContext.installExtensionPin() {
     pinImplements(PIN_LONG, function0)
     pinImplements(PIN_OBSERVER, store.function1)
     pinImplements(PIN_EVENT, button.event)
+    pinImplements(PIN_MENU, button.menu)
+    addPinMethod(PIN_MENU, button.menuMethod, PIN_LIST, 2, """
+        invoke-static {}, Ljava/util/Collections;->emptyList()Ljava/util/List;
+        move-result-object v0
+        return-object v0
+    """)
 
     val continuation = resolvePinContinuation()
     if (continuation != null) {

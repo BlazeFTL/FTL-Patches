@@ -21,7 +21,6 @@ import android.widget.Toast;
 import java.io.ByteArrayOutputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +33,7 @@ public final class ExtensionPin {
     private static final String PREFS = "ftl_pinned_ext";
 
     private static final int POLL_MS = 1500;
+    private static final PinMenu MENU = new PinMenu();
 
     private static Context appCtx;
     private static WeakReference<Object> bstore;
@@ -137,26 +137,7 @@ public final class ExtensionPin {
             bstore = new WeakReference<>(browserStore);
             handler = new Handler(Looper.getMainLooper());
             try {
-                Method observe = null;
-                for (Method m : browserStore.getClass().getMethods()) {
-                    if (m.getName().equals("observeManually") && m.getParameterTypes().length == 1) {
-                        observe = m;
-                        break;
-                    }
-                }
-                if (observe == null) throw new NoSuchMethodException("observeManually");
-                Object subscription = observe.invoke(browserStore, new PinObserver());
-                sub = subscription;
-                Method resume = null;
-                for (Method m : subscription.getClass().getMethods()) {
-                    if (m.getName().equals("resume") && m.getParameterTypes().length == 0) {
-                        resume = m;
-                        break;
-                    }
-                }
-                if (resume == null) throw new NoSuchMethodException("resume");
-                resume.setAccessible(true);
-                resume.invoke(subscription);
+                sub = PinAccess.observe(browserStore, new PinObserver());
             } catch (Throwable t) {
                 Log.e(TAG, "observe failed, polling", t);
                 poll();
@@ -342,7 +323,7 @@ public final class ExtensionPin {
         if (title == null) title = prefs(context).getString("l:" + id, id);
 
         Drawable drawable = new NoTintDrawable(context.getResources(), render(context, bitmap, text, bg, fg, enabled));
-        return PinAccess.button(drawable, title, event(id, false));
+        return PinAccess.button(drawable, title, event(id, false), event(id, true), MENU);
     }
 
     public static void addPinned(ArrayList list, Object middleware) {

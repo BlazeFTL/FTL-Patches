@@ -69,8 +69,17 @@ public final class PinAccess {
         return call("ftlInvoke2", new Class<?>[]{Object.class, Object.class, Object.class}, function, first, second);
     }
 
-    static Object button(Drawable drawable, String title, Object event) throws Exception {
-        return call("ftlButton", new Class<?>[]{Drawable.class, String.class, Object.class}, drawable, title, event);
+    static Object button(Drawable drawable, String title, Object event, Object longEvent, Object menu) throws Exception {
+        return call(
+            "ftlButton",
+            new Class<?>[]{Drawable.class, String.class, Object.class, Object.class, Object.class},
+            drawable, title, event, longEvent, menu
+        );
+    }
+
+    // Store.observeManually(observer) + resume(). Returns the subscription.
+    static Object observe(Object store, Object observer) throws Exception {
+        return call("ftlObserve", new Class<?>[]{Object.class, Object.class}, store, observer);
     }
 
     static Object buttonClick(Object entry) {
