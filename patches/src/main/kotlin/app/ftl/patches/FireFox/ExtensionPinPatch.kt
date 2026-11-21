@@ -141,7 +141,7 @@ private fun Instruction.pinFieldRef() = (this as? ReferenceInstruction)?.referen
 
 private fun Instruction.pinTypeRef() = ((this as? ReferenceInstruction)?.reference as? TypeReference)?.type
 
-private fun Method.pinParams() = parameterTypes.map { it.toString() }
+private fun MethodReference.pinParams() = parameterTypes.map { it.toString() }
 
 // Instance fields read by a data class toString, in read order, without duplicates.
 private fun Method.pinReadFields(owner: String): List<FieldReference> {
