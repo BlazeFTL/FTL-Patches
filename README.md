@@ -26,7 +26,7 @@ Click **[Add To Morphe↗️](https://morphe.software/add-source?github=BlazeFTL
 ## 🐉 Patches list
 
 <!-- PATCHES_START -->
-> **[v1.43.7.5-dev.1](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.7.5-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;121 patches total
+> **[v1.43.7.5](https://github.com/BlazeFTL/FTL-Patches/releases/tag/v1.43.7.5)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;121 patches total
 <a id="all-video-downloader-ace-player"></a>
 <details>
 <summary><img src=".github/assets/icons/videoplayer.videodownloader.downloader.png" width="18" align="absmiddle">&nbsp;&nbsp;All Video Downloader & Ace Player&nbsp;&nbsp;•&nbsp;&nbsp;9 patches</summary>
@@ -234,7 +234,7 @@ Click **[Add To Morphe↗️](https://morphe.software/add-source?github=BlazeFTL
 
 **🎯 Supported versions:**
 
-| 161.0a1 |
+| 162.0a1 |
 | :---: |
 
 | 🩹&nbsp;Patch | 🔥&nbsp;Description |
@@ -243,7 +243,7 @@ Click **[Add To Morphe↗️](https://morphe.software/add-source?github=BlazeFTL
 | <a id="firefox-nightly-hide-fullscreen-toast"></a>[Hide fullscreen toast](patches/src/main/kotlin/app/ftl/patches/FireFox/HideFullscreenToastPatch.kt) | Removes the toast shown when a video goes fullscreen. Toggle in Mod Settings. |
 | <a id="firefox-nightly-long-press-to-select-tab-range"></a>[Long press to select tab range](patches/src/main/kotlin/app/ftl/patches/FireFox/RangeSelectTabsPatch.kt) | In tab tray selection mode, long press a second tab to select every tab between. Toggle in Mod Settings. |
 | <a id="firefox-nightly-new-tab-next-to-current-tab"></a>[New tab next to current tab](patches/src/main/kotlin/app/ftl/patches/FireFox/TabNextToCurrentPatch.kt) | Opens new tabs right after the current tab and adds an add-to-end button (+ with a down arrow) beside + that opens a tab at the end. Both are toggles in Mod Settings. |
-| <a id="firefox-nightly-old-style-3-dot-menu-and-extension-pinning"></a>[Old style 3 dot menu And Extension Pinning](patches/src/main/kotlin/app/ftl/patches/FireFox/OldMenuPatch.kt) | Adds "Mod Settings" to the 3 dot menu: switch between the stock bottom sheet menu and the old style popup menu, and pin extensions to the search bar. |
+| <a id="firefox-nightly-old-style-3-dot-menu-and-extension-pinning"></a>[Old style 3 dot menu And Extension Pinning](patches/src/main/kotlin/app/ftl/patches/FireFox/OldMenuPatch.kt) | Adds "Mod Settings" to the 3 dot menu and switches between the stock bottom sheet menu and the old style popup menu. |
 | <a id="firefox-nightly-remember-tab-scroll-position"></a>[Remember tab scroll position](patches/src/main/kotlin/app/ftl/patches/FireFox/RememberTabScrollPositionPatch.kt) | Keeps the tab tray scroll position when it is closed and reopened. |
 | <a id="firefox-nightly-tab-scroll-button"></a>[Tab scroll button](patches/src/main/kotlin/app/ftl/patches/FireFox/TabScrollButtonPatch.kt) | Adds up and down buttons beside + in the tab tray that jump to the first and last tab. Toggle in Mod Settings. |
 
